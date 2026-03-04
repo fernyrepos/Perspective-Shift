@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <KeyBindingCategoryDef>
+        <defName>PS_Controls</defName>
+        <label>Perspective Shift</label>
+        <description>Controls for direct character control.</description>
+    </KeyBindingCategoryDef>
+
+    <KeyBindingDef>
+        <defName>PS_MoveForward</defName>
+        <label>Move Forward</label>
+        <category>PS_Controls</category>
+        <defaultKeyCodeA>W</defaultKeyCodeA>
+    </KeyBindingDef>
+
+    <KeyBindingDef>
+        <defName>PS_MoveBack</defName>
+        <label>Move Back</label>
+        <category>PS_Controls</category>
+        <defaultKeyCodeA>S</defaultKeyCodeA>
+    </KeyBindingDef>
+
+    <KeyBindingDef>
+        <defName>PS_MoveLeft</defName>
+        <label>Move Left</label>
+        <category>PS_Controls</category>
+        <defaultKeyCodeA>A</defaultKeyCodeA>
+    </KeyBindingDef>
+
+    <KeyBindingDef>
+        <defName>PS_MoveRight</defName>
+        <label>Move Right</label>
+        <category>PS_Controls</category>
+        <defaultKeyCodeA>D</defaultKeyCodeA>
+    </KeyBindingDef>
+
+    <KeyBindingDef>
+        <defName>PS_Sprint</defName>
+        <label>Sprint</label>
+        <category>PS_Controls</category>
+        <defaultKeyCodeA>LeftShift</defaultKeyCodeA>
+    </KeyBindingDef>
+
+    <KeyBindingDef>
+        <defName>PS_Walk</defName>
+        <label>Walk</label>
+        <category>PS_Controls</category>
+        <defaultKeyCodeA>LeftControl</defaultKeyCodeA>
+    </KeyBindingDef>
+</Defs>

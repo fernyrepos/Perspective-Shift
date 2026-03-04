@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+    <PS_LostControl>Lost control of character</PS_LostControl>
+    <PS_TakeControl>Take Control</PS_TakeControl>
+    <PS_SwapCharacter>Swap to this character</PS_SwapCharacter>
+    <PS_ReturnToDirector>Return to Director Mode</PS_ReturnToDirector>
+    <PS_AuthenticLocked>Locked to character</PS_AuthenticLocked>
+    <PS_AuthenticLockedReason>Authentic mode prevents switching characters.</PS_AuthenticLockedReason>
+    <PS_PickedUp>Picked up {0}</PS_PickedUp>
+    <PS_MoveCancelled>Move cancelled</PS_MoveCancelled>
+    <PS_ControlTaken>{0} is now under direct control</PS_ControlTaken>
+
+    <PS_SelectRole>Select your role</PS_SelectRole>
+    <PS_RoleDirector>Director</PS_RoleDirector>
+    <PS_RoleDirectorDesc>Play from an omniscient point of view, managing the characters.</PS_RoleDirectorDesc>
+    <PS_RoleCharacter>Character</PS_RoleCharacter>
+    <PS_RoleCharacterDesc>Play from the point of view of one of your characters.</PS_RoleCharacterDesc>
+
+    <PS_SelectPlaystyle>Select your character playstyle</PS_SelectPlaystyle>
+    <PS_ModeAuthentic>Authentic mode</PS_ModeAuthentic>
+    <PS_ModeAuthenticDesc>You must stick with the character you choose forever. You may never switch to omniscient view, and are always in your character's shoes. Recommended for narrative experiences.</PS_ModeAuthenticDesc>
+    <PS_ModeSwap>Swap mode</PS_ModeSwap>
+    <PS_ModeSwapDesc>You may switch between characters, but must always remain in the perspective of the characters. Recommended for players who like the playstyle but want more control over multiple characters.</PS_ModeSwapDesc>
+    <PS_ModeDynamic>Dynamic mode</PS_ModeDynamic>
+    <PS_ModeDynamicDesc>While your primary form of play will be within your characters, you may swap between director style play or playing as any of your characters at any point.</PS_ModeDynamicDesc>
+
+    <PS_ZoomSpeed>Zoom speed: {0}</PS_ZoomSpeed>
+    <PS_MinZoom>Minimum zoom: {0}</PS_MinZoom>
+    <PS_MaxZoom>Maximum zoom: {0}</PS_MaxZoom>
+    <PS_GrabRange>Grab range: {0}</PS_GrabRange>
+    <PS_ChooseYourCharacter>Choose your character</PS_ChooseYourCharacter>
+    <PS_ChooseYourStartingCharacter>Choose your starting character</PS_ChooseYourStartingCharacter>
+    <PS_MustSelectCharacter>You must select a character before continuing.</PS_MustSelectCharacter>
+</LanguageData>
