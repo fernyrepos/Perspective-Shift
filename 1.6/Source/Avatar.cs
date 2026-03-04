@@ -737,6 +737,29 @@ namespace PerspectiveShift
                 }
             }
 
+            var building = clickCell.GetFirstBuilding(pawn.Map);
+            if (building != null && !building.Destroyed && building.Spawned)
+            {
+                var job = TryGetJobFromWorkGivers(pawn, building);
+                if (job != null)
+                {
+                    Log.Message($"[Avatar.HandleLeftClick] WorkGiver found job: {job.def.defName} on {building.Label}. Starting directly.");
+                    pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
+                    return true;
+                }
+            }
+
+            if (building != null && !building.Destroyed && building.Spawned)
+            {
+                var sleepOrJoyJob = TryGetSleepOrJoyJob(pawn, building);
+                if (sleepOrJoyJob != null)
+                {
+                    Log.Message($"[Avatar.HandleLeftClick] Found Sleep/Joy job: {sleepOrJoyJob.def.defName} on {building.Label}. Starting directly.");
+                    pawn.jobs.TryTakeOrderedJob(sleepOrJoyJob, JobTag.Misc);
+                    return true;
+                }
+            }
+
             var opts = FloatMenuMakerMap.GetOptions(new List<Pawn> { pawn }, clickCell.ToVector3Shifted(), out _);
             Log.Message($"[Avatar.HandleLeftClick] float menu options: {opts?.Count ?? 0}");
             if (opts != null)
@@ -761,6 +784,64 @@ namespace PerspectiveShift
 
             Log.Message("[Avatar.HandleLeftClick] RETURN: No action taken");
             return false;
+        }
+
+        private Job TryGetJobFromWorkGivers(Pawn pawn, Thing thing)
+        {
+            if (pawn.workSettings == null) return null;
+
+            List<WorkGiver> workGivers = pawn.workSettings.WorkGiversInOrderNormal;
+            for (int i = 0; i < workGivers.Count; i++)
+            {
+                WorkGiver workGiver = workGivers[i];
+
+                if (!(workGiver is WorkGiver_Scanner scanner)) continue;
+
+                if (scanner.PotentialWorkThingRequest.Accepts(thing))
+                {
+                    if (!scanner.HasJobOnThing(pawn, thing, forced: true)) continue;
+
+                    var job = scanner.JobOnThing(pawn, thing, forced: true);
+
+                    if (job != null)
+                    {
+                        return job;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private Job TryGetSleepOrJoyJob(Pawn pawn, Thing thing)
+        {
+            if (thing is Building_Bed bed && !bed.ForPrisoners && !bed.Medical && pawn.needs?.rest != null)
+            {
+                if (RestUtility.CanUseBedEver(pawn, bed.def) && pawn.CanReserveAndReach(bed, PathEndMode.OnCell, Danger.Deadly))
+                {
+                    return JobMaker.MakeJob(JobDefOf.LayDown, bed);
+                }
+            }
+
+            if (pawn.needs?.joy != null)
+            {
+                var joyGivers = DefDatabase<JoyGiverDef>.AllDefsListForReading
+                    .Where(jg => jg.Worker is JoyGiver_InteractBuilding && jg.thingDefs != null && jg.thingDefs.Contains(thing.def));
+
+                foreach (var jgDef in joyGivers)
+                {
+                    if (jgDef.Worker is JoyGiver_InteractBuilding worker)
+                    {
+                        Job joyJob = worker.TryGivePlayJob(pawn, thing);
+                        if (joyJob != null)
+                        {
+                            joyJob.playerForced = true;
+                            return joyJob;
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
 
         private void ExecutePickup(Thing target)
@@ -805,13 +886,21 @@ namespace PerspectiveShift
                 }
             }
 
-            if ((building is ISlotGroupParent) || (pawn.Map.haulDestinationManager.SlotGroupAt(cell) != null))
+            var slotGroup = pawn.Map.haulDestinationManager.SlotGroupAt(cell);
+            if (slotGroup != null)
             {
-                Log.Message("[Avatar.HandleDropOrInteract] Cell is storage, trying to drop");
-                if (pawn.carryTracker.TryDropCarriedThing(cell, ThingPlaceMode.Direct, out var _))
+                if (slotGroup.Settings.AllowedToAccept(CarriedThing))
                 {
-                    Log.Message("[Avatar.HandleDropOrInteract] RETURN: Success - Dropped in storage");
-                    return true;
+                    Log.Message("[Avatar.HandleDropOrInteract] Cell is valid storage for item, trying to drop");
+                    if (pawn.carryTracker.TryDropCarriedThing(cell, ThingPlaceMode.Direct, out var _))
+                    {
+                        Log.Message("[Avatar.HandleDropOrInteract] RETURN: Success - Dropped in storage");
+                        return true;
+                    }
+                }
+                else
+                {
+                    Log.Message("[Avatar.HandleDropOrInteract] Cell is storage but does NOT accept this item.");
                 }
             }
 
