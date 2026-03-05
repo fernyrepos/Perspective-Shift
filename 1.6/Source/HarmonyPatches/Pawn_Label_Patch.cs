@@ -3,6 +3,7 @@ using Verse;
 
 namespace PerspectiveShift
 {
+    /*
     [HarmonyPatch(typeof(Thing))]
     public static class Pawn_Label_Patch
     {
@@ -34,4 +35,5 @@ namespace PerspectiveShift
                 __result += " " + "PS_You".Translate();
         }
     }
+    */
 }

@@ -191,6 +191,12 @@ namespace PerspectiveShift
                 pawn.Drawer.leaner.shootSourceOffset = snapped;
             }
 
+            if (pawn.pather != null && IsMoving)
+            {
+                var baseSpeed = pawn.GetStatValue(StatDefOf.MoveSpeed);
+                pawn.pather.nextCellCostTotal = 60f / Mathf.Max(baseSpeed, 0.1f);
+            }
+
             if (!physicsPosition.HasValue) return;
             var tweener = pawn.Drawer.tweener;
             tweener.tweenedPos = physicsPosition.Value;
@@ -594,7 +600,7 @@ namespace PerspectiveShift
             {
                 pawn.jobs.debugLog = true;
             }
-            bool shouldLogUI = true;
+            bool shouldLogUI = false;
             if (shouldLogUI)
             {
                 State.Message($"Windows: {string.Join(", ", Find.WindowStack.windows.Select(x => x.GetType().Name))} | OpenTab: {Find.MainTabsRoot.OpenTab?.defName ?? "null"}");
@@ -1262,22 +1268,6 @@ namespace PerspectiveShift
             }
         }
 
-        private void LogYayoAnimationState()
-        {
-            bool movingNow = pawn.pather?.MovingNow ?? false;
-            int lastMovedTick = pawn.pather?.lastMovedTick ?? -1;
-            int currentTick = Find.TickManager.TicksGame;
-            float costTotal = pawn.pather?.nextCellCostTotal ?? -1f;
-            
-            float bodyAngle = pawn.Drawer?.renderer?.BodyAngle(PawnRenderFlags.None) ?? 0f;
-            
-            Vector3 vanillaBodyPos = pawn.Drawer?.renderer?.GetBodyPos(pawn.DrawPos, pawn.GetPosture(), out bool showBody) ?? Vector3.zero;
-            Vector3 currentTweenPos = pawn.Drawer?.tweener?.tweenedPos ?? Vector3.zero;
-
-            State.Message($"[YayoDebug-Tick] Tick: {currentTick} | IsMoving: {IsMoving} | MovingNow: {movingNow} | lastMovedTick: {lastMovedTick} (diff: {currentTick - lastMovedTick})");
-            State.Message($"[YayoDebug-Render] CostTotal: {costTotal:F2} | BodyAngle: {bodyAngle:F2} | YayoBodyPosOffset: {vanillaBodyPos} | FinalTweenedPos: {currentTweenPos}");
-        }
-
         public void Tick()
         {
             if (pawn == null || pawn.Dead || pawn.Downed) return;
@@ -1286,9 +1276,9 @@ namespace PerspectiveShift
             if (IsMoving && pawn.pather != null)
             {
                 pawn.pather.lastMovedTick = Find.TickManager.TicksGame;
+                var baseSpeed = pawn.GetStatValue(StatDefOf.MoveSpeed);
+                pawn.pather.nextCellCostTotal = 60f / Mathf.Max(baseSpeed, 0.1f);
             }
-            
-            LogYayoAnimationState();
         }
     }
 }
