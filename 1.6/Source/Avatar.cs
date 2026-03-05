@@ -19,11 +19,15 @@ namespace PerspectiveShift
         public bool isWalking;
         public bool IsMoving => moveInput.sqrMagnitude > 0.01f;
         public Vector3? physicsPosition;
+        public Vector3 LeanTarget = Vector3.zero;
+        public Vector3 LeanSmoothed = Vector3.zero;
+        private Vector3 _leanVelocity = Vector3.zero;
 
         public Thing CarriedThing => pawn.carryTracker?.CarriedThing;
 
         private Building_Door interactingDoor;
         private bool wasMovingLastFrame;
+        private int lastJumpLogTick = 0;
         private Rect topRightGizmoBounds;
         private static Texture2D _reticleTex;
         public static Texture2D ReticleTex => _reticleTex ??= ContentFinder<Texture2D>.Get("UI/Reticle");
@@ -71,6 +75,11 @@ namespace PerspectiveShift
                 {
                     if (pawn.pather.Moving) pawn.pather.StopDead();
                     wasMovingLastFrame = false;
+                }
+
+                if (pawn.Drafted && !pawn.InMentalState)
+                {
+                    RotateTowardsMouse();
                 }
                 return;
             }
@@ -136,6 +145,16 @@ namespace PerspectiveShift
 
             if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
             {
+
+                if (pawn.Drafted)
+                {
+                    if (pawn.jobs?.curJob != null && pawn.jobs.curJob.def.playerInterruptible)
+                        pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
+
+                    Event.current.Use();
+                    return true;
+                }
+
                 if (pawn.jobs?.curJob != null && pawn.jobs.curJob.def.playerInterruptible)
                     pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
             }
@@ -161,8 +180,21 @@ namespace PerspectiveShift
         {
             if (pawn == null || pawn.Map == null || !pawn.Spawned) return;
 
-            if (!physicsPosition.HasValue) return;
+            LeanSmoothed = Vector3.SmoothDamp(LeanSmoothed, LeanTarget, ref _leanVelocity, 0.07f, 10f, Time.deltaTime);
 
+            if (pawn.Drawer?.leaner != null)
+            {
+                IntVec3 snapped = IntVec3.Zero;
+                if (LeanTarget.sqrMagnitude > 0.01f)
+                {
+                    snapped = Mathf.Abs(LeanTarget.x) >= Mathf.Abs(LeanTarget.z)
+                        ? (LeanTarget.x > 0 ? IntVec3.East : new IntVec3(-1, 0, 0))
+                        : (LeanTarget.z > 0 ? IntVec3.North : IntVec3.South);
+                }
+                pawn.Drawer.leaner.shootSourceOffset = snapped;
+            }
+
+            if (!physicsPosition.HasValue) return;
             var tweener = pawn.Drawer.tweener;
             tweener.tweenedPos = physicsPosition.Value;
             tweener.lastDrawFrame = RealTime.frameCount;
@@ -201,10 +233,43 @@ namespace PerspectiveShift
             return pawn.TicksPerMoveCardinal / Mathf.Max(num, 1f);
         }
 
+        private void RotateTowardsMouse()
+        {
+            var pawnCenter = pawn.Position.ToVector3Shifted();
+            Vector3 toMouse = UI.MouseMapPosition() - pawnCenter;
+            if (toMouse.sqrMagnitude > 0.1f)
+                pawn.Rotation = Rot4.FromAngleFlat(NormAngle(Mathf.Atan2(toMouse.x, toMouse.z) * Mathf.Rad2Deg));
+        }
+
         private void ProcessMovement()
         {
             if (pawn == null || pawn.Map == null || !pawn.Spawned) return;
+
             if (interactingDoor != null) return;
+
+            if (physicsPosition.HasValue)
+            {
+                var physCell = physicsPosition.Value.ToIntVec3();
+                bool physCellUnwalkable = !physCell.InBounds(pawn.Map) || !physCell.Walkable(pawn.Map);
+                var physXZ = new Vector2(physicsPosition.Value.x, physicsPosition.Value.z);
+                var pawnCenterXZ = new Vector2(pawn.Position.x + 0.5f, pawn.Position.z + 0.5f);
+                float distSq = (physXZ - pawnCenterXZ).sqrMagnitude;
+                bool tooFarFromPawn = distSq > 4f;
+
+                if (physCellUnwalkable || tooFarFromPawn)
+                {
+                    Vector3 oldPos = physicsPosition.Value;
+                    var snappedPos = new Vector3(pawn.Position.x + 0.5f, pawn.def.Altitude, pawn.Position.z + 0.5f);
+                    State.Message($"[JerkDebug] DESYNC DETECTED: oldPos={oldPos:F2} physCell={physCell} unwalkable={physCellUnwalkable} tooFar={tooFarFromPawn} (dist={(float)Math.Sqrt(distSq):F2}) pawn.Pos={pawn.Position} — snapping to {snappedPos:F2}");
+                    physicsPosition = snappedPos;
+                    wasMovingLastFrame = false;
+                }
+            }
+
+            if (IsMoving)
+            {
+                State.Message($"[JerkDebug] Frame {Time.frameCount}: ProcessMovement START - Input: {moveInput.normalized:F2}, Pos: {physicsPosition:F3}");
+            }
 
             if (!IsMoving)
             {
@@ -221,9 +286,7 @@ namespace PerspectiveShift
 
                 if (pawn.Drafted && !pawn.InMentalState && !State.ControlsFrozen)
                 {
-                    Vector3 toMouse = UI.MouseMapPosition() - pawn.DrawPos;
-                    if (toMouse.sqrMagnitude > 0.1f)
-                        pawn.Rotation = Rot4.FromAngleFlat(NormAngle(Mathf.Atan2(toMouse.x, toMouse.z) * Mathf.Rad2Deg));
+                    RotateTowardsMouse();
                 }
 
                 return;
@@ -231,8 +294,21 @@ namespace PerspectiveShift
 
             if (!wasMovingLastFrame || !physicsPosition.HasValue)
             {
-                physicsPosition = pawn.Drawer.tweener.TweenedPos;
-                physicsPosition = new Vector3(physicsPosition.Value.x, pawn.def.Altitude, physicsPosition.Value.z);
+                var initPos = pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
+                if (physicsPosition.HasValue)
+                {
+                    var jumpDist = Vector3.Distance(physicsPosition.Value, initPos);
+                    if (jumpDist > 0.5f && GenTicks.TicksGame - lastJumpLogTick > 60)
+                    {
+                        State.Message($"[JerkDebug] physicsPosition jump: {physicsPosition.Value:F2} -> {initPos:F2} (dist={jumpDist:F2})");
+                        lastJumpLogTick = GenTicks.TicksGame;
+                    }
+                }
+                else
+                {
+                    State.Message($"[JerkDebug] physicsPosition initialised from cell centre: {initPos:F2}");
+                }
+                physicsPosition = initPos;
                 wasMovingLastFrame = true;
             }
 
@@ -245,7 +321,6 @@ namespace PerspectiveShift
             {
                 if (canRunAndGun && isShooting && pawn.Drafted)
                 {
-
                 }
                 else
                 {
@@ -254,38 +329,45 @@ namespace PerspectiveShift
             }
 
             Vector3 deltaRaw = moveInput.normalized;
-
             Vector3 testNewPos = physicsPosition.Value + deltaRaw * 0.1f;
-
             var currentMultiplier = GetMovementSpeedMultiplier(pawn.Position);
             var futureMultiplier = GetMovementSpeedMultiplier(testNewPos.ToIntVec3());
-
             var terrainMultiplier = Mathf.Min(currentMultiplier, futureMultiplier);
-
             var baseSpeed = pawn.GetStatValue(StatDefOf.MoveSpeed);
             float expectedTicks = 60f / Mathf.Max(baseSpeed, 0.1f);
             float tickModifier = expectedTicks / Mathf.Max(pawn.TicksPerMoveCardinal, 1f);
-
-            float speed = baseSpeed
-                          * terrainMultiplier
-                          * tickModifier
-                          * (isSprinting ? 1.3f : isWalking ? 0.5f : 1.0f)
-                          * Time.deltaTime;
-
+            float speed = baseSpeed * terrainMultiplier * tickModifier * (isSprinting ? 1.3f : isWalking ? 0.5f : 1.0f) * Time.deltaTime;
             Vector3 delta = deltaRaw * speed;
             Vector3 newPos = physicsPosition.Value;
+
+            string log = $"[JerkDebug] Frame {Time.frameCount}: Processing - Delta: {delta:F3} ";
 
             if (Mathf.Abs(delta.x) > 0.0001f)
             {
                 Vector3 testX = newPos + new Vector3(delta.x, 0, 0);
-                if (IsWalkableWithMargin(testX)) newPos = testX;
+                if (IsWalkableWithMargin(testX))
+                {
+                    newPos = testX;
+                }
+                else
+                {
+                    log += "[X BLOCKED]";
+                }
             }
 
             if (Mathf.Abs(delta.z) > 0.0001f)
             {
                 Vector3 testZ = newPos + new Vector3(0, 0, delta.z);
-                if (IsWalkableWithMargin(testZ)) newPos = testZ;
+                if (IsWalkableWithMargin(testZ))
+                {
+                    newPos = testZ;
+                }
+                else
+                {
+                     log += "[Z BLOCKED]";
+                }
             }
+            State.Message(log);
 
             var nextCell = newPos.ToIntVec3();
             var door = nextCell.GetDoor(pawn.Map);
@@ -303,6 +385,11 @@ namespace PerspectiveShift
                 pawn.Position = nextCell;
                 pawn.Notify_Teleported(endCurrentJob: false, resetTweenedPos: false);
                 pawn.pather.nextCell = nextCell;
+            }
+
+            if (pawn.Drawer?.leaner != null && !(pawn.stances.curStance is Stance_Busy))
+            {
+                LeanTarget = Vector3.zero;
             }
 
             if (isShooting && pawn.stances.curStance is Stance_Warmup warmup)
@@ -325,7 +412,14 @@ namespace PerspectiveShift
             }
             else
             {
-                UpdateRotation(moveInput.normalized);
+                if (pawn.Drafted)
+                {
+                    RotateTowardsMouse();
+                }
+                else
+                {
+                    UpdateRotation(moveInput.normalized);
+                }
             }
         }
 
@@ -356,6 +450,35 @@ namespace PerspectiveShift
             if (door != null && !door.Open && !door.PawnCanOpen(pawn)) return false;
 
             return true;
+        }
+
+        private IntVec3 GetCursorLeanDirection()
+        {
+            if (pawn == null || !pawn.Spawned) return IntVec3.Zero;
+
+            var pawnCenter = pawn.Position.ToVector3Shifted();
+            Vector3 toMouse = UI.MouseMapPosition() - pawnCenter;
+            if (toMouse.sqrMagnitude < 0.1f) return IntVec3.Zero;
+
+            var absX = Mathf.Abs(toMouse.x);
+            var absZ = Mathf.Abs(toMouse.z);
+
+            IntVec3 current = pawn.Drawer.leaner.shootSourceOffset;
+            bool currentIsX = current.x != 0;
+            const float hysteresis = 1.2f;
+
+            if (currentIsX)
+            {
+                if (absZ > absX * hysteresis)
+                    return toMouse.z > 0 ? new IntVec3(0, 0, 1) : new IntVec3(0, 0, -1);
+                return toMouse.x > 0 ? new IntVec3(1, 0, 0) : new IntVec3(-1, 0, 0);
+            }
+            else
+            {
+                if (absX > absZ * hysteresis)
+                    return toMouse.x > 0 ? new IntVec3(1, 0, 0) : new IntVec3(-1, 0, 0);
+                return toMouse.z > 0 ? new IntVec3(0, 0, 1) : new IntVec3(0, 0, -1);
+            }
         }
 
         private void UpdateRotation(Vector3 dir)
@@ -525,34 +648,94 @@ namespace PerspectiveShift
                 color = new Color(1f, 0.65f, 0f);
                 tex = ReticleCooldownTex;
             }
-            else if (pawn.equipment?.PrimaryEq?.PrimaryVerb == null && (pawn.VerbTracker?.AllVerbs?.FirstOrDefault(v => v is Verb_MeleeAttack && v.Available()) == null))
+            if (pawn.stances.curStance is Stance_Busy)
             {
-                color = Color.green;
-                tex = ReticleTex;
+                Color prevColor = GUI.color;
+                GUI.color = pawn.stances.curStance is Stance_Cooldown
+                    ? new Color(1f, 0.65f, 0f) : Color.white;
+                float reticleSize = 32f;
+                var reticleRect = new Rect(center.x - reticleSize / 2f, center.y - reticleSize / 2f, reticleSize, reticleSize);
+                Texture2D reticleTex = pawn.stances.curStance is Stance_Cooldown ? ReticleCooldownTex : ReticleTex;
+                if (reticleTex != null) GUI.DrawTexture(reticleRect, reticleTex);
+                GUI.color = prevColor;
+                return;
             }
             else
             {
                 Verb verb = pawn.equipment?.PrimaryEq?.PrimaryVerb;
                 if (verb == null || verb.verbProps.IsMeleeAttack)
-                {
                     verb = pawn.VerbTracker?.AllVerbs?.FirstOrDefault(v => v is Verb_MeleeAttack && v.Available());
-                }
 
                 if (verb != null)
                 {
-                    var target = UI.MouseCell();
-                    float range = verb.verbProps.range;
+                    var targetCell = UI.MouseCell();
+                    if (!targetCell.InBounds(pawn.Map))
+                    {
+                        LeanTarget = Vector3.zero;
+                        return;
+                    }
+                    Thing bestTarget = targetCell.GetThingList(pawn.Map)
+                        ?.FirstOrDefault(t => t is Pawn && t != pawn)
+                        ?? targetCell.GetThingList(pawn.Map)
+                            ?.FirstOrDefault(t => t.def.category == ThingCategory.Building);
+                    LocalTargetInfo target = bestTarget != null
+                        ? new LocalTargetInfo(bestTarget)
+                        : new LocalTargetInfo(targetCell);
 
-                    if (pawn.Position.DistanceTo(target) > range || !GenSight.LineOfSight(pawn.Position, target, pawn.Map))
+                    var canHit = verb.CanHitTarget(target);
+
+                    if (!canHit)
                     {
                         color = Color.red;
                         tex = ReticleNoLOSTex;
+                        LeanTarget = Vector3.zero;
+
+                        if (GenTicks.TicksGame % 30 == 0)
+                        {
+                            var leanSources = new List<IntVec3>();
+                            ShootLeanUtility.LeanShootingSourcesFromTo(pawn.Position, targetCell, pawn.Map, leanSources);
+                            var sb = new System.Text.StringBuilder();
+                            sb.Append($"[LeanDebug] Reticle RED - pawn.Pos={pawn.Position} target={targetCell} curOffset={pawn.Drawer.leaner.shootSourceOffset}");
+                            sb.Append($" | leanSources({leanSources.Count}): ");
+                            foreach (var src in leanSources)
+                            {
+                                bool los = GenSight.LineOfSight(src, targetCell, pawn.Map, skipFirstCell: true);
+                                sb.Append($"{src}(LOS={los}) ");
+                            }
+                            var directLos = GenSight.LineOfSight(pawn.Position, targetCell, pawn.Map, skipFirstCell: true);
+                            sb.Append($"| directLOS={directLos}");
+                            State.Message(sb.ToString());
+
+                            foreach (var p in pawn.Map.mapPawns.AllPawnsSpawned)
+                            {
+                                if (p == pawn) continue;
+                                if (p.stances?.curStance is Stance_Warmup w)
+                                {
+                                    State.Message($"[LeanDebug] Compare pawn {p.Name}: pos={p.Position} offset={p.Drawer.leaner.shootSourceOffset} leanPct={p.Drawer.leaner.leanOffsetCurPct:F2} focusTarg={w.focusTarg.Cell} shootLine.Source={(w.verb?.TryFindShootLineFromTo(p.Position, w.focusTarg, out var sl) == true ? sl.Source.ToString() : "n/a")}");
+                                }
+                            }
+                        }
                     }
                     else
                     {
                         color = Color.green;
                         tex = ReticleTex;
+
+                        if (verb.TryFindShootLineFromTo(pawn.Position, target, out ShootLine shootLine))
+                        {
+                            IntVec3 offset = shootLine.Source - pawn.Position;
+                            var newLeanDir = new Vector3(offset.x, 0f, offset.z);
+                            if (LeanTarget != newLeanDir)
+                            {
+                                State.Message($"[LeanDebug] Sync offset from verb shootline: {LeanTarget} -> {newLeanDir} (src={shootLine.Source})");
+                                LeanTarget = newLeanDir;
+                            }
+                        }
                     }
+                }
+                else
+                {
+                    color = Color.green;
                 }
             }
 
@@ -560,9 +743,7 @@ namespace PerspectiveShift
             GUI.color = color;
             float size = 32f;
             var rect = new Rect(center.x - size / 2f, center.y - size / 2f, size, size);
-
             if (tex != null) GUI.DrawTexture(rect, tex);
-
             GUI.color = prev;
         }
 
@@ -570,37 +751,38 @@ namespace PerspectiveShift
         {
             Verb verb = pawn.equipment?.PrimaryEq?.PrimaryVerb;
             if (verb == null || verb.verbProps.IsMeleeAttack)
-            {
                 verb = pawn.VerbTracker?.AllVerbs?.FirstOrDefault(v => v is Verb_MeleeAttack && v.Available());
-            }
             if (verb == null) return;
 
             var targetCell = UI.MouseCell();
-            var target = new LocalTargetInfo(targetCell);
-
+            if (!targetCell.InBounds(pawn.Map)) return;
             var things = targetCell.GetThingList(pawn.Map);
-            Thing bestTarget = things?.FirstOrDefault(t => t is Pawn && t != pawn) ?? things?.FirstOrDefault(t => t.def.category == ThingCategory.Building || t.def.category == ThingCategory.Item);
-            if (bestTarget != null) target = new LocalTargetInfo(bestTarget);
+            Thing bestTarget = things?.FirstOrDefault(t => t is Pawn && t != pawn)
+                ?? things?.FirstOrDefault(t => t.def.category == ThingCategory.Building || t.def.category == ThingCategory.Item);
+            LocalTargetInfo target = bestTarget != null
+                ? new LocalTargetInfo(bestTarget)
+                : new LocalTargetInfo(targetCell);
 
             Vector3 targetPos = target.Thing != null ? target.Thing.DrawPos : targetCell.ToVector3Shifted();
             Vector3 toTarget = targetPos - pawn.DrawPos;
             if (toTarget.sqrMagnitude > 0.01f)
-            {
                 pawn.Rotation = Rot4.FromAngleFlat(NormAngle(Mathf.Atan2(toTarget.x, toTarget.z) * Mathf.Rad2Deg));
-            }
 
             if (verb.verbProps.IsMeleeAttack)
             {
                 if (pawn.Position.AdjacentTo8WayOrInside(targetCell) && target.Thing != null)
-                {
                     pawn.meleeVerbs.TryMeleeAttack(target.Thing);
-                }
             }
             else
             {
-                if (pawn.Position.DistanceTo(targetCell) <= verb.verbProps.range && GenSight.LineOfSight(pawn.Position, targetCell, pawn.Map))
+                if (verb.CanHitTarget(target))
                 {
+                    State.Message($"[LeanDebug] HandleFiring: canHit=true, TryStartCastOn target={targetCell}");
                     verb.TryStartCastOn(target, false, true);
+                }
+                else
+                {
+                    State.Message($"[LeanDebug] HandleFiring: canHit=false for target={targetCell} from pos={pawn.Position}");
                 }
             }
         }
@@ -709,6 +891,8 @@ namespace PerspectiveShift
         private bool HandleLeftClick()
         {
             var clickCell = UI.MouseCell();
+
+            if (clickCell == pawn.Position) return false;
 
             var distance = pawn.Position.DistanceTo(clickCell);
             Log.Message($"[Avatar.HandleLeftClick] START - clickCell: {clickCell}, distance: {distance:F2}, grabRange: {PerspectiveShiftMod.settings.grabRange}, CarriedThing: {CarriedThing?.Label ?? "null"}");
@@ -848,7 +1032,14 @@ namespace PerspectiveShift
         {
             Log.Message($"[Avatar.ExecutePickup] START - target: {target?.Label}, stackCount: {target?.stackCount ?? 0}");
 
-            var pickedUpCount = pawn.carryTracker.TryStartCarry(target, target.stackCount);
+            var reserver = target.Map.reservationManager.FirstRespectedReserver(target, pawn);
+            if (reserver != null && reserver != pawn)
+            {
+                Log.Message($"[Avatar.ExecutePickup] Target {target.Label} is reserved by {reserver.Label}. Releasing reservation.");
+                target.Map.reservationManager.ReleaseAllForTarget(target);
+            }
+
+            var pickedUpCount = pawn.carryTracker.TryStartCarry(target, target.stackCount, reserve: true);
             Log.Message($"[Avatar.ExecutePickup] TryStartCarry result: {pickedUpCount}");
 
             if (pickedUpCount > 0)

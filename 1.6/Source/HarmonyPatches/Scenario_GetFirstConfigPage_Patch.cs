@@ -4,9 +4,9 @@ using RimWorld;
 namespace PerspectiveShift
 {
     [HarmonyPatch(typeof(Scenario), nameof(Scenario.GetFirstConfigPage))]
-    public class Scenario_GetFirstConfigPage_Patch
+    public static class Scenario_GetFirstConfigPage_Patch
     {
-        static void Postfix(ref Page __result)
+        public static void Postfix(ref Page __result)
         {
             if (__result == null) return;
 
