@@ -27,7 +27,6 @@ namespace PerspectiveShift
 
         private Building_Door interactingDoor;
         private bool wasMovingLastFrame;
-        private int lastJumpLogTick = 0;
         private Rect topRightGizmoBounds;
         private static Texture2D _reticleTex;
         public static Texture2D ReticleTex => _reticleTex ??= ContentFinder<Texture2D>.Get("UI/Reticle");
@@ -95,7 +94,7 @@ namespace PerspectiveShift
             var driver = Find.CameraDriver;
             if (driver == null) return;
 
-            Vector3 targetCamPos = pawn.DrawPos;
+            Vector3 targetCamPos = physicsPosition ?? pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
             var newPos = Vector3.Lerp(driver.rootPos, targetCamPos, 0.1f);
 
             var scroll = Input.GetAxis("Mouse ScrollWheel");
@@ -260,7 +259,7 @@ namespace PerspectiveShift
                 {
                     Vector3 oldPos = physicsPosition.Value;
                     var snappedPos = new Vector3(pawn.Position.x + 0.5f, pawn.def.Altitude, pawn.Position.z + 0.5f);
-                    State.Message($"[JerkDebug] DESYNC DETECTED: oldPos={oldPos:F2} physCell={physCell} unwalkable={physCellUnwalkable} tooFar={tooFarFromPawn} (dist={(float)Math.Sqrt(distSq):F2}) pawn.Pos={pawn.Position} — snapping to {snappedPos:F2}");
+                    State.Message($"[JerkDebug] DESYNC DETECTED: oldPos={oldPos} physCell={physCell} unwalkable={physCellUnwalkable} tooFar={tooFarFromPawn} (dist={(float)Math.Sqrt(distSq)}) pawn.Pos={pawn.Position} — snapping to {snappedPos}");
                     physicsPosition = snappedPos;
                     wasMovingLastFrame = false;
                 }
@@ -268,7 +267,7 @@ namespace PerspectiveShift
 
             if (IsMoving)
             {
-                State.Message($"[JerkDebug] Frame {Time.frameCount}: ProcessMovement START - Input: {moveInput.normalized:F2}, Pos: {physicsPosition:F3}");
+                State.Message($"[JerkDebug] Frame {Time.frameCount}: ProcessMovement START - Input: {moveInput.normalized}, Pos: {physicsPosition}");
             }
 
             if (!IsMoving)
@@ -292,23 +291,24 @@ namespace PerspectiveShift
                 return;
             }
 
-            if (!wasMovingLastFrame || !physicsPosition.HasValue)
+            if (!wasMovingLastFrame && physicsPosition.HasValue)
+            {
+                if (physicsPosition.Value.ToIntVec3() != pawn.Position)
+                {
+                    State.Message($"[JerkDebug] Desync detected on move start: physicsCell={physicsPosition.Value.ToIntVec3()}, pawn.Position={pawn.Position}. Resetting physicsPosition.");
+                    physicsPosition = null;
+                }
+            }
+
+            if (!physicsPosition.HasValue)
             {
                 var initPos = pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
-                if (physicsPosition.HasValue)
-                {
-                    var jumpDist = Vector3.Distance(physicsPosition.Value, initPos);
-                    if (jumpDist > 0.5f && GenTicks.TicksGame - lastJumpLogTick > 60)
-                    {
-                        State.Message($"[JerkDebug] physicsPosition jump: {physicsPosition.Value:F2} -> {initPos:F2} (dist={jumpDist:F2})");
-                        lastJumpLogTick = GenTicks.TicksGame;
-                    }
-                }
-                else
-                {
-                    State.Message($"[JerkDebug] physicsPosition initialised from cell centre: {initPos:F2}");
-                }
+                State.Message($"[JerkDebug] physicsPosition initialised from cell centre: {initPos}");
                 physicsPosition = initPos;
+            }
+
+            if (!wasMovingLastFrame)
+            {
                 wasMovingLastFrame = true;
             }
 
@@ -340,7 +340,7 @@ namespace PerspectiveShift
             Vector3 delta = deltaRaw * speed;
             Vector3 newPos = physicsPosition.Value;
 
-            string log = $"[JerkDebug] Frame {Time.frameCount}: Processing - Delta: {delta:F3} ";
+            string log = $"[JerkDebug] Frame {Time.frameCount}: Processing - Delta: {delta} ";
 
             if (Mathf.Abs(delta.x) > 0.0001f)
             {
@@ -364,7 +364,7 @@ namespace PerspectiveShift
                 }
                 else
                 {
-                     log += "[Z BLOCKED]";
+                    log += "[Z BLOCKED]";
                 }
             }
             State.Message(log);
@@ -553,6 +553,7 @@ namespace PerspectiveShift
         {
             if (pawn != null)
             {
+                DebugLogFrame();
                 if (!pawn.InMentalState)
                 {
                     DrawTopRightGizmos();
@@ -578,6 +579,21 @@ namespace PerspectiveShift
                     Cursor.visible = true;
                 }
             }
+        }
+
+        private void DebugLogFrame()
+        {
+            State.Message($"Frame={Time.frameCount} " +
+                $"physPos={physicsPosition} " +
+                $"pawn.Pos={pawn.Position} " +
+                $"DrawPos={pawn.DrawPos} " +
+                $"LeanSmoothed={LeanSmoothed} " +
+                $"LeanTarget={LeanTarget} " +
+                $"camPos={Find.CameraDriver?.rootPos} " +
+                $"mouseUI={UI.MousePositionOnUI} " +
+                $"mouseCell={UI.MouseCell()} " +
+                $"IsMoving={IsMoving} " +
+                $"paused={Find.TickManager.Paused}");
         }
 
         private bool IsMouseOverUI()
@@ -712,7 +728,7 @@ namespace PerspectiveShift
                                 if (p == pawn) continue;
                                 if (p.stances?.curStance is Stance_Warmup w)
                                 {
-                                    State.Message($"[LeanDebug] Compare pawn {p.Name}: pos={p.Position} offset={p.Drawer.leaner.shootSourceOffset} leanPct={p.Drawer.leaner.leanOffsetCurPct:F2} focusTarg={w.focusTarg.Cell} shootLine.Source={(w.verb?.TryFindShootLineFromTo(p.Position, w.focusTarg, out var sl) == true ? sl.Source.ToString() : "n/a")}");
+                                    State.Message($"[LeanDebug] Compare pawn {p.Name}: pos={p.Position} offset={p.Drawer.leaner.shootSourceOffset} leanPct={p.Drawer.leaner.leanOffsetCurPct} focusTarg={w.focusTarg.Cell} shootLine.Source={(w.verb?.TryFindShootLineFromTo(p.Position, w.focusTarg, out var sl) == true ? sl.Source.ToString() : "n/a")}");
                                 }
                             }
                         }
@@ -726,8 +742,8 @@ namespace PerspectiveShift
                         {
                             var leanSources = new System.Collections.Generic.List<IntVec3>();
                             ShootLeanUtility.LeanShootingSourcesFromTo(pawn.Position, targetCell, pawn.Map, leanSources);
-                            IntVec3 bestLeanSource = leanSources.FirstOrDefault(s => s != pawn.Position);
-                            LeanTarget = bestLeanSource.IsValid
+                            IntVec3 bestLeanSource = leanSources.FirstOrDefault(s => s != pawn.Position && s.IsValid && s != IntVec3.Zero);
+                            LeanTarget = (bestLeanSource != IntVec3.Zero && bestLeanSource != pawn.Position)
                                 ? (bestLeanSource - pawn.Position).ToVector3()
                                 : Vector3.zero;
                         }
@@ -895,7 +911,7 @@ namespace PerspectiveShift
             if (clickCell == pawn.Position) return false;
 
             var distance = pawn.Position.DistanceTo(clickCell);
-            Log.Message($"[Avatar.HandleLeftClick] START - clickCell: {clickCell}, distance: {distance:F2}, grabRange: {PerspectiveShiftMod.settings.grabRange}, CarriedThing: {CarriedThing?.Label ?? "null"}");
+            Log.Message($"[Avatar.HandleLeftClick] START - clickCell: {clickCell}, distance: {distance}, grabRange: {PerspectiveShiftMod.settings.grabRange}, CarriedThing: {CarriedThing?.Label ?? "null"}");
 
             if (distance > PerspectiveShiftMod.settings.grabRange)
             {
