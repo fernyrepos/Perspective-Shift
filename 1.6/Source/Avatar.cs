@@ -688,7 +688,8 @@ namespace PerspectiveShift
                     {
                         color = Color.red;
                         tex = ReticleNoLOSTex;
-                        LeanTarget = Vector3.zero;
+                        if (!IsMoving)
+                            LeanTarget = Vector3.zero;
 
                         if (GenTicks.TicksGame % 30 == 0)
                         {
@@ -721,15 +722,14 @@ namespace PerspectiveShift
                         color = Color.green;
                         tex = ReticleTex;
 
-                        if (verb.TryFindShootLineFromTo(pawn.Position, target, out ShootLine shootLine))
+                        if (!IsMoving)
                         {
-                            IntVec3 offset = shootLine.Source - pawn.Position;
-                            var newLeanDir = new Vector3(offset.x, 0f, offset.z);
-                            if (LeanTarget != newLeanDir)
-                            {
-                                State.Message($"[LeanDebug] Sync offset from verb shootline: {LeanTarget} -> {newLeanDir} (src={shootLine.Source})");
-                                LeanTarget = newLeanDir;
-                            }
+                            var leanSources = new System.Collections.Generic.List<IntVec3>();
+                            ShootLeanUtility.LeanShootingSourcesFromTo(pawn.Position, targetCell, pawn.Map, leanSources);
+                            IntVec3 bestLeanSource = leanSources.FirstOrDefault(s => s != pawn.Position);
+                            LeanTarget = bestLeanSource.IsValid
+                                ? (bestLeanSource - pawn.Position).ToVector3()
+                                : Vector3.zero;
                         }
                     }
                 }
