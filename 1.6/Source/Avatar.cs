@@ -22,6 +22,7 @@ namespace PerspectiveShift
         public Vector3 LeanTarget = Vector3.zero;
         public Vector3 LeanSmoothed = Vector3.zero;
         private Vector3 _leanVelocity = Vector3.zero;
+        private float moveInputDuration = 0f;
 
         public Thing CarriedThing => pawn.carryTracker?.CarriedThing;
 
@@ -56,7 +57,7 @@ namespace PerspectiveShift
                 moveInput = Vector3.zero;
                 if (wasMovingLastFrame)
                 {
-                    if (pawn.pather.Moving) pawn.pather.StopDead();
+                    if (pawn.pather.curPath != null) pawn.pather.StopDead();
                     wasMovingLastFrame = false;
                 }
                 physicsPosition = null;
@@ -72,7 +73,7 @@ namespace PerspectiveShift
                 moveInput = Vector3.zero;
                 if (wasMovingLastFrame)
                 {
-                    if (pawn.pather.Moving) pawn.pather.StopDead();
+                    if (pawn.pather.curPath != null) pawn.pather.StopDead();
                     wasMovingLastFrame = false;
                 }
 
@@ -94,27 +95,22 @@ namespace PerspectiveShift
             var driver = Find.CameraDriver;
             if (driver == null) return;
 
+            var sizeRange = ModCompatibility.GetCameraSizeRange();
+            driver.config.sizeRange = sizeRange;
+            driver.config.zoomSpeed = PerspectiveShiftMod.settings.zoomSpeed * 10f;
+
             Vector3 targetCamPos = physicsPosition ?? pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
             var newPos = Vector3.Lerp(driver.rootPos, targetCamPos, 0.1f);
 
-            var scroll = Input.GetAxis("Mouse ScrollWheel");
-            float newSize = driver.desiredSize;
-            if (Mathf.Abs(scroll) > 0.01f)
-            {
-                newSize -= scroll * PerspectiveShiftMod.settings.zoomSpeed * 10f;
-                newSize = Mathf.Clamp(newSize,
-                    PerspectiveShiftMod.settings.minZoom,
-                    PerspectiveShiftMod.settings.maxZoom);
-            }
-
             driver.rootPos = newPos;
-            driver.desiredSize = newSize;
 
             var cam = driver.GetComponent<Camera>();
             if (cam != null)
             {
                 Vector3 finalPos = newPos;
-                finalPos.y = 15f + (driver.RootSize - driver.config.sizeRange.min) / (driver.config.sizeRange.max - driver.config.sizeRange.min) * 50f;
+                float rangeSpan = sizeRange.max - sizeRange.min;
+                if (rangeSpan <= 0.01f) rangeSpan = 0.01f;
+                finalPos.y = 15f + (driver.RootSize - sizeRange.min) / rangeSpan * 50f;
                 cam.transform.position = finalPos + driver.shaker.ShakeOffset;
                 cam.orthographicSize = driver.RootSize;
             }
@@ -124,6 +120,8 @@ namespace PerspectiveShift
         {
             if (pawn == null || pawn.Dead || pawn.Downed) return false;
             if (pawn.InMentalState) return false;
+
+            if (Find.TickManager.Paused) return false;
 
             if (IsMouseOverUI() || IsMouseOverColonistBar()) return false;
 
@@ -272,13 +270,14 @@ namespace PerspectiveShift
 
             if (!IsMoving)
             {
+                moveInputDuration = 0f;
                 if (wasMovingLastFrame)
                 {
-                    if (pawn.pather.Moving) pawn.pather.StopDead();
+                    if (pawn.pather.curPath != null) pawn.pather.StopDead();
                     wasMovingLastFrame = false;
                 }
 
-                if (pawn.pather.Moving)
+                if (pawn.pather.curPath != null)
                 {
                     physicsPosition = null;
                 }
@@ -290,6 +289,8 @@ namespace PerspectiveShift
 
                 return;
             }
+
+            moveInputDuration += Time.deltaTime;
 
             if (!wasMovingLastFrame && physicsPosition.HasValue)
             {
@@ -312,19 +313,20 @@ namespace PerspectiveShift
                 wasMovingLastFrame = true;
             }
 
-            if (pawn.pather != null && pawn.pather.Moving) pawn.pather.StopDead();
+            if (pawn.pather != null && pawn.pather.curPath != null) pawn.pather.StopDead();
 
             bool isShooting = pawn.stances.curStance is Stance_Warmup || pawn.stances.curStance is Stance_Cooldown;
             var canRunAndGun = ModCompatibility.IsRunAndGunActiveFor(pawn);
 
             if (pawn.jobs?.curJob != null && pawn.jobs.curJob.def.playerInterruptible)
             {
-                if (canRunAndGun && isShooting && pawn.Drafted)
+                bool isOurWaitJob = pawn.jobs.curJob.def == JobDefOf.Wait && pawn.jobs.curJob.expiryInterval == 60;
+                if (!isOurWaitJob && moveInputDuration > 0.35f)
                 {
-                }
-                else
-                {
-                    pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
+                    if (!(canRunAndGun && isShooting && pawn.Drafted))
+                    {
+                        pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
+                    }
                 }
             }
 
@@ -335,6 +337,12 @@ namespace PerspectiveShift
             var terrainMultiplier = Mathf.Min(currentMultiplier, futureMultiplier);
             var baseSpeed = pawn.GetStatValue(StatDefOf.MoveSpeed);
             float expectedTicks = 60f / Mathf.Max(baseSpeed, 0.1f);
+
+            if (pawn.pather != null)
+            {
+                pawn.pather.nextCellCostTotal = expectedTicks;
+            }
+
             float tickModifier = expectedTicks / Mathf.Max(pawn.TicksPerMoveCardinal, 1f);
             float speed = baseSpeed * terrainMultiplier * tickModifier * (isSprinting ? 1.3f : isWalking ? 0.5f : 1.0f) * Time.deltaTime;
             Vector3 delta = deltaRaw * speed;
@@ -535,10 +543,11 @@ namespace PerspectiveShift
         {
             if (pawn != null)
             {
-                DebugLogFrame();
+                DebugLog();
                 if (!pawn.InMentalState)
                 {
                     DrawTopRightGizmos();
+                    DrawNeeds();
                 }
 
                 bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || topRightGizmoBounds.Contains(Event.current.mousePosition);
@@ -546,7 +555,7 @@ namespace PerspectiveShift
 
                 if (pawn.Drafted && !pawn.InMentalState)
                 {
-                    if (mouseOverUI || mouseOverGizmo)
+                    if (mouseOverUI || mouseOverGizmo || Find.TickManager.Paused)
                     {
                         Cursor.visible = true;
                     }
@@ -563,19 +572,33 @@ namespace PerspectiveShift
             }
         }
 
-        private void DebugLogFrame()
+        private void DebugLog()
         {
-            State.Message($"Frame={Time.frameCount} " +
-                $"physPos={physicsPosition} " +
-                $"pawn.Pos={pawn.Position} " +
-                $"DrawPos={pawn.DrawPos} " +
-                $"LeanSmoothed={LeanSmoothed} " +
-                $"LeanTarget={LeanTarget} " +
-                $"camPos={Find.CameraDriver?.rootPos} " +
-                $"mouseUI={UI.MousePositionOnUI} " +
-                $"mouseCell={UI.MouseCell()} " +
-                $"IsMoving={IsMoving} " +
-                $"paused={Find.TickManager.Paused}");
+            bool shouldLogMovement = false;
+            if (shouldLogMovement)
+            {
+                State.Message($"Frame={Time.frameCount} " +
+                    $"physPos={physicsPosition} " +
+                    $"pawn.Pos={pawn.Position} " +
+                    $"DrawPos={pawn.DrawPos} " +
+                    $"LeanSmoothed={LeanSmoothed} " +
+                    $"LeanTarget={LeanTarget} " +
+                    $"camPos={Find.CameraDriver?.rootPos} " +
+                    $"mouseUI={UI.MousePositionOnUI} " +
+                    $"mouseCell={UI.MouseCell()} " +
+                    $"IsMoving={IsMoving} " +
+                    $"paused={Find.TickManager.Paused}");
+            }
+            bool shouldLogJobs = true;
+            if (shouldLogJobs)
+            {
+                pawn.jobs.debugLog = true;
+            }
+            bool shouldLogUI = true;
+            if (shouldLogUI)
+            {
+                State.Message($"Windows: {string.Join(", ", Find.WindowStack.windows.Select(x => x.GetType().Name))} | OpenTab: {Find.MainTabsRoot.OpenTab?.defName ?? "null"}");
+            }
         }
 
         private bool IsMouseOverUI()
@@ -724,7 +747,7 @@ namespace PerspectiveShift
                         {
                             var leanSources = new System.Collections.Generic.List<IntVec3>();
                             ShootLeanUtility.LeanShootingSourcesFromTo(pawn.Position, targetCell, pawn.Map, leanSources);
-                            IntVec3 bestLeanSource = leanSources.FirstOrDefault(s => s != pawn.Position && s.IsValid && s != IntVec3.Zero);
+                            var bestLeanSource = leanSources.FirstOrDefault(s => s != pawn.Position && s.IsValid && s != IntVec3.Zero);
                             LeanTarget = (bestLeanSource != IntVec3.Zero && bestLeanSource != pawn.Position)
                                 ? (bestLeanSource - pawn.Position).ToVector3()
                                 : Vector3.zero;
@@ -950,6 +973,12 @@ namespace PerspectiveShift
                 {
                     var opt = opts[i];
                     Log.Message($"[Avatar.HandleLeftClick]   [{i}] Label: {opt.Label}, Priority: {opt.Priority}, Disabled: {opt.Disabled}");
+                }
+
+                if (pawn.equipment?.Primary != null)
+                {
+                    var dropString = "Drop".Translate(pawn.equipment.Primary.Label, pawn.equipment.Primary);
+                    opts.RemoveAll(opt => opt.Label == dropString);
                 }
             }
 
@@ -1207,11 +1236,59 @@ namespace PerspectiveShift
             }
         }
 
+        private void DrawNeeds()
+        {
+            if (pawn?.needs == null || topRightGizmoBounds == Rect.zero) return;
+
+            var needs = pawn.needs.AllNeeds.Where(n => n.ShowOnNeedList && n.def.major).ToList();
+            if (!needs.Any()) return;
+
+            float width = 200f;
+            float height = 40f;
+
+            float startX = topRightGizmoBounds.xMax - width - 10;
+            float startY = topRightGizmoBounds.yMax + 15f;
+
+            float totalHeight = needs.Count * height;
+            var unifiedBg = new Rect(startX - 10, startY - 5, width + 20, totalHeight + 10);
+            Widgets.DrawBoxSolid(unifiedBg, new ColorInt(32, 32, 32).ToColor.WithAlpha(0.7f));
+
+            float currentY = startY;
+            foreach (var need in needs)
+            {
+                Rect needRect = new Rect(startX, currentY, width, height);
+                need.DrawOnGUI(needRect, maxThresholdMarkers: int.MaxValue, customMargin: 4f, drawArrows: true, doTooltip: true, rectForTooltip: null, drawLabel: true);
+                currentY += height;
+            }
+        }
+
+        private void LogYayoAnimationState()
+        {
+            bool movingNow = pawn.pather?.MovingNow ?? false;
+            int lastMovedTick = pawn.pather?.lastMovedTick ?? -1;
+            int currentTick = Find.TickManager.TicksGame;
+            float costTotal = pawn.pather?.nextCellCostTotal ?? -1f;
+            
+            float bodyAngle = pawn.Drawer?.renderer?.BodyAngle(PawnRenderFlags.None) ?? 0f;
+            
+            Vector3 vanillaBodyPos = pawn.Drawer?.renderer?.GetBodyPos(pawn.DrawPos, pawn.GetPosture(), out bool showBody) ?? Vector3.zero;
+            Vector3 currentTweenPos = pawn.Drawer?.tweener?.tweenedPos ?? Vector3.zero;
+
+            State.Message($"[YayoDebug-Tick] Tick: {currentTick} | IsMoving: {IsMoving} | MovingNow: {movingNow} | lastMovedTick: {lastMovedTick} (diff: {currentTick - lastMovedTick})");
+            State.Message($"[YayoDebug-Render] CostTotal: {costTotal:F2} | BodyAngle: {bodyAngle:F2} | YayoBodyPosOffset: {vanillaBodyPos} | FinalTweenedPos: {currentTweenPos}");
+        }
+
         public void Tick()
         {
             if (pawn == null || pawn.Dead || pawn.Downed) return;
             HandleDoorInteraction();
             HandleCombatStance();
+            if (IsMoving && pawn.pather != null)
+            {
+                pawn.pather.lastMovedTick = Find.TickManager.TicksGame;
+            }
+            
+            LogYayoAnimationState();
         }
     }
 }

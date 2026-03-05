@@ -15,7 +15,13 @@ namespace PerspectiveShift
                 yield break;
             }
 
-            foreach (var g in values) yield return g;
+            foreach (var g in values)
+            {
+                if (__instance.IsAvatar() && g is Command_Toggle toggle && toggle.tutorTag == "FireAtWillToggle")
+                    continue;
+
+                yield return g;
+            }
 
             if (!__instance.IsColonist) yield break;
 
