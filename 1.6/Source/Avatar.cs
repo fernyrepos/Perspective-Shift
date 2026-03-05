@@ -76,7 +76,7 @@ namespace PerspectiveShift
                     wasMovingLastFrame = false;
                 }
 
-                if (pawn.Drafted && !pawn.InMentalState)
+                if (pawn.Drafted && !pawn.InMentalState && !(pawn.stances.curStance is Stance_Busy))
                 {
                     RotateTowardsMouse();
                 }
@@ -283,7 +283,7 @@ namespace PerspectiveShift
                     physicsPosition = null;
                 }
 
-                if (pawn.Drafted && !pawn.InMentalState && !State.ControlsFrozen)
+                if (pawn.Drafted && !pawn.InMentalState && !State.ControlsFrozen && !(pawn.stances.curStance is Stance_Busy))
                 {
                     RotateTowardsMouse();
                 }
@@ -392,25 +392,7 @@ namespace PerspectiveShift
                 LeanTarget = Vector3.zero;
             }
 
-            if (isShooting && pawn.stances.curStance is Stance_Warmup warmup)
-            {
-                var targetPos = warmup.focusTarg.Thing?.DrawPos ?? warmup.focusTarg.Cell.ToVector3Shifted();
-                Vector3 toTarget = targetPos - pawn.DrawPos;
-                if (toTarget.sqrMagnitude > 0.01f)
-                {
-                    pawn.Rotation = Rot4.FromAngleFlat(NormAngle(Mathf.Atan2(toTarget.x, toTarget.z) * Mathf.Rad2Deg));
-                }
-            }
-            else if (isShooting && pawn.stances.curStance is Stance_Cooldown cooldown)
-            {
-                var targetPos = cooldown.focusTarg.Thing?.DrawPos ?? cooldown.focusTarg.Cell.ToVector3Shifted();
-                Vector3 toTarget = targetPos - pawn.DrawPos;
-                if (toTarget.sqrMagnitude > 0.01f)
-                {
-                    pawn.Rotation = Rot4.FromAngleFlat(NormAngle(Mathf.Atan2(toTarget.x, toTarget.z) * Mathf.Rad2Deg));
-                }
-            }
-            else
+            if (!(pawn.stances.curStance is Stance_Busy))
             {
                 if (pawn.Drafted)
                 {

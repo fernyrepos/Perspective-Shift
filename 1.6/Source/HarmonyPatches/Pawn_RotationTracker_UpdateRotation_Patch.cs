@@ -10,6 +10,11 @@ namespace PerspectiveShift
         {
             if (!__instance.pawn.IsAvatar()) return true;
 
+            if (__instance.pawn.stances.curStance is Stance_Busy)
+            {
+                return true;
+            }
+
             if (State.Avatar?.IsMoving == false)
             {
                 if (__instance.pawn.Drafted && !__instance.pawn.InMentalState && !State.ControlsFrozen)
