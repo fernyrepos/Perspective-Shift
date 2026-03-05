@@ -20,8 +20,9 @@ namespace PerspectiveShift
             {
                 if (Find.WindowStack.WindowsPreventCameraMotion) return true;
                 if (GUI.GetNameOfFocusedControl() != "") return true;
-                var openTab = Find.MainTabsRoot.OpenTab;
-                if (openTab != null && openTab != MainButtonDefOf.Inspect) return true;
+
+                if (Avatar?.pawn?.CurJob != null && !Avatar.pawn.CurJob.def.playerInterruptible) return true;
+
                 return false;
             }
         }
@@ -62,7 +63,11 @@ namespace PerspectiveShift
 
         public static void Update()
         {
-            if (!IsActive) return;
+            if (!IsActive)
+            {
+                if (!Cursor.visible) Cursor.visible = true;
+                return;
+            }
             Avatar.RenderPawn();
             if (Find.TickManager.Paused)
             {
@@ -80,7 +85,11 @@ namespace PerspectiveShift
 
         public static void OnGUI()
         {
-            if (!IsActive) return;
+            if (!IsActive)
+            {
+                if (!Cursor.visible) Cursor.visible = true;
+                return;
+            }
             if (Find.CameraDriver == null) return;
 
             bool pawnSpawned = Avatar.pawn.Spawned;

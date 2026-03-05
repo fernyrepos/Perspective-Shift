@@ -14,6 +14,10 @@ namespace PerspectiveShift
         public static readonly bool GiddyUpAvailable;
         public static readonly bool RunAndGunAvailable;
         public static readonly bool VehicleFrameworkAvailable;
+        public static readonly bool SimpleCameraSettingAvailable;
+
+        private static Type scsModSettingType;
+        private static FieldInfo scsModSettingField;
         private static Type vehiclePawnType;
         private static Type vehiclePathFollowerType;
         private static MethodInfo startPathMethod;
@@ -35,10 +39,47 @@ namespace PerspectiveShift
             GiddyUpAvailable = ModsConfig.IsActive("MemeGoddess.GiddyUp");
             RunAndGunAvailable = ModsConfig.IsActive("MemeGoddess.RunAndGun") || ModsConfig.IsActive("roolo.RunAndGun");
             VehicleFrameworkAvailable = ModsConfig.IsActive("SmashPhil.VehicleFramework");
+            SimpleCameraSettingAvailable = ModsConfig.IsActive("ray1203.SimpleCameraSetting");
 
             InitGiddyUpCompat();
             InitVehicleCompat();
             InitRunAndGunCompat();
+            InitSCSCompat();
+        }
+
+        public static void InitSCSCompat()
+        {
+            if (!SimpleCameraSettingAvailable) return;
+
+            scsModSettingType = AccessTools.TypeByName("SimpleCameraSetting.SimpleCameraModSetting");
+            if (scsModSettingType == null)
+            {
+                Log.Error("[PerspectiveShift] Failed to find SimpleCameraSetting.SimpleCameraModSetting type");
+                return;
+            }
+            scsModSettingField = AccessTools.Field(scsModSettingType, "modSetting");
+            if (scsModSettingField == null)
+            {
+                Log.Error("[PerspectiveShift] Failed to find SimpleCameraSetting.SimpleCameraModSetting.modSetting field");
+            }
+        }
+
+        public static FloatRange GetCameraSizeRange()
+        {
+            if (SimpleCameraSettingAvailable)
+            {
+                try
+                {
+                    var modSetting = scsModSettingField?.GetValue(null);
+                    if (modSetting != null)
+                    {
+                        var sizeRangeField = AccessTools.Field(modSetting.GetType(), "sizeRange");
+                        if (sizeRangeField != null) return (FloatRange)sizeRangeField.GetValue(modSetting);
+                    }
+                }
+                catch (Exception ex) { Log.Warning($"[PerspectiveShift] Error reading SimpleCameraSetting sizeRange: {ex}"); }
+            }
+            return new FloatRange(PerspectiveShiftMod.settings.minZoom, PerspectiveShiftMod.settings.maxZoom);
         }
 
         public static void InitRunAndGunCompat()

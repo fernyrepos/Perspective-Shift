@@ -28,7 +28,11 @@
     <PS_MinZoom>Minimum zoom: {0}</PS_MinZoom>
     <PS_MaxZoom>Maximum zoom: {0}</PS_MaxZoom>
     <PS_GrabRange>Grab range: {0}</PS_GrabRange>
+    <PS_DisableAimingDelay>Disable aiming time for Avatar</PS_DisableAimingDelay>
+    <PS_DisableAimingDelayDesc>When checked, your controlled character fires weapons instantly without having to wait for the weapon's warmup/aiming cycle. Cooldown between shots still applies.</PS_DisableAimingDelayDesc>
     <PS_ChooseYourCharacter>Choose your character</PS_ChooseYourCharacter>
     <PS_ChooseYourStartingCharacter>Choose your starting character</PS_ChooseYourStartingCharacter>
     <PS_MustSelectCharacter>You must select a character before continuing.</PS_MustSelectCharacter>
+    <PS_You>(you)</PS_You>
+    <PS_StatPart_AvatarAimingDelay>Direct control</PS_StatPart_AvatarAimingDelay>
 </LanguageData>

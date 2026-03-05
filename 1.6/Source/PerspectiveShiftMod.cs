@@ -23,13 +23,15 @@ namespace PerspectiveShift
             settings.zoomSpeed = listing.Slider(settings.zoomSpeed, 0.1f, 1.0f);
 
             listing.Label("PS_MinZoom".Translate(settings.minZoom.ToString("F1")));
-            settings.minZoom = listing.Slider(settings.minZoom, 4f, 20f);
+            settings.minZoom = listing.Slider(settings.minZoom, 0.1f, 20f);
 
             listing.Label("PS_MaxZoom".Translate(settings.maxZoom.ToString("F1")));
             settings.maxZoom = listing.Slider(settings.maxZoom, 40f, 100f);
 
             listing.Label("PS_GrabRange".Translate(settings.grabRange.ToString("F1")));
             settings.grabRange = listing.Slider(settings.grabRange, 0.5f, 3f);
+
+            listing.CheckboxLabeled("PS_DisableAimingDelay".Translate(), ref settings.disableAimingDelay, "PS_DisableAimingDelayDesc".Translate());
 
             listing.End();
             base.DoSettingsWindowContents(rect);
