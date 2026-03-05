@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
-    <PS_LostControl>Lost control of character</PS_LostControl>
-    <PS_TakeControl>Take Control</PS_TakeControl>
+    <PS_LostControl>Lost control of character.</PS_LostControl>
+    <PS_TakeControl>Inhabit character</PS_TakeControl>
     <PS_SwapCharacter>Swap to this character</PS_SwapCharacter>
-    <PS_ReturnToDirector>Return to Director Mode</PS_ReturnToDirector>
+    <PS_ReturnToDirector>Return to director view</PS_ReturnToDirector>
     <PS_AuthenticLocked>Locked to character</PS_AuthenticLocked>
     <PS_AuthenticLockedReason>Authentic mode prevents switching characters.</PS_AuthenticLockedReason>
     <PS_PickedUp>Picked up {0}</PS_PickedUp>
     <PS_MoveCancelled>Move cancelled</PS_MoveCancelled>
-    <PS_ControlTaken>{0} is now under direct control</PS_ControlTaken>
+    <PS_ControlTaken>You are now {0}.</PS_ControlTaken>
 
     <PS_SelectRole>Select your role</PS_SelectRole>
     <PS_RoleDirector>Director</PS_RoleDirector>
