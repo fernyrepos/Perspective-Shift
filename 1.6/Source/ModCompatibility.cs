@@ -64,24 +64,6 @@ namespace PerspectiveShift
             }
         }
 
-        public static FloatRange GetCameraSizeRange()
-        {
-            if (SimpleCameraSettingAvailable)
-            {
-                try
-                {
-                    var modSetting = scsModSettingField?.GetValue(null);
-                    if (modSetting != null)
-                    {
-                        var sizeRangeField = AccessTools.Field(modSetting.GetType(), "sizeRange");
-                        if (sizeRangeField != null) return (FloatRange)sizeRangeField.GetValue(modSetting);
-                    }
-                }
-                catch (Exception ex) { Log.Warning($"[PerspectiveShift] Error reading SimpleCameraSetting sizeRange: {ex}"); }
-            }
-            return new FloatRange(PerspectiveShiftMod.settings.minZoom, PerspectiveShiftMod.settings.maxZoom);
-        }
-
         public static void InitRunAndGunCompat()
         {
             if (!RunAndGunAvailable) return;

@@ -11,33 +11,37 @@ namespace PerspectiveShift
             if (__result == null) return;
 
             Page curr = __result;
+            Page configPawns = null;
             while (curr != null)
             {
-                if (curr is Page_SelectStoryteller)
+                if (curr is Page_ConfigureStartingPawns)
                 {
-                    if (!(curr.next is Page_ChoosePerspective))
-                    {
-                        Page next = curr.next;
-                        var perspectivePage = new Page_ChoosePerspective();
-                        curr.next = perspectivePage;
-                        perspectivePage.prev = curr;
-                        perspectivePage.next = next;
-                        if (next != null) next.prev = perspectivePage;
-                    }
+                    configPawns = curr;
+                    break;
                 }
                 curr = curr.next;
             }
 
-            Page last = __result;
-            while (last.next != null) last = last.next;
-
-            if (!(last is Page_ChooseStartingCharacter))
+            if (configPawns != null && !(configPawns.next is Page_ChoosePerspective))
             {
+                var perspectivePage = new Page_ChoosePerspective();
                 var characterPage = new Page_ChooseStartingCharacter();
-                characterPage.nextAct = last.nextAct;
-                last.nextAct = null;
-                last.next = characterPage;
-                characterPage.prev = last;
+
+                perspectivePage.next = characterPage;
+                characterPage.prev = perspectivePage;
+
+                characterPage.nextAct = configPawns.nextAct;
+                configPawns.nextAct = null;
+
+                Page oldNext = configPawns.next;
+                configPawns.next = perspectivePage;
+                perspectivePage.prev = configPawns;
+
+                if (oldNext != null)
+                {
+                    characterPage.next = oldNext;
+                    oldNext.prev = characterPage;
+                }
             }
         }
     }

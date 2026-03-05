@@ -1,7 +1,6 @@
 using HarmonyLib;
 using UnityEngine;
 using Verse;
-using Verse.AI;
 
 namespace PerspectiveShift
 {
@@ -18,12 +17,8 @@ namespace PerspectiveShift
 			if (pawn.equipment?.Primary == null) return true;
 			if (pawn.CurJob?.def?.neverShowWeapon == true) return true;
 
-			Vector3 toMouse = UI.MouseMapPosition() - pawn.DrawPos;
-			toMouse.y = 0f;
-			if (toMouse.sqrMagnitude < 0.01f) return true;
-
-			float aimAngle = Mathf.Atan2(toMouse.x, toMouse.z) * Mathf.Rad2Deg;
-			if (aimAngle < 0f) aimAngle += 360f;
+			float aimAngle = State.Avatar.aimAngle;
+			if (aimAngle < 0f) aimAngle = pawn.Rotation.AsAngle;
 
 			float equipmentDrawDistanceFactor = pawn.ageTracker.CurLifeStage.equipmentDrawDistanceFactor;
 			Vector3 weaponDrawPos = drawPos + new Vector3(0f, 0f, 0.4f + pawn.equipment.Primary.def.equippedDistanceOffset)

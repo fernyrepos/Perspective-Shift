@@ -8,7 +8,7 @@ namespace PerspectiveShift
         {
             dollyRateKeys = 0f;
             dollyRateScreenEdge = 0f;
-            sizeRange = ModCompatibility.GetCameraSizeRange();
+            sizeRange = new FloatRange(PerspectiveShiftMod.settings.minZoom, PerspectiveShiftMod.settings.maxZoom);
             zoomSpeed = PerspectiveShiftMod.settings.zoomSpeed * 10f;
         }
     }

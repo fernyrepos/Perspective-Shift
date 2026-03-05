@@ -5,7 +5,6 @@ using Verse.AI;
 using Verse.Sound;
 using System.Collections.Generic;
 using System.Linq;
-using System;
 
 namespace PerspectiveShift
 {
@@ -21,10 +20,12 @@ namespace PerspectiveShift
         public Vector3? physicsPosition;
         public Vector3 LeanTarget = Vector3.zero;
         public Vector3 LeanSmoothed = Vector3.zero;
-        private Vector3 _leanVelocity = Vector3.zero;
         private float moveInputDuration = 0f;
+        public float aimAngle = -1f;
+        private Vector3 _leanVelocity = Vector3.zero;
 
         public Thing CarriedThing => pawn.carryTracker?.CarriedThing;
+        public Thing LastManualTarget;
 
         private Building_Door interactingDoor;
         private bool wasMovingLastFrame;
@@ -76,15 +77,31 @@ namespace PerspectiveShift
                     if (pawn.pather.curPath != null) pawn.pather.StopDead();
                     wasMovingLastFrame = false;
                 }
-
-                if (pawn.Drafted && !pawn.InMentalState && !(pawn.stances.curStance is Stance_Busy))
-                {
-                    RotateTowardsMouse();
-                }
                 return;
             }
 
             UpdateInput();
+
+            if (moveInput == Vector3.zero && !pawn.Position.Walkable(pawn.Map))
+            {
+                IntVec3 best = IntVec3.Invalid;
+                foreach (var adj in GenAdj.AdjacentCells)
+                {
+                    IntVec3 c = pawn.Position + adj;
+                    if (c.InBounds(pawn.Map) && c.Walkable(pawn.Map))
+                    {
+                        best = c;
+                        break;
+                    }
+                }
+
+                if (best.IsValid)
+                {
+                    Vector3 dir = (best.ToVector3Shifted() - pawn.Position.ToVector3Shifted()).normalized;
+                    moveInput = dir;
+                }
+            }
+
             ProcessMovement();
         }
 
@@ -95,7 +112,7 @@ namespace PerspectiveShift
             var driver = Find.CameraDriver;
             if (driver == null) return;
 
-            var sizeRange = ModCompatibility.GetCameraSizeRange();
+            var sizeRange = new FloatRange(PerspectiveShiftMod.settings.minZoom, PerspectiveShiftMod.settings.maxZoom);
             driver.config.sizeRange = sizeRange;
             driver.config.zoomSpeed = PerspectiveShiftMod.settings.zoomSpeed * 10f;
 
@@ -142,6 +159,18 @@ namespace PerspectiveShift
 
             if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
             {
+                if (pawn.carryTracker?.CarriedThing != null && pawn.inventory != null)
+                {
+                    var carried = pawn.carryTracker.CarriedThing;
+                    int count = carried.stackCount;
+                    var transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(carried, pawn.inventory.innerContainer, count);
+                    if (transferred > 0)
+                    {
+                        SoundDefOf.Tick_High.PlayOneShotOnCamera();
+                        Event.current.Use();
+                        return true;
+                    }
+                }
 
                 if (pawn.Drafted)
                 {
@@ -247,27 +276,7 @@ namespace PerspectiveShift
         private void ProcessMovement()
         {
             if (pawn == null || pawn.Map == null || !pawn.Spawned) return;
-
             if (interactingDoor != null) return;
-
-            if (physicsPosition.HasValue)
-            {
-                var physCell = physicsPosition.Value.ToIntVec3();
-                bool physCellUnwalkable = !physCell.InBounds(pawn.Map) || !physCell.Walkable(pawn.Map);
-                var physXZ = new Vector2(physicsPosition.Value.x, physicsPosition.Value.z);
-                var pawnCenterXZ = new Vector2(pawn.Position.x + 0.5f, pawn.Position.z + 0.5f);
-                float distSq = (physXZ - pawnCenterXZ).sqrMagnitude;
-                bool tooFarFromPawn = distSq > 4f;
-
-                if (physCellUnwalkable || tooFarFromPawn)
-                {
-                    Vector3 oldPos = physicsPosition.Value;
-                    var snappedPos = new Vector3(pawn.Position.x + 0.5f, pawn.def.Altitude, pawn.Position.z + 0.5f);
-                    State.Message($"[JerkDebug] DESYNC DETECTED: oldPos={oldPos} physCell={physCell} unwalkable={physCellUnwalkable} tooFar={tooFarFromPawn} (dist={(float)Math.Sqrt(distSq)}) pawn.Pos={pawn.Position} — snapping to {snappedPos}");
-                    physicsPosition = snappedPos;
-                    wasMovingLastFrame = false;
-                }
-            }
 
             if (IsMoving)
             {
@@ -329,7 +338,11 @@ namespace PerspectiveShift
                 bool isOurWaitJob = pawn.jobs.curJob.def == JobDefOf.Wait && pawn.jobs.curJob.expiryInterval == 60;
                 if (!isOurWaitJob && moveInputDuration > 0.35f)
                 {
-                    if (!(canRunAndGun && isShooting && pawn.Drafted))
+                    if (!pawn.Awake())
+                    {
+                        RestUtility.WakeUp(pawn);
+                    }
+                    else if (!(canRunAndGun && isShooting && pawn.Drafted))
                     {
                         pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
                     }
@@ -423,15 +436,19 @@ namespace PerspectiveShift
         {
             float margin = 0.2f;
             var cCenter = pos.ToIntVec3();
-            var c1 = new Vector3(pos.x + margin, pos.y, pos.z + margin).ToIntVec3();
-            var c2 = new Vector3(pos.x - margin, pos.y, pos.z + margin).ToIntVec3();
-            var c3 = new Vector3(pos.x + margin, pos.y, pos.z - margin).ToIntVec3();
-            var c4 = new Vector3(pos.x - margin, pos.y, pos.z - margin).ToIntVec3();
 
             if (!IsWalkableCell(cCenter)) return false;
+
+            var c1 = new Vector3(pos.x + margin, pos.y, pos.z + margin).ToIntVec3();
             if (c1 != cCenter && !IsWalkableCell(c1)) return false;
+
+            var c2 = new Vector3(pos.x - margin, pos.y, pos.z + margin).ToIntVec3();
             if (c2 != cCenter && !IsWalkableCell(c2)) return false;
+
+            var c3 = new Vector3(pos.x + margin, pos.y, pos.z - margin).ToIntVec3();
             if (c3 != cCenter && !IsWalkableCell(c3)) return false;
+
+            var c4 = new Vector3(pos.x - margin, pos.y, pos.z - margin).ToIntVec3();
             if (c4 != cCenter && !IsWalkableCell(c4)) return false;
 
             return true;
@@ -561,6 +578,17 @@ namespace PerspectiveShift
 
                 if (pawn.Drafted && !pawn.InMentalState)
                 {
+                    if (!Find.TickManager.Paused && !State.ControlsFrozen && !(pawn.stances.curStance is Stance_Busy))
+                    {
+                        Vector3 toMouse = UI.MouseMapPosition() - pawn.DrawPos;
+                        toMouse.y = 0f;
+                        if (toMouse.sqrMagnitude >= 0.01f)
+                        {
+                            aimAngle = Mathf.Atan2(toMouse.x, toMouse.z) * Mathf.Rad2Deg;
+                            if (aimAngle < 0f) aimAngle += 360f;
+                        }
+                    }
+
                     if (mouseOverUI || mouseOverGizmo || Find.TickManager.Paused)
                     {
                         Cursor.visible = true;
@@ -919,12 +947,32 @@ namespace PerspectiveShift
         {
             var clickCell = UI.MouseCell();
 
-            if (clickCell == pawn.Position) return false;
+            bool inRange = pawn.Position.DistanceTo(clickCell) <= PerspectiveShiftMod.settings.grabRange;
+
+            if (!inRange)
+            {
+                var things = clickCell.GetThingList(pawn.Map);
+                foreach (var t in things)
+                {
+                    if (t.def.size.x > 1 || t.def.size.z > 1)
+                    {
+                        foreach (var c in t.OccupiedRect())
+                        {
+                            if (pawn.Position.DistanceTo(c) <= PerspectiveShiftMod.settings.grabRange)
+                            {
+                                inRange = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (inRange) break;
+                }
+            }
 
             var distance = pawn.Position.DistanceTo(clickCell);
-            Log.Message($"[Avatar.HandleLeftClick] START - clickCell: {clickCell}, distance: {distance}, grabRange: {PerspectiveShiftMod.settings.grabRange}, CarriedThing: {CarriedThing?.Label ?? "null"}");
+            Log.Message($"[Avatar.HandleLeftClick] START - clickCell: {clickCell}, rawDist: {distance}, inRange: {inRange}, grabRange: {PerspectiveShiftMod.settings.grabRange}, CarriedThing: {CarriedThing?.Label ?? "null"}");
 
-            if (distance > PerspectiveShiftMod.settings.grabRange)
+            if (!inRange)
             {
                 Log.Message("[Avatar.HandleLeftClick] RETURN: Out of grab range");
                 return false;
@@ -951,22 +999,10 @@ namespace PerspectiveShift
             var building = clickCell.GetFirstBuilding(pawn.Map);
             if (building != null && !building.Destroyed && building.Spawned)
             {
-                var job = TryGetJobFromWorkGivers(pawn, building);
-                if (job != null)
+                if (InteractWith(building))
                 {
-                    Log.Message($"[Avatar.HandleLeftClick] WorkGiver found job: {job.def.defName} on {building.Label}. Starting directly.");
-                    pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
-                    return true;
-                }
-            }
-
-            if (building != null && !building.Destroyed && building.Spawned)
-            {
-                var sleepOrJoyJob = TryGetSleepOrJoyJob(pawn, building);
-                if (sleepOrJoyJob != null)
-                {
-                    Log.Message($"[Avatar.HandleLeftClick] Found Sleep/Joy job: {sleepOrJoyJob.def.defName} on {building.Label}. Starting directly.");
-                    pawn.jobs.TryTakeOrderedJob(sleepOrJoyJob, JobTag.Misc);
+                    LastManualTarget = building;
+                    Log.Message($"[Avatar.HandleLeftClick] InteractWith succeeded on {building.Label}.");
                     return true;
                 }
             }
@@ -1003,62 +1039,99 @@ namespace PerspectiveShift
             return false;
         }
 
-        private Job TryGetJobFromWorkGivers(Pawn pawn, Thing thing)
+        public bool InteractWith(Thing target)
         {
-            if (pawn.workSettings == null) return null;
+            Log.Message($"[Avatar.InteractWith] START: target={target?.Label ?? "null"}, destroyed={target?.Destroyed ?? true}");
 
-            List<WorkGiver> workGivers = pawn.workSettings.WorkGiversInOrderNormal;
-            for (int i = 0; i < workGivers.Count; i++)
+            if (target == null || target.Destroyed)
             {
-                WorkGiver workGiver = workGivers[i];
+                Log.Message("[Avatar.InteractWith] RETURN: target is null or destroyed");
+                return false;
+            }
 
-                if (!(workGiver is WorkGiver_Scanner scanner)) continue;
-
-                if (scanner.PotentialWorkThingRequest.Accepts(thing))
+            if (pawn.workSettings != null)
+            {
+                List<WorkGiver> workGivers = pawn.workSettings.WorkGiversInOrderNormal;
+                Log.Message($"[Avatar.InteractWith] Checking {workGivers.Count} WorkGivers");
+                for (int i = 0; i < workGivers.Count; i++)
                 {
-                    if (!scanner.HasJobOnThing(pawn, thing, forced: true)) continue;
-
-                    var job = scanner.JobOnThing(pawn, thing, forced: true);
-
-                    if (job != null)
+                    if (workGivers[i] is WorkGiver_Scanner scanner)
                     {
-                        return job;
+                        if (scanner.PotentialWorkThingRequest.Accepts(target))
+                        {
+                            Log.Message($"[Avatar.InteractWith] WorkGiver {scanner.GetType().Name} accepts target, checking for job");
+                            if (scanner.HasJobOnThing(pawn, target, forced: true))
+                            {
+                                Log.Message($"[Avatar.InteractWith] WorkGiver {scanner.GetType().Name} has job, trying to start");
+                                if (TryStartForcedJob(scanner.JobOnThing(pawn, target, forced: true)))
+                                {
+                                    Log.Message($"[Avatar.InteractWith] RETURN: SUCCESS from WorkGiver {scanner.GetType().Name}");
+                                    return true;
+                                }
+                            }
+                        }
                     }
                 }
             }
-            return null;
-        }
 
-        private Job TryGetSleepOrJoyJob(Pawn pawn, Thing thing)
-        {
-            if (thing is Building_Bed bed && !bed.ForPrisoners && !bed.Medical && pawn.needs?.rest != null)
+            if (target is Building_Bed bed && !bed.ForPrisoners && !bed.Medical && pawn.needs?.rest != null)
             {
+                Log.Message($"[Avatar.InteractWith] Target is bed, checking if usable");
                 if (RestUtility.CanUseBedEver(pawn, bed.def) && pawn.CanReserveAndReach(bed, PathEndMode.OnCell, Danger.Deadly))
                 {
-                    return JobMaker.MakeJob(JobDefOf.LayDown, bed);
+                    Log.Message($"[Avatar.InteractWith] Bed is usable, starting LayDown job");
+                    if (TryStartForcedJob(JobMaker.MakeJob(JobDefOf.LayDown, bed)))
+                    {
+                        Log.Message($"[Avatar.InteractWith] RETURN: SUCCESS from bed");
+                        return true;
+                    }
                 }
             }
 
             if (pawn.needs?.joy != null)
             {
                 var joyGivers = DefDatabase<JoyGiverDef>.AllDefsListForReading
-                    .Where(jg => jg.Worker is JoyGiver_InteractBuilding && jg.thingDefs != null && jg.thingDefs.Contains(thing.def));
+                    .Where(jg => jg.Worker is JoyGiver_InteractBuilding && jg.thingDefs != null && jg.thingDefs.Contains(target.def)).ToList();
 
+                Log.Message($"[Avatar.InteractWith] Found {joyGivers.Count} JoyGivers for {target.def.defName}");
                 foreach (var jgDef in joyGivers)
                 {
                     if (jgDef.Worker is JoyGiver_InteractBuilding worker)
                     {
-                        Job joyJob = worker.TryGivePlayJob(pawn, thing);
-                        if (joyJob != null)
+                        Log.Message($"[Avatar.InteractWith] Trying JoyGiver {jgDef.defName}");
+                        if (TryStartForcedJob(worker.TryGivePlayJob(pawn, target)))
                         {
-                            joyJob.playerForced = true;
-                            return joyJob;
+                            Log.Message($"[Avatar.InteractWith] RETURN: SUCCESS from JoyGiver {jgDef.defName}");
+                            return true;
                         }
                     }
                 }
             }
 
-            return null;
+            Log.Message("[Avatar.InteractWith] RETURN: FAIL - no job found");
+            return false;
+        }
+
+        private bool TryStartForcedJob(Job job)
+        {
+            if (job == null)
+            {
+                Log.Message($"[Avatar.TryStartForcedJob] FAIL: job is null");
+                return false;
+            }
+            job.playerForced = true;
+            var result = pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
+            string targetInfo = "invalid";
+            if (job.targetA.HasThing)
+            {
+                targetInfo = job.targetA.Thing?.Label ?? "null thing";
+            }
+            else if (job.targetA.Cell.IsValid)
+            {
+                targetInfo = job.targetA.Cell.ToString();
+            }
+            Log.Message($"[Avatar.TryStartForcedJob] {(result ? "SUCCESS" : "FAIL")}: job.def={job.def.defName}, targetA={targetInfo}, result={result}");
+            return result;
         }
 
         private void ExecutePickup(Thing target)
@@ -1253,7 +1326,7 @@ namespace PerspectiveShift
             float height = 40f;
 
             float startX = topRightGizmoBounds.xMax - width - 10;
-            float startY = topRightGizmoBounds.yMax + 15f;
+            float startY = topRightGizmoBounds.yMax + 35f;
 
             float totalHeight = needs.Count * height;
             var unifiedBg = new Rect(startX - 10, startY - 5, width + 20, totalHeight + 10);
@@ -1273,6 +1346,12 @@ namespace PerspectiveShift
             if (pawn == null || pawn.Dead || pawn.Downed) return;
             HandleDoorInteraction();
             HandleCombatStance();
+
+            if (pawn.jobs?.curJob != null && pawn.jobs.curJob.def != JobDefOf.Wait && pawn.jobs.curJob.def != JobDefOf.Wait_Combat)
+            {
+                pawn.jobs.curJob.expiryInterval = -1;
+            }
+
             if (IsMoving && pawn.pather != null)
             {
                 pawn.pather.lastMovedTick = Find.TickManager.TicksGame;

@@ -56,6 +56,10 @@ namespace PerspectiveShift
             {
                 return;
             }
+            if (CurrentMode == PlaystyleMode.Authentic && !pawn.Dead)
+            {
+                return;
+            }
             Message($"EmergencyRevokeControl - revoking from {pawn.Name}");
             ClearAvatar();
             Messages.Message("PS_LostControl".Translate(), MessageTypeDefOf.NegativeEvent);
