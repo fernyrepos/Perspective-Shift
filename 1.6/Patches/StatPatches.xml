@@ -1,9 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Patch>
- <Operation Class="PatchOperationAdd">
- <xpath>Defs/StatDef[defName="AimingDelayFactor"]/parts</xpath>
- <value>
- <li Class="PerspectiveShift.StatPart_AvatarAimingDelay" />
- </value>
- </Operation>
+    <Operation Class="PatchOperationAdd">
+        <xpath>Defs/StatDef[defName="AimingDelayFactor"]/parts</xpath>
+        <value>
+            <li Class="PerspectiveShift.StatPart_AvatarAimingDelay" />
+        </value>
+    </Operation>
+
+    <Operation Class="PatchOperationConditional">
+        <xpath>/Defs/StatDef[defName="ShootingAccuracyPawn"]/parts</xpath>
+        <match Class="PatchOperationSequence">
+            <operations>
+                <li Class="PatchOperationAdd">
+                    <xpath>/Defs/StatDef[defName="ShootingAccuracyPawn"]/parts</xpath>
+                    <value>
+                        <li Class="PerspectiveShift.StatPart_AvatarShootingAccuracy" />
+                    </value>
+                </li>
+            </operations>
+        </match>
+        <nomatch Class="PatchOperationSequence">
+            <operations>
+                <li Class="PatchOperationAdd">
+                    <xpath>/Defs/StatDef[defName="ShootingAccuracyPawn"]</xpath>
+                    <value>
+                        <parts>
+                            <li Class="PerspectiveShift.StatPart_AvatarShootingAccuracy" />
+                        </parts>
+                    </value>
+                </li>
+            </operations>
+        </nomatch>
+    </Operation>
 </Patch>

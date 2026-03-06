@@ -10,6 +10,7 @@ namespace PerspectiveShift
         {
             if (__instance.pawn.IsAvatar())
             {
+                __instance.fireAtWillInt = false;
                 __result = false;
                 return false;
             }

@@ -29,7 +29,7 @@ namespace PerspectiveShift
 
         private Building_Door interactingDoor;
         private bool wasMovingLastFrame;
-        private Rect topRightGizmoBounds;
+        private Rect gizmoBounds;
         private static Texture2D _reticleTex;
         public static Texture2D ReticleTex => _reticleTex ??= ContentFinder<Texture2D>.Get("UI/Reticle");
         private static Texture2D _reticleCooldownTex;
@@ -65,6 +65,14 @@ namespace PerspectiveShift
                 return;
             }
 
+            if (pawn.jobs?.curJob != null && pawn.jobs.curJob.def.HasModExtension<JobRequiresHoldExtension>())
+            {
+                if (!Input.GetMouseButton(0))
+                {
+                    pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
+                }
+            }
+
             bool inCombatStance = pawn.stances.curStance is Stance_Warmup || pawn.stances.curStance is Stance_Cooldown;
             var canRunAndGun = ModCompatibility.IsRunAndGunActiveFor(pawn);
             bool isShootingStationary = inCombatStance && !canRunAndGun;
@@ -81,6 +89,11 @@ namespace PerspectiveShift
             }
 
             UpdateInput();
+
+            if (!pawn.Awake() && (IsMoving || moveInputDuration > 0f))
+            {
+                RestUtility.WakeUp(pawn);
+            }
 
             if (moveInput == Vector3.zero && !pawn.Position.Walkable(pawn.Map))
             {
@@ -278,11 +291,6 @@ namespace PerspectiveShift
             if (pawn == null || pawn.Map == null || !pawn.Spawned) return;
             if (interactingDoor != null) return;
 
-            if (IsMoving)
-            {
-                State.Message($"[JerkDebug] Frame {Time.frameCount}: ProcessMovement START - Input: {moveInput.normalized}, Pos: {physicsPosition}");
-            }
-
             if (!IsMoving)
             {
                 moveInputDuration = 0f;
@@ -311,16 +319,13 @@ namespace PerspectiveShift
             {
                 if (physicsPosition.Value.ToIntVec3() != pawn.Position)
                 {
-                    State.Message($"[JerkDebug] Desync detected on move start: physicsCell={physicsPosition.Value.ToIntVec3()}, pawn.Position={pawn.Position}. Resetting physicsPosition.");
                     physicsPosition = null;
                 }
             }
 
             if (!physicsPosition.HasValue)
             {
-                var initPos = pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
-                State.Message($"[JerkDebug] physicsPosition initialised from cell centre: {initPos}");
-                physicsPosition = initPos;
+                physicsPosition = pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
             }
 
             if (!wasMovingLastFrame)
@@ -338,11 +343,7 @@ namespace PerspectiveShift
                 bool isOurWaitJob = pawn.jobs.curJob.def == JobDefOf.Wait && pawn.jobs.curJob.expiryInterval == 60;
                 if (!isOurWaitJob && moveInputDuration > 0.35f)
                 {
-                    if (!pawn.Awake())
-                    {
-                        RestUtility.WakeUp(pawn);
-                    }
-                    else if (!(canRunAndGun && isShooting && pawn.Drafted))
+                    if (!(canRunAndGun && isShooting && pawn.Drafted))
                     {
                         pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
                     }
@@ -363,38 +364,21 @@ namespace PerspectiveShift
             }
 
             float tickModifier = expectedTicks / Mathf.Max(pawn.TicksPerMoveCardinal, 1f);
-            float speed = baseSpeed * terrainMultiplier * tickModifier * (isSprinting ? 1.3f : isWalking ? 0.5f : 1.0f) * Time.deltaTime;
+            float speed = baseSpeed * PerspectiveShiftMod.settings.moveSpeedMultiplier * terrainMultiplier * tickModifier * (isSprinting ? 1.3f : isWalking ? 0.5f : 1.0f) * Time.deltaTime * Find.TickManager.TickRateMultiplier;
             Vector3 delta = deltaRaw * speed;
             Vector3 newPos = physicsPosition.Value;
-
-            string log = $"[JerkDebug] Frame {Time.frameCount}: Processing - Delta: {delta} ";
 
             if (Mathf.Abs(delta.x) > 0.0001f)
             {
                 Vector3 testX = newPos + new Vector3(delta.x, 0, 0);
-                if (IsWalkableWithMargin(testX))
-                {
-                    newPos = testX;
-                }
-                else
-                {
-                    log += "[X BLOCKED]";
-                }
+                if (IsWalkableWithMargin(testX)) newPos = testX;
             }
 
             if (Mathf.Abs(delta.z) > 0.0001f)
             {
                 Vector3 testZ = newPos + new Vector3(0, 0, delta.z);
-                if (IsWalkableWithMargin(testZ))
-                {
-                    newPos = testZ;
-                }
-                else
-                {
-                    log += "[Z BLOCKED]";
-                }
+                if (IsWalkableWithMargin(testZ)) newPos = testZ;
             }
-            State.Message(log);
 
             var nextCell = newPos.ToIntVec3();
             var door = nextCell.GetDoor(pawn.Map);
@@ -463,35 +447,6 @@ namespace PerspectiveShift
             if (door != null && !door.Open && !door.PawnCanOpen(pawn)) return false;
 
             return true;
-        }
-
-        private IntVec3 GetCursorLeanDirection()
-        {
-            if (pawn == null || !pawn.Spawned) return IntVec3.Zero;
-
-            var pawnCenter = pawn.Position.ToVector3Shifted();
-            Vector3 toMouse = UI.MouseMapPosition() - pawnCenter;
-            if (toMouse.sqrMagnitude < 0.1f) return IntVec3.Zero;
-
-            var absX = Mathf.Abs(toMouse.x);
-            var absZ = Mathf.Abs(toMouse.z);
-
-            IntVec3 current = pawn.Drawer.leaner.shootSourceOffset;
-            bool currentIsX = current.x != 0;
-            const float hysteresis = 1.2f;
-
-            if (currentIsX)
-            {
-                if (absZ > absX * hysteresis)
-                    return toMouse.z > 0 ? new IntVec3(0, 0, 1) : new IntVec3(0, 0, -1);
-                return toMouse.x > 0 ? new IntVec3(1, 0, 0) : new IntVec3(-1, 0, 0);
-            }
-            else
-            {
-                if (absX > absZ * hysteresis)
-                    return toMouse.x > 0 ? new IntVec3(1, 0, 0) : new IntVec3(-1, 0, 0);
-                return toMouse.z > 0 ? new IntVec3(0, 0, 1) : new IntVec3(0, 0, -1);
-            }
         }
 
         private void UpdateRotation(Vector3 dir)
@@ -569,15 +524,16 @@ namespace PerspectiveShift
                 DebugLog();
                 if (!pawn.InMentalState)
                 {
-                    DrawTopRightGizmos();
+                    DrawPlayerGizmos();
                     DrawNeeds();
                 }
-
-                bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || topRightGizmoBounds.Contains(Event.current.mousePosition);
+                bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(Event.current.mousePosition);
                 bool mouseOverUI = IsMouseOverUI() || IsMouseOverColonistBar();
 
                 if (pawn.Drafted && !pawn.InMentalState)
                 {
+                    if (!Find.TickManager.Paused && Find.Selector.NumSelected > 0) Find.Selector.ClearSelection();
+
                     if (!Find.TickManager.Paused && !State.ControlsFrozen && !(pawn.stances.curStance is Stance_Busy))
                     {
                         Vector3 toMouse = UI.MouseMapPosition() - pawn.DrawPos;
@@ -640,7 +596,7 @@ namespace PerspectiveShift
             Vector2 mousePos = Event.current.mousePosition;
             Vector2 mouseInverted = UI.MousePositionOnUIInverted;
 
-            if (topRightGizmoBounds.Contains(mousePos))
+            if (gizmoBounds.Contains(mousePos))
                 return true;
 
             if (Find.WindowStack.GetWindowAt(mouseInverted) != null)
@@ -745,32 +701,6 @@ namespace PerspectiveShift
                         tex = ReticleNoLOSTex;
                         if (!IsMoving)
                             LeanTarget = Vector3.zero;
-
-                        if (GenTicks.TicksGame % 30 == 0)
-                        {
-                            var leanSources = new List<IntVec3>();
-                            ShootLeanUtility.LeanShootingSourcesFromTo(pawn.Position, targetCell, pawn.Map, leanSources);
-                            var sb = new System.Text.StringBuilder();
-                            sb.Append($"[LeanDebug] Reticle RED - pawn.Pos={pawn.Position} target={targetCell} curOffset={pawn.Drawer.leaner.shootSourceOffset}");
-                            sb.Append($" | leanSources({leanSources.Count}): ");
-                            foreach (var src in leanSources)
-                            {
-                                bool los = GenSight.LineOfSight(src, targetCell, pawn.Map, skipFirstCell: true);
-                                sb.Append($"{src}(LOS={los}) ");
-                            }
-                            var directLos = GenSight.LineOfSight(pawn.Position, targetCell, pawn.Map, skipFirstCell: true);
-                            sb.Append($"| directLOS={directLos}");
-                            State.Message(sb.ToString());
-
-                            foreach (var p in pawn.Map.mapPawns.AllPawnsSpawned)
-                            {
-                                if (p == pawn) continue;
-                                if (p.stances?.curStance is Stance_Warmup w)
-                                {
-                                    State.Message($"[LeanDebug] Compare pawn {p.Name}: pos={p.Position} offset={p.Drawer.leaner.shootSourceOffset} leanPct={p.Drawer.leaner.leanOffsetCurPct} focusTarg={w.focusTarg.Cell} shootLine.Source={(w.verb?.TryFindShootLineFromTo(p.Position, w.focusTarg, out var sl) == true ? sl.Source.ToString() : "n/a")}");
-                                }
-                            }
-                        }
                     }
                     else
                     {
@@ -779,9 +709,12 @@ namespace PerspectiveShift
 
                         if (!IsMoving)
                         {
-                            var leanSources = new System.Collections.Generic.List<IntVec3>();
+                            var leanSources = new List<IntVec3>();
                             ShootLeanUtility.LeanShootingSourcesFromTo(pawn.Position, targetCell, pawn.Map, leanSources);
-                            var bestLeanSource = leanSources.FirstOrDefault(s => s != pawn.Position && s.IsValid && s != IntVec3.Zero);
+                            var bestLeanSource = leanSources
+                                .Where(s => s != pawn.Position && s.IsValid && s != IntVec3.Zero && GenSight.LineOfSight(s, targetCell, pawn.Map, skipFirstCell: true))
+                                .OrderBy(s => s.DistanceToSquared(targetCell))
+                                .FirstOrDefault();
                             LeanTarget = (bestLeanSource != IntVec3.Zero && bestLeanSource != pawn.Position)
                                 ? (bestLeanSource - pawn.Position).ToVector3()
                                 : Vector3.zero;
@@ -832,17 +765,12 @@ namespace PerspectiveShift
             {
                 if (verb.CanHitTarget(target))
                 {
-                    State.Message($"[LeanDebug] HandleFiring: canHit=true, TryStartCastOn target={targetCell}");
                     verb.TryStartCastOn(target, false, true);
-                }
-                else
-                {
-                    State.Message($"[LeanDebug] HandleFiring: canHit=false for target={targetCell} from pos={pawn.Position}");
                 }
             }
         }
 
-        public void DrawTopRightGizmos()
+        public void DrawPlayerGizmos()
         {
             if (pawn == null) return;
             if (Event.current.type == EventType.Layout) return;
@@ -860,11 +788,37 @@ namespace PerspectiveShift
             float actualSize = 75f;
             float spacing = 8f;
 
-            float startX = (UI.screenWidth - 10f) / scale - actualSize;
-            float startY = 10f / scale;
+            float startX = 0f;
+            float startY = 0f;
+
+            switch (PerspectiveShiftMod.settings.gizmoCorner)
+            {
+                case GizmoCorner.TopRight:
+                    startX = (UI.screenWidth - 10f) / scale - actualSize;
+                    startY = 10f / scale;
+                    break;
+                case GizmoCorner.BottomRight:
+                    startX = (UI.screenWidth - 10f) / scale - actualSize;
+                    startY = (UI.screenHeight - 10f) / scale - actualSize;
+                    break;
+                case GizmoCorner.BottomLeft:
+                    startX = 10f / scale;
+                    startY = (UI.screenHeight - 10f) / scale - actualSize;
+                    break;
+                case GizmoCorner.TopLeft:
+                    startX = 10f / scale;
+                    startY = 10f / scale;
+                    break;
+            }
+
             float x = startX;
             float y = startY;
+
+            float xStep = (PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.TopLeft || PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomLeft) ? (actualSize + spacing) : -(actualSize + spacing);
+            float yStep = (PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.TopLeft || PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.TopRight) ? (actualSize + spacing) : -(actualSize + spacing);
+
             float minX = startX - (actualSize + spacing) * 4f;
+            float maxX = startX + (actualSize + spacing) * 4f;
 
             GizmoGridDrawer.drawnHotKeys.Clear();
 
@@ -911,11 +865,12 @@ namespace PerspectiveShift
                 }
 
                 isFirst = false;
-                x -= actualSize + spacing;
-                if (x < minX)
+
+                x += xStep;
+                if ((xStep < 0 && x < minX) || (xStep > 0 && x > maxX))
                 {
                     x = startX;
-                    y += actualSize + spacing;
+                    y += yStep;
                 }
             }
 
@@ -923,11 +878,11 @@ namespace PerspectiveShift
 
             if (gizmos.Count > 0)
             {
-                topRightGizmoBounds = new Rect(boundsMinX, boundsMinY, boundsMaxX - boundsMinX, boundsMaxY - boundsMinY);
+                gizmoBounds = new Rect(boundsMinX, boundsMinY, boundsMaxX - boundsMinX, boundsMaxY - boundsMinY);
             }
             else
             {
-                topRightGizmoBounds = Rect.zero;
+                gizmoBounds = Rect.zero;
             }
 
             if (interactedGizmo != null)
@@ -946,51 +901,64 @@ namespace PerspectiveShift
         private bool HandleLeftClick()
         {
             var clickCell = UI.MouseCell();
-
-            bool inRange = pawn.Position.DistanceTo(clickCell) <= PerspectiveShiftMod.settings.grabRange;
+            bool itemInRange = pawn.Position.DistanceTo(clickCell) <= PerspectiveShiftMod.settings.grabRange || clickCell.AdjacentTo8WayOrInside(pawn.Position);
+            bool inRange = itemInRange;
 
             if (!inRange)
             {
                 var things = clickCell.GetThingList(pawn.Map);
-                foreach (var t in things)
+                if (things != null)
                 {
-                    if (t.def.size.x > 1 || t.def.size.z > 1)
+                    foreach (var t in things)
                     {
-                        foreach (var c in t.OccupiedRect())
+                        if (t.def.hasInteractionCell && t.InteractionCell == pawn.Position)
                         {
-                            if (pawn.Position.DistanceTo(c) <= PerspectiveShiftMod.settings.grabRange)
+                            inRange = true;
+                            break;
+                        }
+                        if (t.def.building?.watchBuildingStandDistanceRange != null)
+                        {
+                            var watchCells = WatchBuildingUtility.CalculateWatchCells(t.def, t.Position, t.Rotation, pawn.Map);
+                            if (watchCells.Contains(pawn.Position))
                             {
                                 inRange = true;
                                 break;
                             }
                         }
+                        if (t.def.size.x > 1 || t.def.size.z > 1)
+                        {
+                            foreach (var c in t.OccupiedRect())
+                            {
+                                if (pawn.Position.DistanceTo(c) <= PerspectiveShiftMod.settings.grabRange)
+                                {
+                                    inRange = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (inRange) break;
                     }
-                    if (inRange) break;
                 }
             }
 
-            var distance = pawn.Position.DistanceTo(clickCell);
-            Log.Message($"[Avatar.HandleLeftClick] START - clickCell: {clickCell}, rawDist: {distance}, inRange: {inRange}, grabRange: {PerspectiveShiftMod.settings.grabRange}, CarriedThing: {CarriedThing?.Label ?? "null"}");
-
             if (!inRange)
             {
-                Log.Message("[Avatar.HandleLeftClick] RETURN: Out of grab range");
                 return false;
             }
 
             if (CarriedThing != null)
             {
-                Log.Message("[Avatar.HandleLeftClick] Hands are full, calling HandleDropOrInteract");
-                return HandleDropOrInteract(clickCell);
+                return HandleDropOrInteract(clickCell, itemInRange);
             }
             else
             {
                 var item = clickCell.GetFirstItem(pawn.Map);
-                Log.Message($"[Avatar.HandleLeftClick] item found: {item?.Label ?? "null"}, category: {item?.def.category.ToString() ?? "null"}");
-
-                if (item != null && item.def.category == ThingCategory.Item)
+                if (item != null && item.def.category == ThingCategory.Item && itemInRange)
                 {
-                    Log.Message($"[Avatar.HandleLeftClick] Calling ExecutePickup for: {item.Label}");
+                    if (!pawn.Awake())
+                    {
+                        RestUtility.WakeUp(pawn);
+                    }
                     ExecutePickup(item);
                     return true;
                 }
@@ -1002,21 +970,13 @@ namespace PerspectiveShift
                 if (InteractWith(building))
                 {
                     LastManualTarget = building;
-                    Log.Message($"[Avatar.HandleLeftClick] InteractWith succeeded on {building.Label}.");
                     return true;
                 }
             }
 
             var opts = FloatMenuMakerMap.GetOptions(new List<Pawn> { pawn }, clickCell.ToVector3Shifted(), out _);
-            Log.Message($"[Avatar.HandleLeftClick] float menu options: {opts?.Count ?? 0}");
             if (opts != null)
             {
-                for (int i = 0; i < opts.Count; i++)
-                {
-                    var opt = opts[i];
-                    Log.Message($"[Avatar.HandleLeftClick]   [{i}] Label: {opt.Label}, Priority: {opt.Priority}, Disabled: {opt.Disabled}");
-                }
-
                 if (pawn.equipment?.Primary != null)
                 {
                     var dropString = "Drop".Translate(pawn.equipment.Primary.Label, pawn.equipment.Primary);
@@ -1030,43 +990,39 @@ namespace PerspectiveShift
                                  .FirstOrDefault();
             if (bestOption != null)
             {
-                Log.Message($"[Avatar.HandleLeftClick] invoking best option: {bestOption.Label}, priority: {bestOption.Priority}");
                 bestOption.action.Invoke();
                 return true;
             }
 
-            Log.Message("[Avatar.HandleLeftClick] RETURN: No action taken");
             return false;
         }
 
         public bool InteractWith(Thing target)
         {
-            Log.Message($"[Avatar.InteractWith] START: target={target?.Label ?? "null"}, destroyed={target?.Destroyed ?? true}");
-
             if (target == null || target.Destroyed)
             {
-                Log.Message("[Avatar.InteractWith] RETURN: target is null or destroyed");
                 return false;
             }
 
             if (pawn.workSettings != null)
             {
                 List<WorkGiver> workGivers = pawn.workSettings.WorkGiversInOrderNormal;
-                Log.Message($"[Avatar.InteractWith] Checking {workGivers.Count} WorkGivers");
                 for (int i = 0; i < workGivers.Count; i++)
                 {
                     if (workGivers[i] is WorkGiver_Scanner scanner)
                     {
                         if (scanner.PotentialWorkThingRequest.Accepts(target))
                         {
-                            Log.Message($"[Avatar.InteractWith] WorkGiver {scanner.GetType().Name} accepts target, checking for job");
                             if (scanner.HasJobOnThing(pawn, target, forced: true))
                             {
-                                Log.Message($"[Avatar.InteractWith] WorkGiver {scanner.GetType().Name} has job, trying to start");
-                                if (TryStartForcedJob(scanner.JobOnThing(pawn, target, forced: true)))
+                                Job job = scanner.JobOnThing(pawn, target, forced: true);
+                                if (job != null)
                                 {
-                                    Log.Message($"[Avatar.InteractWith] RETURN: SUCCESS from WorkGiver {scanner.GetType().Name}");
-                                    return true;
+                                    if (job.def == JobDefOf.HaulToContainer && pawn.carryTracker?.CarriedThing == null) continue;
+                                    if (job.def == JobDefOf.Refuel && pawn.carryTracker?.CarriedThing == null) continue;
+                                    if (job.def == JobDefOf.RefuelAtomic && pawn.carryTracker?.CarriedThing == null) continue;
+
+                                    if (TryStartForcedJob(job)) return true;
                                 }
                             }
                         }
@@ -1076,13 +1032,10 @@ namespace PerspectiveShift
 
             if (target is Building_Bed bed && !bed.ForPrisoners && !bed.Medical && pawn.needs?.rest != null)
             {
-                Log.Message($"[Avatar.InteractWith] Target is bed, checking if usable");
                 if (RestUtility.CanUseBedEver(pawn, bed.def) && pawn.CanReserveAndReach(bed, PathEndMode.OnCell, Danger.Deadly))
                 {
-                    Log.Message($"[Avatar.InteractWith] Bed is usable, starting LayDown job");
                     if (TryStartForcedJob(JobMaker.MakeJob(JobDefOf.LayDown, bed)))
                     {
-                        Log.Message($"[Avatar.InteractWith] RETURN: SUCCESS from bed");
                         return true;
                     }
                 }
@@ -1093,125 +1046,130 @@ namespace PerspectiveShift
                 var joyGivers = DefDatabase<JoyGiverDef>.AllDefsListForReading
                     .Where(jg => jg.Worker is JoyGiver_InteractBuilding && jg.thingDefs != null && jg.thingDefs.Contains(target.def)).ToList();
 
-                Log.Message($"[Avatar.InteractWith] Found {joyGivers.Count} JoyGivers for {target.def.defName}");
                 foreach (var jgDef in joyGivers)
                 {
                     if (jgDef.Worker is JoyGiver_InteractBuilding worker)
                     {
-                        Log.Message($"[Avatar.InteractWith] Trying JoyGiver {jgDef.defName}");
                         if (TryStartForcedJob(worker.TryGivePlayJob(pawn, target)))
                         {
-                            Log.Message($"[Avatar.InteractWith] RETURN: SUCCESS from JoyGiver {jgDef.defName}");
                             return true;
                         }
                     }
                 }
             }
 
-            Log.Message("[Avatar.InteractWith] RETURN: FAIL - no job found");
             return false;
         }
 
         private bool TryStartForcedJob(Job job)
         {
-            if (job == null)
-            {
-                Log.Message($"[Avatar.TryStartForcedJob] FAIL: job is null");
-                return false;
-            }
+            if (job == null) return false;
             job.playerForced = true;
-            var result = pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
-            string targetInfo = "invalid";
-            if (job.targetA.HasThing)
-            {
-                targetInfo = job.targetA.Thing?.Label ?? "null thing";
-            }
-            else if (job.targetA.Cell.IsValid)
-            {
-                targetInfo = job.targetA.Cell.ToString();
-            }
-            Log.Message($"[Avatar.TryStartForcedJob] {(result ? "SUCCESS" : "FAIL")}: job.def={job.def.defName}, targetA={targetInfo}, result={result}");
-            return result;
+            return pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
         }
 
         private void ExecutePickup(Thing target)
         {
-            Log.Message($"[Avatar.ExecutePickup] START - target: {target?.Label}, stackCount: {target?.stackCount ?? 0}");
-
             var reserver = target.Map.reservationManager.FirstRespectedReserver(target, pawn);
             if (reserver != null && reserver != pawn)
             {
-                Log.Message($"[Avatar.ExecutePickup] Target {target.Label} is reserved by {reserver.Label}. Releasing reservation.");
                 target.Map.reservationManager.ReleaseAllForTarget(target);
             }
 
             var pickedUpCount = pawn.carryTracker.TryStartCarry(target, target.stackCount, reserve: true);
-            Log.Message($"[Avatar.ExecutePickup] TryStartCarry result: {pickedUpCount}");
 
             if (pickedUpCount > 0)
             {
                 if (target.def.soundPickup != null)
                     target.def.soundPickup.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
-                Log.Message("[Avatar.ExecutePickup] SUCCESS - Item picked up");
-            }
-            else
-            {
-                Log.Message("[Avatar.ExecutePickup] FAILED - TryStartCarry returned 0");
             }
         }
 
-        private bool HandleDropOrInteract(IntVec3 cell)
+        private bool HandleDropOrInteract(IntVec3 cell, bool itemInRange)
         {
-            Log.Message($"[Avatar.HandleDropOrInteract] START - cell: {cell}, CarriedThing: {CarriedThing?.Label ?? "null"}");
-
             if (!cell.InBounds(pawn.Map))
             {
-                Log.Message("[Avatar.HandleDropOrInteract] RETURN: cell not in bounds");
                 return false;
             }
 
+            var cellThings = cell.GetThingList(pawn.Map);
+            if (cellThings != null)
+            {
+                var refuelableThing = cellThings.FirstOrDefault(t => t.TryGetComp<CompRefuelable>() != null);
+                if (refuelableThing != null)
+                {
+                    var comp = refuelableThing.TryGetComp<CompRefuelable>();
+                    if (comp.Props.fuelFilter.Allows(CarriedThing) && comp.GetFuelCountToFullyRefuel() > 0)
+                    {
+                        int amount = Mathf.Min(CarriedThing.stackCount, comp.GetFuelCountToFullyRefuel());
+                        comp.Refuel(amount);
+                        CarriedThing.SplitOff(amount).Destroy();
+                        if (refuelableThing.def.soundInteract != null) refuelableThing.def.soundInteract.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                        return true;
+                    }
+                }
+
+                var blueprint = cellThings.OfType<Blueprint_Build>().FirstOrDefault();
+                if (blueprint != null && blueprint.ThingCountNeeded(CarriedThing.def) > 0)
+                {
+                    if (blueprint.TryReplaceWithSolidThing(pawn, out Thing frameThing, out _))
+                    {
+                        if (frameThing is Frame frame)
+                        {
+                            int needed = frame.ThingCountNeeded(CarriedThing.def);
+                            if (needed > 0)
+                            {
+                                pawn.carryTracker.innerContainer.TryTransferToContainer(CarriedThing, frame.resourceContainer, Mathf.Min(CarriedThing.stackCount, needed));
+                            }
+                            return true;
+                        }
+                    }
+                }
+
+                var frame2 = cellThings.OfType<Frame>().FirstOrDefault();
+                if (frame2 != null)
+                {
+                    int needed = frame2.ThingCountNeeded(CarriedThing.def);
+                    if (needed > 0)
+                    {
+                        pawn.carryTracker.innerContainer.TryTransferToContainer(CarriedThing, frame2.resourceContainer, Mathf.Min(CarriedThing.stackCount, needed));
+                        return true;
+                    }
+                }
+            }
+
             var building = cell.GetFirstBuilding(pawn.Map);
-            Log.Message($"[Avatar.HandleDropOrInteract] building at cell: {building?.Label ?? "null"}");
 
             if (building is IBillGiver billGiver)
             {
-                Log.Message("[Avatar.HandleDropOrInteract] Building is IBillGiver, trying TryDepositIntoBill");
                 if (TryDepositIntoBill(billGiver, building))
                 {
-                    Log.Message("[Avatar.HandleDropOrInteract] RETURN: Success from TryDepositIntoBill");
                     return true;
                 }
             }
+
+            if (!itemInRange) return false;
 
             var slotGroup = pawn.Map.haulDestinationManager.SlotGroupAt(cell);
             if (slotGroup != null)
             {
                 if (slotGroup.Settings.AllowedToAccept(CarriedThing))
                 {
-                    Log.Message("[Avatar.HandleDropOrInteract] Cell is valid storage for item, trying to drop");
                     if (pawn.carryTracker.TryDropCarriedThing(cell, ThingPlaceMode.Direct, out var _))
                     {
-                        Log.Message("[Avatar.HandleDropOrInteract] RETURN: Success - Dropped in storage");
                         return true;
                     }
-                }
-                else
-                {
-                    Log.Message("[Avatar.HandleDropOrInteract] Cell is storage but does NOT accept this item.");
                 }
             }
 
             if (cell.Walkable(pawn.Map))
             {
-                Log.Message("[Avatar.HandleDropOrInteract] Cell is walkable, trying to drop on ground");
                 if (pawn.carryTracker.TryDropCarriedThing(cell, ThingPlaceMode.Direct, out var _))
                 {
-                    Log.Message("[Avatar.HandleDropOrInteract] RETURN: Success - Dropped on ground");
                     return true;
                 }
             }
 
-            Log.Message("[Avatar.HandleDropOrInteract] RETURN: Failed to drop anywhere");
             return false;
         }
 
@@ -1220,43 +1178,33 @@ namespace PerspectiveShift
             Thing heldItem = CarriedThing;
             if (heldItem == null) return false;
 
-            Log.Message($"[Avatar.TryDepositIntoBill] START - heldItem: {heldItem.Label}, building: {building?.Label ?? "null"}");
-
             foreach (var bill in billGiver.BillStack)
             {
-                Log.Message($"[Avatar.TryDepositIntoBill] Checking bill: {bill.Label}, ShouldDoNow: {bill.ShouldDoNow()}, IsFixedOrAllowedIngredient: {bill.IsFixedOrAllowedIngredient(heldItem)}");
-
                 if (bill.ShouldDoNow() && bill.IsFixedOrAllowedIngredient(heldItem))
                 {
                     IntVec3 placeLoc = building.InteractionCell;
-                    Log.Message($"[Avatar.TryDepositIntoBill] Bill matches! placeLoc: {placeLoc}");
 
                     var container = building.TryGetInnerInteractableThingOwner();
-                    Log.Message($"[Avatar.TryDepositIntoBill] container: {container != null}, building is Building_Storage: {building is Building_Storage}");
 
                     if (building is Building_Storage || container != null)
                     {
                         int transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(heldItem, container, heldItem.stackCount);
-                        Log.Message($"[Avatar.TryDepositIntoBill] TryTransferToContainer result: {transferred}");
 
                         if (transferred > 0)
                         {
-                            Log.Message("[Avatar.TryDepositIntoBill] SUCCESS - Transferred to container");
                             TryStartBillJob(billGiver);
                             return true;
                         }
                     }
 
-                    if (pawn.carryTracker.TryDropCarriedThing(placeLoc, ThingPlaceMode.Direct, out Thing droppedItem))
+                    if (pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out Thing droppedItem))
                     {
-                        Log.Message($"[Avatar.TryDepositIntoBill] SUCCESS - Dropped on floor: {droppedItem?.Label ?? "null"}");
                         TryStartBillJob(billGiver);
                         return true;
                     }
                 }
             }
 
-            Log.Message("[Avatar.TryDepositIntoBill] RETURN: No matching bill or deposit failed");
             return false;
         }
 
@@ -1293,12 +1241,7 @@ namespace PerspectiveShift
                     var job = workGiver.JobOnThing(pawn, billGiverThing, forced: true);
                     if (job != null)
                     {
-                        Log.Message($"[Avatar] Auto-starting bill job: {job.def.defName} on {billGiverThing.Label}");
                         pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
-                    }
-                    else
-                    {
-                        Log.Message($"[Avatar] JobOnThing returned null (ingredients likely missing locally)");
                     }
                 }
                 finally
@@ -1309,27 +1252,37 @@ namespace PerspectiveShift
                     }
                 }
             }
-            else
-            {
-                Log.Message($"[Avatar] No WorkGiver_DoBill found for {billGiverThing.Label}");
-            }
         }
 
         private void DrawNeeds()
         {
-            if (pawn?.needs == null || topRightGizmoBounds == Rect.zero) return;
+            if (pawn?.needs == null || gizmoBounds == Rect.zero) return;
 
-            var needs = pawn.needs.AllNeeds.Where(n => n.ShowOnNeedList && n.def.major).ToList();
+            var needs = pawn.needs.AllNeeds.Where(n => n.ShowOnNeedList && (n.def.major || n is Need_Mood)).ToList();
             if (!needs.Any()) return;
 
             float width = 200f;
             float height = 40f;
-
-            float startX = topRightGizmoBounds.xMax - width - 10;
-            float startY = topRightGizmoBounds.yMax + 35f;
-
             float totalHeight = needs.Count * height;
-            var unifiedBg = new Rect(startX - 10, startY - 5, width + 20, totalHeight + 10);
+
+            float startX = gizmoBounds.xMax - width - 10f;
+            float startY = gizmoBounds.yMax + 35f;
+
+            if (PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomRight)
+            {
+                startY = gizmoBounds.yMin - totalHeight - 10f;
+            }
+            else if (PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomLeft)
+            {
+                startX = gizmoBounds.xMin + 10f;
+                startY = gizmoBounds.yMin - totalHeight - 10f;
+            }
+            else if (PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.TopLeft)
+            {
+                startX = gizmoBounds.xMin + 10f;
+            }
+
+            var unifiedBg = new Rect(startX - 10f, startY - 5f, width + 20f, totalHeight + 10f);
             Widgets.DrawBoxSolid(unifiedBg, new ColorInt(32, 32, 32).ToColor.WithAlpha(0.7f));
 
             float currentY = startY;
@@ -1346,6 +1299,11 @@ namespace PerspectiveShift
             if (pawn == null || pawn.Dead || pawn.Downed) return;
             HandleDoorInteraction();
             HandleCombatStance();
+
+            if (pawn.Drafted && pawn.carryTracker?.CarriedThing != null)
+            {
+                pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out _);
+            }
 
             if (pawn.jobs?.curJob != null && pawn.jobs.curJob.def != JobDefOf.Wait && pawn.jobs.curJob.def != JobDefOf.Wait_Combat)
             {

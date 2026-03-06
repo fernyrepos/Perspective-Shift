@@ -12,7 +12,7 @@ namespace PerspectiveShift
 		{
 			if (__result != null || !pawn.IsAvatar()) return;
 
-			var wait = JobMaker.MakeJob(JobDefOf.Wait, pawn.Position);
+			var wait = JobMaker.MakeJob(JobDefOf.Wait);
 			wait.expiryInterval = 60;
 			wait.checkOverrideOnExpire = true;
 			__result = wait;

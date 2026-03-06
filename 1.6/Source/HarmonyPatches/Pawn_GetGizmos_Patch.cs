@@ -23,23 +23,26 @@ namespace PerspectiveShift
                 yield return g;
             }
 
-            if (!__instance.IsColonist) yield break;
+            if (!__instance.IsColonist && !PerspectiveShiftMod.settings.allowNonHuman) yield break;
 
-            if (State.CurrentMode == PlaystyleMode.Director) yield break;
-
-            if (State.CurrentMode == PlaystyleMode.Authentic)
+            if (!PerspectiveShiftMod.settings.totalFreedom)
             {
-                if (__instance == State.Current?.pawn)
+                if (State.CurrentMode == PlaystyleMode.Director) yield break;
+
+                if (State.CurrentMode == PlaystyleMode.Authentic)
                 {
-                    yield return new Command_Action
+                    if (__instance == State.Current?.pawn)
                     {
-                        defaultLabel = "PS_AuthenticLocked".Translate(),
-                        icon = ContentFinder<Texture2D>.Get("Gizmos/TakeControl"),
-                        disabled = true,
-                        disabledReason = "PS_AuthenticLockedReason".Translate()
-                    };
+                        yield return new Command_Action
+                        {
+                            defaultLabel = "PS_AuthenticLocked".Translate(),
+                            icon = ContentFinder<Texture2D>.Get("Gizmos/TakeControl"),
+                            disabled = true,
+                            disabledReason = "PS_AuthenticLockedReason".Translate()
+                        };
+                    }
+                    yield break;
                 }
-                yield break;
             }
 
             if (__instance != State.Current?.pawn || State.Current == null)
@@ -56,7 +59,7 @@ namespace PerspectiveShift
                 };
             }
 
-            if (__instance == State.Current?.pawn && State.CurrentMode == PlaystyleMode.Dynamic)
+            if (__instance == State.Current?.pawn && (State.CurrentMode == PlaystyleMode.Dynamic || PerspectiveShiftMod.settings.totalFreedom))
             {
                 yield return new Command_Action
                 {

@@ -30,9 +30,19 @@
     <PS_GrabRange>Grab range: {0}</PS_GrabRange>
     <PS_DisableAimingDelay>Disable aiming time for Avatar</PS_DisableAimingDelay>
     <PS_DisableAimingDelayDesc>When checked, your controlled character fires weapons instantly without having to wait for the weapon's warmup/aiming cycle. Cooldown between shots still applies.</PS_DisableAimingDelayDesc>
+    
+    <PS_MoveSpeedMultiplier>Move speed multiplier: {0}</PS_MoveSpeedMultiplier>
+    <PS_ShootAccuracyMultiplier>Shooting accuracy multiplier: {0}</PS_ShootAccuracyMultiplier>
+    <PS_GizmoCorner>Gizmo UI position</PS_GizmoCorner>
+    <PS_TotalFreedom>Total Freedom</PS_TotalFreedom>
+    <PS_TotalFreedomDesc>Always allow character switching regardless of current playstyle settings.</PS_TotalFreedomDesc>
+    <PS_AllowNonHuman>Allow non-human control</PS_AllowNonHuman>
+    <PS_AllowNonHumanDesc>Allows possessing animals, mechanoids, and other non-colonist pawns.</PS_AllowNonHumanDesc>
+
     <PS_ChooseYourCharacter>Choose your character</PS_ChooseYourCharacter>
     <PS_ChooseYourStartingCharacter>Choose your starting character</PS_ChooseYourStartingCharacter>
     <PS_MustSelectCharacter>You must select a character before continuing.</PS_MustSelectCharacter>
     <PS_You>(you)</PS_You>
     <PS_StatPart_AvatarAimingDelay>Direct control</PS_StatPart_AvatarAimingDelay>
+    <PS_StatPart_AvatarShootingAccuracy>Direct control accuracy bonus</PS_StatPart_AvatarShootingAccuracy>
 </LanguageData>
