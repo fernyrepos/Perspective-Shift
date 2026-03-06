@@ -12,7 +12,9 @@ namespace PerspectiveShift
         public static PlaystyleMode CurrentMode = PlaystyleMode.Director;
         public static bool DrawingTopRightGizmos = false;
         private static CameraMapConfig _savedConfig;
-        public static bool IsActive => Avatar != null && Avatar.pawn != null && !Avatar.pawn.Dead;
+        public static Vector3? CameraLockPosition;
+        public static bool IsActive => Avatar != null && Avatar.pawn != null && !Avatar.pawn.Dead
+            && !WorldComponent_GravshipController.CutsceneInProgress;
         public static Avatar Current => Avatar;
         public static bool ControlsFrozen
         {
@@ -46,6 +48,7 @@ namespace PerspectiveShift
                 Find.CameraDriver.config = _savedConfig;
                 _savedConfig = null;
             }
+            CameraLockPosition = null;
             Avatar = null;
             Cursor.visible = true;
         }

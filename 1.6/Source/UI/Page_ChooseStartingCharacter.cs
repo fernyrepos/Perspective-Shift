@@ -59,7 +59,7 @@ namespace PerspectiveShift
 
             DrawPawnList(mainRect);
 
-            DoBottomButtons(rect, "Next".Translate(), null, null, showNext: true, doNextOnKeypress: false);
+            DoBottomButtons(rect, "Start".Translate(), null, null, showNext: true, doNextOnKeypress: false);
         }
 
         private void DrawPawnList(Rect rect)

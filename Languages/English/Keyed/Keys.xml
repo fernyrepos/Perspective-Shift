@@ -43,6 +43,7 @@
     <PS_ChooseYourStartingCharacter>Choose your starting character</PS_ChooseYourStartingCharacter>
     <PS_MustSelectCharacter>You must select a character before continuing.</PS_MustSelectCharacter>
     <PS_You>(you)</PS_You>
+    <PS_ReturnToCharacter>Return to character</PS_ReturnToCharacter>
     <PS_StatPart_AvatarAimingDelay>Direct control</PS_StatPart_AvatarAimingDelay>
     <PS_StatPart_AvatarShootingAccuracy>Direct control accuracy bonus</PS_StatPart_AvatarShootingAccuracy>
 </LanguageData>

@@ -2,6 +2,7 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using Verse.AI;
+using Verse.AI.Group;
 using Verse.Sound;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,6 +53,7 @@ namespace PerspectiveShift
         public void UpdatePhysics()
         {
             if (pawn == null || pawn.Dead || pawn.Downed) return;
+            if (WorldComponent_GravshipController.CutsceneInProgress) return;
 
             if (pawn.InMentalState)
             {
@@ -129,7 +131,9 @@ namespace PerspectiveShift
             driver.config.sizeRange = sizeRange;
             driver.config.zoomSpeed = PerspectiveShiftMod.settings.zoomSpeed * 10f;
 
-            Vector3 targetCamPos = physicsPosition ?? pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
+            Vector3 targetCamPos = State.CameraLockPosition
+                ?? physicsPosition
+                ?? pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
             var newPos = Vector3.Lerp(driver.rootPos, targetCamPos, 0.1f);
 
             driver.rootPos = newPos;
@@ -218,6 +222,7 @@ namespace PerspectiveShift
         public void RenderPawn()
         {
             if (pawn == null || pawn.Map == null || !pawn.Spawned) return;
+            if (WorldComponent_GravshipController.CutsceneInProgress) return;
 
             LeanSmoothed = Vector3.SmoothDamp(LeanSmoothed, LeanTarget, ref _leanVelocity, 0.07f, 10f, Time.deltaTime);
 
@@ -290,6 +295,12 @@ namespace PerspectiveShift
         {
             if (pawn == null || pawn.Map == null || !pawn.Spawned) return;
             if (interactingDoor != null) return;
+
+            if (!pawn.Drafted && pawn.GetLord() != null)
+            {
+                physicsPosition = null;
+                return;
+            }
 
             if (!IsMoving)
             {
@@ -522,6 +533,19 @@ namespace PerspectiveShift
             if (pawn != null)
             {
                 DebugLog();
+                if (State.CameraLockPosition.HasValue)
+                {
+                    float btnW = 220f;
+                    float panelH = 70f;
+                    float panelY = UI.screenHeight - 150f - panelH;
+                    var panelRect = new Rect(UI.screenWidth / 2f - btnW / 2f - 10f, panelY, btnW + 20f, panelH);
+                    Widgets.DrawWindowBackground(panelRect);
+                    var btnRect = new Rect(panelRect.xMin + 10f, panelRect.yMin + 10f, btnW, 50f);
+                    if (Widgets.ButtonText(btnRect, "PS_ReturnToCharacter".Translate()))
+                    {
+                        State.CameraLockPosition = null;
+                    }
+                }
                 if (!pawn.InMentalState)
                 {
                     DrawPlayerGizmos();
@@ -980,8 +1004,19 @@ namespace PerspectiveShift
                 if (pawn.equipment?.Primary != null)
                 {
                     var dropString = "Drop".Translate(pawn.equipment.Primary.Label, pawn.equipment.Primary);
+                    var removedDrop = opts.Where(opt => opt.Label == dropString).ToList();
+                    if (removedDrop.Any())
+                    {
+                        Log.Message($"[PerspectiveShift] Removing drop options: {string.Join(", ", removedDrop.Select(o => o.Label))}");
+                    }
                     opts.RemoveAll(opt => opt.Label == dropString);
                 }
+                var removedPawnOpts = opts.Where(opt => opt.revalidateClickTarget is Pawn otherPawn && otherPawn != pawn).ToList();
+                if (removedPawnOpts.Any())
+                {
+                    Log.Message($"[PerspectiveShift] Removing other pawn options: {string.Join(", ", removedPawnOpts.Select(o => o.Label))}");
+                }
+                opts.RemoveAll(opt => opt.revalidateClickTarget is Pawn otherPawn && otherPawn != pawn);
             }
 
             var bestOption = opts.Where(opt => !opt.Disabled)
@@ -1061,9 +1096,64 @@ namespace PerspectiveShift
             return false;
         }
 
+        private bool IsTargetInRange(LocalTargetInfo target)
+        {
+            if (!target.IsValid) return true;
+
+            IntVec3 cell = target.Cell;
+
+            if (pawn.Position.DistanceTo(cell) <= PerspectiveShiftMod.settings.grabRange ||
+                cell.AdjacentTo8WayOrInside(pawn.Position))
+                return true;
+
+            Thing thing = target.Thing;
+            if (thing != null)
+            {
+                if (thing.def.hasInteractionCell && thing.InteractionCell == pawn.Position)
+                    return true;
+
+                if (thing.def.building?.watchBuildingStandDistanceRange != null)
+                {
+                    var watchCells = WatchBuildingUtility.CalculateWatchCells(
+                        thing.def, thing.Position, thing.Rotation, pawn.Map);
+                    if (watchCells.Contains(pawn.Position))
+                        return true;
+                }
+
+                if (thing.def.size.x > 1 || thing.def.size.z > 1)
+                {
+                    foreach (var c in thing.OccupiedRect())
+                        if (pawn.Position.DistanceTo(c) <= PerspectiveShiftMod.settings.grabRange)
+                            return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool JobTargetsInRange(Job job)
+        {
+            if (job == null) return true;
+
+            if (job.targetA.IsValid && !IsTargetInRange(job.targetA)) return false;
+            if (job.targetB.IsValid && !IsTargetInRange(job.targetB)) return false;
+            if (job.targetC.IsValid && !IsTargetInRange(job.targetC)) return false;
+
+            if (job.targetQueueA != null)
+                foreach (var t in job.targetQueueA)
+                    if (t.IsValid && !IsTargetInRange(t)) return false;
+
+            if (job.targetQueueB != null)
+                foreach (var t in job.targetQueueB)
+                    if (t.IsValid && !IsTargetInRange(t)) return false;
+
+            return true;
+        }
+
         private bool TryStartForcedJob(Job job)
         {
             if (job == null) return false;
+            if (!JobTargetsInRange(job)) return false;
             job.playerForced = true;
             return pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
         }
@@ -1296,7 +1386,7 @@ namespace PerspectiveShift
 
         public void Tick()
         {
-            if (pawn == null || pawn.Dead || pawn.Downed) return;
+            if (pawn == null || pawn.Dead || pawn.Downed || pawn.GetLord() != null || pawn.mindState.duty != null) return;
             HandleDoorInteraction();
             HandleCombatStance();
 
