@@ -13,6 +13,7 @@ namespace PerspectiveShift
     [HotSwappable]
     public class Avatar : IExposable
     {
+        public static bool IsAvatarLeftClick = false;
         public Pawn pawn;
         public Vector3 moveInput;
         public bool isSprinting;
@@ -54,6 +55,7 @@ namespace PerspectiveShift
         {
             if (pawn == null || pawn.Dead || pawn.Downed) return;
             if (WorldComponent_GravshipController.CutsceneInProgress) return;
+            if (State.CameraLockPosition.HasValue) return;
 
             if (pawn.InMentalState)
             {
@@ -156,6 +158,7 @@ namespace PerspectiveShift
             if (pawn.InMentalState) return false;
 
             if (Find.TickManager.Paused) return false;
+            if (State.CameraLockPosition.HasValue) return false;
 
             if (IsMouseOverUI() || IsMouseOverColonistBar()) return false;
 
@@ -998,23 +1001,15 @@ namespace PerspectiveShift
                 }
             }
 
+            IsAvatarLeftClick = true;
             var opts = FloatMenuMakerMap.GetOptions(new List<Pawn> { pawn }, clickCell.ToVector3Shifted(), out _);
+            IsAvatarLeftClick = false;
             if (opts != null)
             {
                 if (pawn.equipment?.Primary != null)
                 {
                     var dropString = "Drop".Translate(pawn.equipment.Primary.Label, pawn.equipment.Primary);
-                    var removedDrop = opts.Where(opt => opt.Label == dropString).ToList();
-                    if (removedDrop.Any())
-                    {
-                        Log.Message($"[PerspectiveShift] Removing drop options: {string.Join(", ", removedDrop.Select(o => o.Label))}");
-                    }
                     opts.RemoveAll(opt => opt.Label == dropString);
-                }
-                var removedPawnOpts = opts.Where(opt => opt.revalidateClickTarget is Pawn otherPawn && otherPawn != pawn).ToList();
-                if (removedPawnOpts.Any())
-                {
-                    Log.Message($"[PerspectiveShift] Removing other pawn options: {string.Join(", ", removedPawnOpts.Select(o => o.Label))}");
                 }
                 opts.RemoveAll(opt => opt.revalidateClickTarget is Pawn otherPawn && otherPawn != pawn);
             }
@@ -1050,7 +1045,7 @@ namespace PerspectiveShift
                         {
                             if (scanner.HasJobOnThing(pawn, target, forced: true))
                             {
-                                Job job = scanner.JobOnThing(pawn, target, forced: true);
+                                var job = scanner.JobOnThing(pawn, target, forced: true);
                                 if (job != null)
                                 {
                                     if (job.def == JobDefOf.HaulToContainer && pawn.carryTracker?.CarriedThing == null) continue;
@@ -1191,7 +1186,7 @@ namespace PerspectiveShift
                     var comp = refuelableThing.TryGetComp<CompRefuelable>();
                     if (comp.Props.fuelFilter.Allows(CarriedThing) && comp.GetFuelCountToFullyRefuel() > 0)
                     {
-                        int amount = Mathf.Min(CarriedThing.stackCount, comp.GetFuelCountToFullyRefuel());
+                        var amount = Mathf.Min(CarriedThing.stackCount, comp.GetFuelCountToFullyRefuel());
                         comp.Refuel(amount);
                         CarriedThing.SplitOff(amount).Destroy();
                         if (refuelableThing.def.soundInteract != null) refuelableThing.def.soundInteract.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
@@ -1206,7 +1201,7 @@ namespace PerspectiveShift
                     {
                         if (frameThing is Frame frame)
                         {
-                            int needed = frame.ThingCountNeeded(CarriedThing.def);
+                            var needed = frame.ThingCountNeeded(CarriedThing.def);
                             if (needed > 0)
                             {
                                 pawn.carryTracker.innerContainer.TryTransferToContainer(CarriedThing, frame.resourceContainer, Mathf.Min(CarriedThing.stackCount, needed));
@@ -1219,7 +1214,7 @@ namespace PerspectiveShift
                 var frame2 = cellThings.OfType<Frame>().FirstOrDefault();
                 if (frame2 != null)
                 {
-                    int needed = frame2.ThingCountNeeded(CarriedThing.def);
+                    var needed = frame2.ThingCountNeeded(CarriedThing.def);
                     if (needed > 0)
                     {
                         pawn.carryTracker.innerContainer.TryTransferToContainer(CarriedThing, frame2.resourceContainer, Mathf.Min(CarriedThing.stackCount, needed));

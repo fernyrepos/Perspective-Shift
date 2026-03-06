@@ -1,6 +1,7 @@
 using HarmonyLib;
 using Verse;
 using Verse.AI;
+using Verse.AI.Group;
 
 namespace PerspectiveShift
 {
@@ -16,6 +17,7 @@ namespace PerspectiveShift
             {
                 return true;
             }
+            if (pawn.GetLord() != null || pawn.mindState.duty != null) return true;
             if (curJob.playerForced)
             {
                 return false;

@@ -35,6 +35,7 @@ namespace PerspectiveShift
 
             Message($"PerspectiveState.SetAvatar - Setting avatar to {pawn.Name}, Mode: {CurrentMode}");
             Avatar = new Avatar(pawn);
+            CameraLockPosition = null;
 
             if (showMessage)
                 Messages.Message("PS_ControlTaken".Translate(pawn.LabelShort), pawn, MessageTypeDefOf.NeutralEvent);
