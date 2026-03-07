@@ -26,4 +26,14 @@
             </modExtensions>
         </value>
     </Operation>
+
+    <Operation Class="PatchOperationAdd">
+        <xpath>/Defs/JobDef[defName="HarvestDesignated"]</xpath>
+        <value>
+            <modExtensions>
+                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
+            </modExtensions>
+        </value>
+    </Operation>
+
 </Patch>

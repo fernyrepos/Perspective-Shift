@@ -11,7 +11,7 @@
                         <clipPath>PS_PackInventory</clipPath>
                     </li>
                 </grains>
-                <volumeRange>20~20</volumeRange>
+                <volumeRange>150~150</volumeRange>
             </li>
         </subSounds>
     </SoundDef>
