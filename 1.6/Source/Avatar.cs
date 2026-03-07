@@ -1275,6 +1275,12 @@ namespace PerspectiveShift
 
         private void ExecutePickup(Thing target)
         {
+            if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, target, target.stackCount))
+            {
+                int maxCount = MassUtility.CountToPickUpUntilOverEncumbered(pawn, target);
+                if (maxCount <= 0) return;
+                target = target.SplitOff(maxCount);
+            }
             var reservers = new HashSet<Pawn>();
             target.Map.reservationManager.ReserversOf(target, reservers);
             foreach (var r in reservers.ToList())
@@ -1385,7 +1391,7 @@ namespace PerspectiveShift
 
                 if (!isPossible)
                 {
-                    Messages.Message("PS_StorageImpossible".Translate(itemToDrop.LabelCap), MessageTypeDefOf.RejectInput, false);
+                    Messages.Message("PS_StorageImpossible".Translate(itemToDrop.LabelCap), MessageTypeDefOf.CautionInput, false);
                     IntVec3 dropCell = cell;
                     foreach (var adj in GenAdj.AdjacentCells)
                     {

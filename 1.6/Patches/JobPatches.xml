@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+    <Operation Class="PatchOperationAdd">
+        <xpath>/Defs/JobDef[defName="Mine"]</xpath>
+        <value>
+            <modExtensions>
+                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
+            </modExtensions>
+        </value>
+    </Operation>
+
+    <Operation Class="PatchOperationAdd">
+        <xpath>/Defs/JobDef[defName="Harvest"]</xpath>
+        <value>
+            <modExtensions>
+                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
+            </modExtensions>
+        </value>
+    </Operation>
+
+    <Operation Class="PatchOperationAdd">
+        <xpath>/Defs/JobDef[defName="FinishFrame"]</xpath>
+        <value>
+            <modExtensions>
+                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
+            </modExtensions>
+        </value>
+    </Operation>
+</Patch>

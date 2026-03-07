@@ -2,10 +2,10 @@
 <Defs>
     <SoundDef>
         <defName>PS_PackInventory</defName>
-        <context>MapOnly</context>
         <maxSimultaneous>1</maxSimultaneous>
         <subSounds>
             <li>
+                <onCamera>True</onCamera>
                 <grains>
                     <li Class="AudioGrain_Clip">
                         <clipPath>PS_PackInventory</clipPath>

@@ -107,6 +107,7 @@ namespace PerspectiveShift
 
             if (!pawnReady)
             {
+                Cursor.visible = true;
                 var container = TryGetSpawnedContainer(Avatar.pawn);
                 if (container != null)
                 {
