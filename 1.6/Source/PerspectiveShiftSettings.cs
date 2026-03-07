@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Verse;
 
 namespace PerspectiveShift
@@ -23,6 +24,8 @@ namespace PerspectiveShift
         public GizmoCorner gizmoCorner = GizmoCorner.TopRight;
         public bool totalFreedom = false;
         public bool allowNonHuman = false;
+        public bool requirePawnInFaction = true;
+        public List<string> pinnedNeeds = new List<string>() { "Mood", "Food", "Rest" };
 
         public override void ExposeData()
         {
@@ -36,6 +39,13 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref gizmoCorner, "gizmoCorner", GizmoCorner.TopRight);
             Scribe_Values.Look(ref totalFreedom, "totalFreedom", false);
             Scribe_Values.Look(ref allowNonHuman, "allowNonHuman", false);
+            Scribe_Values.Look(ref requirePawnInFaction, "requirePawnInFaction", true);
+            Scribe_Collections.Look(ref pinnedNeeds, "pinnedNeeds", LookMode.Value);
+
+            if (pinnedNeeds == null)
+            {
+                pinnedNeeds = new List<string>() { "Mood", "Food", "Rest" };
+            }
         }
     }
 }

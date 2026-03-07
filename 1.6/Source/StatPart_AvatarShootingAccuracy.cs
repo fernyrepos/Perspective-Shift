@@ -9,7 +9,10 @@ namespace PerspectiveShift
         {
             if (req.HasThing && req.Thing is Pawn pawn && pawn.IsAvatar())
             {
-                val *= PerspectiveShiftMod.settings.shootAccuracyMultiplier;
+                if (PerspectiveShiftMod.settings.shootAccuracyMultiplier >= 100f)
+                    val = 9999f;
+                else
+                    val *= PerspectiveShiftMod.settings.shootAccuracyMultiplier;
             }
         }
 

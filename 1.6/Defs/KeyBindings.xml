@@ -47,4 +47,11 @@
         <category>PS_Controls</category>
         <defaultKeyCodeA>LeftControl</defaultKeyCodeA>
     </KeyBindingDef>
+
+    <KeyBindingDef>
+        <defName>PS_OpenGearTab</defName>
+        <label>Open Gear Tab</label>
+        <category>PS_Controls</category>
+        <defaultKeyCodeA>E</defaultKeyCodeA>
+    </KeyBindingDef>
 </Defs>

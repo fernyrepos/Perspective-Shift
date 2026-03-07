@@ -19,6 +19,7 @@ namespace PerspectiveShift
         public bool isSprinting;
         public bool isWalking;
         public bool IsMoving => moveInput.sqrMagnitude > 0.01f;
+        public static bool DrawingAvatarNeeds = false;
         public Vector3? physicsPosition;
         public Vector3 LeanTarget = Vector3.zero;
         public Vector3 LeanSmoothed = Vector3.zero;
@@ -194,6 +195,11 @@ namespace PerspectiveShift
 
                 if (pawn.Drafted)
                 {
+                    bool otherPawnsSelected = Find.Selector.SelectedObjects
+                        .Any(o => o is Pawn p && p != pawn);
+                    if (otherPawnsSelected)
+                        return false;
+
                     if (pawn.jobs?.curJob != null && pawn.jobs.curJob.def.playerInterruptible)
                         pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
 
@@ -395,6 +401,13 @@ namespace PerspectiveShift
             }
 
             var nextCell = newPos.ToIntVec3();
+
+            if (nextCell.InBounds(pawn.Map) && nextCell.OnEdge(pawn.Map) && pawn.Map.exitMapGrid.IsExitCell(nextCell))
+            {
+                pawn.ExitMap(true, pawn.Rotation);
+                return;
+            }
+
             var door = nextCell.GetDoor(pawn.Map);
             if (door != null && !door.Open && door.PawnCanOpen(pawn))
             {
@@ -557,9 +570,37 @@ namespace PerspectiveShift
                 bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(Event.current.mousePosition);
                 bool mouseOverUI = IsMouseOverUI() || IsMouseOverColonistBar();
 
+                if (DefsOf.PS_OpenGearTab.KeyDownEvent)
+                {
+                    if (Find.Selector.SingleSelectedThing != pawn)
+                    {
+                        Find.Selector.ClearSelection();
+                        Find.Selector.Select(pawn);
+                    }
+                    if (Find.MainTabsRoot.OpenTab != MainButtonDefOf.Inspect)
+                    {
+                        Find.MainTabsRoot.SetCurrentTab(MainButtonDefOf.Inspect);
+                    }
+
+                    var inspectPane = (MainTabWindow_Inspect)MainButtonDefOf.Inspect.TabWindow;
+                    if (inspectPane != null)
+                    {
+                        var gearTab = inspectPane.CurTabs.FirstOrDefault(t => t is ITab_Pawn_Gear);
+                        if (gearTab != null)
+                        {
+                            if (inspectPane.OpenTabType == gearTab.GetType())
+                                inspectPane.CloseOpenTab();
+                            else
+                                inspectPane.OpenTabType = gearTab.GetType();
+                        }
+                    }
+                    Event.current.Use();
+                }
+
                 if (pawn.Drafted && !pawn.InMentalState)
                 {
-                    if (!Find.TickManager.Paused && Find.Selector.NumSelected > 0) Find.Selector.ClearSelection();
+                    if (!Find.TickManager.Paused && Find.Selector.NumSelected > 0 && !Find.Selector.SelectedObjects.Any(o => o is Thing t && t != pawn))
+                        Find.Selector.ClearSelection();
 
                     if (!Find.TickManager.Paused && !State.ControlsFrozen && !(pawn.stances.curStance is Stance_Busy))
                     {
@@ -572,7 +613,7 @@ namespace PerspectiveShift
                         }
                     }
 
-                    if (mouseOverUI || mouseOverGizmo || Find.TickManager.Paused)
+                    if (mouseOverUI || mouseOverGizmo || Find.TickManager.Paused || State.ControlsFrozen)
                     {
                         Cursor.visible = true;
                     }
@@ -859,11 +900,15 @@ namespace PerspectiveShift
             float boundsMinY = UI.screenHeight;
             float boundsMaxY = 0f;
 
+            bool suppressHotkeys = Find.Selector.NumSelected > 0 && !Find.Selector.IsSelected(pawn);
+
             Matrix4x4 prevMatrix = GUI.matrix;
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1f));
 
             foreach (var cmd in gizmos)
             {
+                KeyBindingDef tempHotkey = cmd.hotKey;
+                if (suppressHotkeys) cmd.hotKey = null;
                 float screenX = x * scale;
                 float screenY = y * scale;
                 float screenW = actualSize * scale;
@@ -877,6 +922,9 @@ namespace PerspectiveShift
                 GizmoRenderParms parms = default;
                 parms.isFirst = isFirst;
                 GizmoResult result = cmd.GizmoOnGUI(new Vector2(x, y), actualSize, parms);
+
+                if (suppressHotkeys) cmd.hotKey = tempHotkey;
+
                 GenUI.AbsorbClicksInRect(new Rect(x, y, actualSize, actualSize));
 
                 if (result.State == GizmoState.Interacted ||
@@ -1343,7 +1391,9 @@ namespace PerspectiveShift
         {
             if (pawn?.needs == null || gizmoBounds == Rect.zero) return;
 
-            var needs = pawn.needs.AllNeeds.Where(n => n.ShowOnNeedList && (n.def.major || n is Need_Mood)).ToList();
+            var needs = pawn.needs.AllNeeds
+                .Where(n => PerspectiveShiftMod.settings.pinnedNeeds.Contains(n.def.defName))
+                .ToList();
             if (!needs.Any()) return;
 
             float width = 200f;
@@ -1370,6 +1420,7 @@ namespace PerspectiveShift
             var unifiedBg = new Rect(startX - 10f, startY - 5f, width + 20f, totalHeight + 10f);
             Widgets.DrawBoxSolid(unifiedBg, new ColorInt(32, 32, 32).ToColor.WithAlpha(0.7f));
 
+            DrawingAvatarNeeds = true;
             float currentY = startY;
             foreach (var need in needs)
             {
@@ -1377,6 +1428,7 @@ namespace PerspectiveShift
                 need.DrawOnGUI(needRect, maxThresholdMarkers: int.MaxValue, customMargin: 4f, drawArrows: true, doTooltip: true, rectForTooltip: null, drawLabel: true);
                 currentY += height;
             }
+            DrawingAvatarNeeds = false;
         }
 
         public void Tick()

@@ -13,6 +13,7 @@ namespace PerspectiveShift
         public static bool DrawingTopRightGizmos = false;
         private static CameraMapConfig _savedConfig;
         public static Vector3? CameraLockPosition;
+        
         public static bool IsActive => Avatar != null && Avatar.pawn != null && !Avatar.pawn.Dead
             && !WorldComponent_GravshipController.CutsceneInProgress;
         public static Avatar Current => Avatar;

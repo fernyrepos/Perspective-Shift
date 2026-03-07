@@ -1,4 +1,5 @@
 using HarmonyLib;
+using RimWorld;
 using System.Collections.Generic;
 using UnityEngine;
 using Verse;
@@ -24,6 +25,7 @@ namespace PerspectiveShift
             }
 
             if (!__instance.IsColonist && !PerspectiveShiftMod.settings.allowNonHuman) yield break;
+            if (!PerspectiveShiftMod.settings.totalFreedom && PerspectiveShiftMod.settings.requirePawnInFaction && __instance.Faction != Faction.OfPlayer) yield break;
 
             if (!PerspectiveShiftMod.settings.totalFreedom)
             {
