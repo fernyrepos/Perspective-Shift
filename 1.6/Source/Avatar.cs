@@ -6,6 +6,7 @@ using Verse.AI.Group;
 using Verse.Sound;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace PerspectiveShift
 {
@@ -1005,6 +1006,25 @@ namespace PerspectiveShift
 
         private bool HandleLeftClick()
         {
+            IsAvatarLeftClick = true;
+            bool result = false;
+            try
+            {
+                result = HandleLeftClickInt();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("[PerspectiveShift] Error in HandleLeftClick: " + ex);
+            }
+            finally
+            {
+                IsAvatarLeftClick = false;
+            }
+            return result;
+        }
+
+        private bool HandleLeftClickInt()
+        {
             if (pawn.Map == null || !pawn.Spawned) return false;
             var clickCell = UI.MouseCell();
             bool itemInRange = pawn.Position.DistanceTo(clickCell) <= PerspectiveShiftMod.settings.grabRange;
@@ -1071,8 +1091,6 @@ namespace PerspectiveShift
             }
 
             List<FloatMenuOption> opts = null;
-
-            IsAvatarLeftClick = true;
             try
             {
                 var building = clickCell.GetFirstBuilding(pawn.Map);
@@ -1089,7 +1107,6 @@ namespace PerspectiveShift
             }
             finally
             {
-                IsAvatarLeftClick = false;
             }
             if (opts != null)
             {
@@ -1472,7 +1489,7 @@ namespace PerspectiveShift
                     return false;
                 }
             }
-            
+
             if (dest.Accepts(item))
             {
                 return pawn.carryTracker.TryDropCarriedThing(cell, placeMode, out _);
