@@ -12,6 +12,7 @@ namespace PerspectiveShift
         {
             Pawn pawn = __instance.pawn;
             if (!pawn.IsAvatar()) return true;
+            if (pawn.InMentalState) return true;
             Job curJob = __instance.curJob;
             if (curJob == null)
             {

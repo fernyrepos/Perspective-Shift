@@ -1,0 +1,21 @@
+using HarmonyLib;
+using RimWorld;
+using Verse;
+
+namespace PerspectiveShift
+{
+    [HarmonyPatch(typeof(StoreUtility), nameof(StoreUtility.TryFindBestBetterStoreCellForIn))]
+    public static class StoreUtility_TryFindBestBetterStoreCellForIn_Patch
+    {
+        public static bool Prefix(Pawn carrier, ref IntVec3 foundCell, ref bool __result)
+        {
+            if (carrier != null && carrier.IsAvatar() && !carrier.InMentalState && !Avatar.IsAvatarLeftClick)
+            {
+                foundCell = IntVec3.Invalid;
+                __result = false;
+                return false;
+            }
+            return true;
+        }
+    }
+}

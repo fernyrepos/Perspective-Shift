@@ -139,14 +139,18 @@ namespace PerspectiveShift
             Avatar.OnGUI();
         }
 
-        private static Thing TryGetSpawnedContainer(Pawn pawn)
+        public static Thing TryGetSpawnedContainer(Pawn pawn)
         {
             if (pawn == null) return null;
             IThingHolder holder = pawn.ParentHolder;
             while (holder != null)
             {
-                if (holder is Thing t && t.Spawned && t.Map == Find.CurrentMap)
+                if (holder is Thing t && t.Spawned)
                     return t;
+                
+                if (holder is ThingComp comp && comp.parent != null && comp.parent.Spawned)
+                    return comp.parent;
+
                 holder = holder.ParentHolder;
             }
             return null;

@@ -54,7 +54,7 @@ namespace PerspectiveShift
 
         public void UpdatePhysics()
         {
-            if (pawn == null || pawn.Dead || pawn.Downed) return;
+            if (pawn == null || pawn.Dead || pawn.Downed || !pawn.Spawned || pawn.Map == null) return;
             if (WorldComponent_GravshipController.CutsceneInProgress) return;
             if (State.CameraLockPosition.HasValue) return;
 
@@ -125,7 +125,7 @@ namespace PerspectiveShift
 
         public void UpdateCamera()
         {
-            if (pawn == null || pawn.Map != Find.CurrentMap) return;
+            if (pawn == null) return;
 
             var driver = Find.CameraDriver;
             if (driver == null) return;
@@ -134,9 +134,22 @@ namespace PerspectiveShift
             driver.config.sizeRange = sizeRange;
             driver.config.zoomSpeed = PerspectiveShiftMod.settings.zoomSpeed * 10f;
 
-            Vector3 targetCamPos = State.CameraLockPosition
-                ?? physicsPosition
-                ?? pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
+            Vector3 targetCamPos = Vector3.zero;
+            if (pawn.Map == Find.CurrentMap && pawn.Spawned)
+            {
+                targetCamPos = State.CameraLockPosition
+                    ?? physicsPosition
+                    ?? pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
+            }
+            else
+            {
+                var container = State.TryGetSpawnedContainer(pawn);
+                if (container != null && container.Map == Find.CurrentMap)
+                    targetCamPos = container.DrawPos;
+                else
+                    return;
+            }
+
             var newPos = Vector3.Lerp(driver.rootPos, targetCamPos, 0.1f);
 
             driver.rootPos = newPos;
@@ -816,6 +829,8 @@ namespace PerspectiveShift
 
         private void HandleFiring()
         {
+            if (pawn.stances.curStance is Stance_Busy) return;
+
             Verb verb = pawn.equipment?.PrimaryEq?.PrimaryVerb;
             if (verb == null || verb.verbProps.IsMeleeAttack)
                 verb = pawn.VerbTracker?.AllVerbs?.FirstOrDefault(v => v is Verb_MeleeAttack && v.Available());
@@ -987,7 +1002,7 @@ namespace PerspectiveShift
         private bool HandleLeftClick()
         {
             var clickCell = UI.MouseCell();
-            bool itemInRange = pawn.Position.DistanceTo(clickCell) <= PerspectiveShiftMod.settings.grabRange || clickCell.AdjacentTo8WayOrInside(pawn.Position);
+            bool itemInRange = pawn.Position.DistanceTo(clickCell) <= PerspectiveShiftMod.settings.grabRange;
             bool inRange = itemInRange;
 
             if (!inRange)
@@ -1229,11 +1244,18 @@ namespace PerspectiveShift
 
         private void ExecutePickup(Thing target)
         {
-            var reserver = target.Map.reservationManager.FirstRespectedReserver(target, pawn);
-            if (reserver != null && reserver != pawn)
+            var reservers = new HashSet<Pawn>();
+            target.Map.reservationManager.ReserversOf(target, reservers);
+            foreach (var r in reservers.ToList())
             {
-                target.Map.reservationManager.ReleaseAllForTarget(target);
+                if (r != pawn && r.jobs != null)
+                {
+                    r.jobs.EndCurrentJob(JobCondition.InterruptForced);
+                }
             }
+
+            target.Map.reservationManager.ReleaseAllForTarget(target);
+            target.Map.physicalInteractionReservationManager.ReleaseAllForTarget(target);
 
             var pickedUpCount = pawn.carryTracker.TryStartCarry(target, target.stackCount, reserve: true);
 
@@ -1326,7 +1348,47 @@ namespace PerspectiveShift
             var slotGroup = pawn.Map.haulDestinationManager.SlotGroupAt(cell);
             if (slotGroup != null)
             {
-                if (slotGroup.Settings.AllowedToAccept(CarriedThing))
+                Thing itemToDrop = CarriedThing;
+                var parentSettings = slotGroup.parent.GetParentStoreSettings();
+                bool isPossible = parentSettings == null || parentSettings.AllowedToAccept(itemToDrop);
+
+                if (!isPossible)
+                {
+                    Messages.Message("PS_StorageImpossible".Translate(itemToDrop.LabelCap), MessageTypeDefOf.RejectInput, false);
+                    IntVec3 dropCell = cell;
+                    foreach (var adj in GenAdj.AdjacentCells)
+                    {
+                        var c = cell + adj;
+                        if (c.InBounds(pawn.Map) && c.Walkable(pawn.Map) && pawn.Map.haulDestinationManager.SlotGroupAt(c) == null)
+                        {
+                            dropCell = c;
+                            break;
+                        }
+                    }
+                    if (dropCell == cell) dropCell = pawn.Position;
+                    pawn.carryTracker.TryDropCarriedThing(dropCell, ThingPlaceMode.Near, out _);
+                    return true;
+                }
+                else if (!slotGroup.Settings.AllowedToAccept(itemToDrop))
+                {
+                    string text = "PS_StorageNotPermitted".Translate(itemToDrop.Label, slotGroup.parent.SlotYielderLabel());
+                    Find.WindowStack.Add(new Dialog_MessageBox(text, "Yes".Translate(), () =>
+                    {
+                        if (itemToDrop != null && !itemToDrop.Destroyed)
+                        {
+                            slotGroup.Settings.filter.SetAllow(itemToDrop.def, true);
+                            pawn.carryTracker.TryDropCarriedThing(cell, placeMode, out _);
+                        }
+                    }, "No".Translate(), () =>
+                    {
+                        if (itemToDrop != null && !itemToDrop.Destroyed)
+                        {
+                            pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out _);
+                        }
+                    }));
+                    return true;
+                }
+                else
                 {
                     if (pawn.carryTracker.TryDropCarriedThing(cell, placeMode, out var _))
                     {
@@ -1453,7 +1515,21 @@ namespace PerspectiveShift
 
         public void Tick()
         {
-            if (pawn == null || pawn.Dead || pawn.Downed || pawn.GetLord() != null || pawn.mindState.duty != null) return;
+            if (pawn == null || pawn.Dead || pawn.Downed || !pawn.Spawned || pawn.Map == null || pawn.GetLord() != null || pawn.mindState.duty != null) return;
+            if (pawn.InMentalState) return;
+
+            if (pawn.carryTracker?.CarriedThing != null && pawn.CurJob != null)
+            {
+                if (!pawn.Map.reservationManager.ReservedBy(pawn.carryTracker.CarriedThing, pawn, pawn.CurJob))
+                {
+                    pawn.Map.reservationManager.Reserve(pawn, pawn.CurJob, pawn.carryTracker.CarriedThing);
+                }
+                if (!pawn.Map.physicalInteractionReservationManager.IsReservedBy(pawn, pawn.carryTracker.CarriedThing))
+                {
+                    pawn.Map.physicalInteractionReservationManager.Reserve(pawn, pawn.CurJob, pawn.carryTracker.CarriedThing);
+                }
+            }
+
             HandleDoorInteraction();
             HandleCombatStance();
 

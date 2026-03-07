@@ -13,6 +13,7 @@ namespace PerspectiveShift
 		public static void Postfix(Pawn pawn, ref Job __result)
 		{
 			if (__result != null || !pawn.IsAvatar()) return;
+			if (pawn.InMentalState) return;
 
 			if (pawn.mindState?.duty != null) return;
 			if (pawn.GetLord() != null) return;

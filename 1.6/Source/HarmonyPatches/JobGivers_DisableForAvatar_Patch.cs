@@ -19,7 +19,7 @@ namespace PerspectiveShift
 
         public static bool Prefix(Pawn pawn, ref Job __result)
         {
-            if (pawn.IsAvatar())
+            if (pawn.IsAvatar() && !pawn.InMentalState)
             {
                 __result = null;
                 return false;
