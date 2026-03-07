@@ -57,7 +57,6 @@ namespace PerspectiveShift
         {
             if (pawn == null || pawn.Dead || pawn.Downed || !pawn.Spawned || pawn.Map == null) return;
             if (WorldComponent_GravshipController.CutsceneInProgress) return;
-            if (State.CameraLockPosition.HasValue) return;
 
             if (pawn.InMentalState)
             {
@@ -83,18 +82,14 @@ namespace PerspectiveShift
             var canRunAndGun = ModCompatibility.IsRunAndGunActiveFor(pawn);
             bool isShootingStationary = inCombatStance && !canRunAndGun;
 
-            if (State.ControlsFrozen || isShootingStationary)
+            if (State.ControlsFrozen || isShootingStationary || State.CameraLockPosition.HasValue)
             {
                 moveInput = Vector3.zero;
-                if (wasMovingLastFrame)
-                {
-                    if (pawn.pather.curPath != null) pawn.pather.StopDead();
-                    wasMovingLastFrame = false;
-                }
-                return;
             }
-
-            UpdateInput();
+            else
+            {
+                UpdateInput();
+            }
 
             if (!pawn.Awake() && (IsMoving || moveInputDuration > 0f))
             {
@@ -374,7 +369,8 @@ namespace PerspectiveShift
 
             if (pawn.jobs?.curJob != null && pawn.jobs.curJob.def.playerInterruptible)
             {
-                bool isOurWaitJob = pawn.jobs.curJob.def == JobDefOf.Wait && pawn.jobs.curJob.expiryInterval == 60;
+                bool isOurWaitJob = (pawn.jobs.curJob.def == JobDefOf.Wait && pawn.jobs.curJob.expiryInterval == 60)
+                                    || pawn.jobs.curJob.def == JobDefOf.Wait_Combat;
                 if (!isOurWaitJob && moveInputDuration > 0.35f)
                 {
                     if (!(canRunAndGun && isShooting && pawn.Drafted))
@@ -1173,6 +1169,16 @@ namespace PerspectiveShift
             if (target == null || target.Destroyed)
             {
                 return false;
+            }
+
+            if (target is Building b)
+            {
+                var blueprint = b.Position.GetThingList(pawn.Map).OfType<Blueprint>().FirstOrDefault();
+                if (blueprint != null && GenConstruct.BlocksConstruction(blueprint, b) && b.DeconstructibleBy(pawn.Faction).Accepted)
+                {
+                    if (TryStartForcedJob(JobMaker.MakeJob(JobDefOf.Deconstruct, b)))
+                        return true;
+                }
             }
 
             if (pawn.workSettings != null)

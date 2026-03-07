@@ -13,7 +13,7 @@ namespace PerspectiveShift
         public static bool DrawingTopRightGizmos = false;
         private static CameraMapConfig _savedConfig;
         public static Vector3? CameraLockPosition;
-        
+
         public static bool IsActive => Avatar != null && Avatar.pawn != null && !Avatar.pawn.Dead
             && !WorldComponent_GravshipController.CutsceneInProgress;
         public static Avatar Current => Avatar;
@@ -34,6 +34,11 @@ namespace PerspectiveShift
         {
             if (pawn == null) return;
 
+            if (Avatar?.pawn != null && Avatar.pawn != pawn)
+            {
+                CleanupPawnState(Avatar.pawn);
+            }
+
             Message($"PerspectiveState.SetAvatar - Setting avatar to {pawn.Name}, Mode: {CurrentMode}");
             Avatar = new Avatar(pawn);
             CameraLockPosition = null;
@@ -45,6 +50,12 @@ namespace PerspectiveShift
         public static void ClearAvatar()
         {
             Message($"PerspectiveState.ClearAvatar - Clearing avatar");
+
+            if (Avatar?.pawn != null)
+            {
+                CleanupPawnState(Avatar.pawn);
+            }
+
             if (_savedConfig != null && Find.CameraDriver != null)
             {
                 Find.CameraDriver.config = _savedConfig;
@@ -53,6 +64,15 @@ namespace PerspectiveShift
             CameraLockPosition = null;
             Avatar = null;
             Cursor.visible = true;
+        }
+
+        private static void CleanupPawnState(Pawn pawn)
+        {
+            if (pawn == null || pawn.drafter == null) return;
+            if (pawn.Drafted)
+            {
+                pawn.drafter.Drafted = false;
+            }
         }
 
         public static void RevokeControl(Pawn pawn)
@@ -148,7 +168,7 @@ namespace PerspectiveShift
             {
                 if (holder is Thing t && t.Spawned)
                     return t;
-                
+
                 if (holder is ThingComp comp && comp.parent != null && comp.parent.Spawned)
                     return comp.parent;
 

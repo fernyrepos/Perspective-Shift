@@ -16,6 +16,26 @@ namespace PerspectiveShift
                 yield break;
             }
 
+            if (__instance.IsAvatar())
+            {
+                if (__instance.drafter == null)
+                    __instance.drafter = new Pawn_DraftController(__instance);
+
+                if (__instance.equipment == null) __instance.equipment = new Pawn_EquipmentTracker(__instance);
+                if (__instance.story == null) __instance.story = new Pawn_StoryTracker(__instance);
+                if (__instance.skills == null) __instance.skills = new Pawn_SkillTracker(__instance);
+                if (__instance.playerSettings == null) __instance.playerSettings = new Pawn_PlayerSettings(__instance);
+
+                bool nativelyYieldsDraft = __instance.IsColonistPlayerControlled || __instance.IsColonyMech || __instance.IsColonySubhumanPlayerControlled;
+                if (!nativelyYieldsDraft)
+                {
+                    foreach (var g in __instance.drafter.GetGizmos())
+                    {
+                        yield return g;
+                    }
+                }
+            }
+
             foreach (var g in values)
             {
                 if (__instance.IsAvatar() && g is Command_Toggle toggle && toggle.tutorTag == "FireAtWillToggle")
