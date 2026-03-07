@@ -1,5 +1,7 @@
 using HarmonyLib;
+using RimWorld;
 using Verse;
+using Verse.AI;
 
 namespace PerspectiveShift
 {
@@ -15,17 +17,19 @@ namespace PerspectiveShift
                 return true;
             }
 
-            if (State.Avatar?.IsMoving == false)
-            {
-                if (__instance.pawn.Drafted && !__instance.pawn.InMentalState && !State.ControlsFrozen)
-                {
-                    return false;
-                }
+            bool doingJob = __instance.pawn.jobs?.curJob != null && __instance.pawn.jobs.curJob.def != JobDefOf.Wait && __instance.pawn.jobs.curJob.def != JobDefOf.Wait_Combat;
 
-                return true;
+            if (State.Avatar?.IsMoving == true && !doingJob)
+            {
+                return false;
             }
 
-            return false;
+            if (__instance.pawn.Drafted && !__instance.pawn.InMentalState && !State.ControlsFrozen)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

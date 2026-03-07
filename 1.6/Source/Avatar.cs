@@ -389,38 +389,38 @@ namespace PerspectiveShift
             var futureMultiplier = GetMovementSpeedMultiplier(testNewPos.ToIntVec3());
             var terrainMultiplier = Mathf.Min(currentMultiplier, futureMultiplier);
             var baseSpeed = pawn.GetStatValue(StatDefOf.MoveSpeed);
-            float expectedTicks = 60f / Mathf.Max(baseSpeed, 0.1f);
-
-            if (pawn.pather != null)
-            {
-                pawn.pather.nextCellCostTotal = expectedTicks;
-            }
-
-            float tickModifier = expectedTicks / Mathf.Max(pawn.TicksPerMoveCardinal, 1f);
-            float speed = baseSpeed * PerspectiveShiftMod.settings.moveSpeedMultiplier * terrainMultiplier * tickModifier * (isSprinting ? PerspectiveShiftMod.settings.sprintSpeedMultiplier : isWalking ? PerspectiveShiftMod.settings.sneakSpeedMultiplier : 1.0f) * Time.deltaTime * Find.TickManager.TickRateMultiplier;
-            Vector3 delta = deltaRaw * speed;
+            float speed = baseSpeed * PerspectiveShiftMod.settings.moveSpeedMultiplier * terrainMultiplier * (isSprinting ? PerspectiveShiftMod.settings.sprintSpeedMultiplier : isWalking ? PerspectiveShiftMod.settings.sneakSpeedMultiplier : 1.0f) * Time.deltaTime * Find.TickManager.TickRateMultiplier;
+            speed = Mathf.Min(speed, 0.8f);
             Vector3 newPos = physicsPosition.Value;
 
-            bool currentlyWalkable = IsWalkableWithMargin(physicsPosition.Value);
-            Vector3 safePos = pawn.Position.ToVector3Shifted();
-
-            if (Mathf.Abs(delta.x) > 0.0001f)
+            float distanceRemaining = speed;
+            while (distanceRemaining > 0)
             {
-                Vector3 testX = newPos + new Vector3(delta.x, 0, 0);
-                if (IsWalkableWithMargin(testX)) newPos = testX;
-                else if (!currentlyWalkable)
+                float step = Mathf.Min(distanceRemaining, 0.05f);
+                distanceRemaining -= step;
+
+                Vector3 stepDelta = deltaRaw * step;
+                bool currentlyWalkable = IsWalkableWithMargin(newPos);
+                Vector3 safePos = pawn.Position.ToVector3Shifted();
+
+                if (Mathf.Abs(stepDelta.x) > 0.0001f)
                 {
-                    if ((testX - safePos).sqrMagnitude < (newPos - safePos).sqrMagnitude) newPos = testX;
+                    Vector3 testX = newPos + new Vector3(stepDelta.x, 0, 0);
+                    if (IsWalkableWithMargin(testX)) newPos = testX;
+                    else if (!currentlyWalkable)
+                    {
+                        if ((testX - safePos).sqrMagnitude < (newPos - safePos).sqrMagnitude) newPos = testX;
+                    }
                 }
-            }
 
-            if (Mathf.Abs(delta.z) > 0.0001f)
-            {
-                Vector3 testZ = newPos + new Vector3(0, 0, delta.z);
-                if (IsWalkableWithMargin(testZ)) newPos = testZ;
-                else if (!currentlyWalkable)
+                if (Mathf.Abs(stepDelta.z) > 0.0001f)
                 {
-                    if ((testZ - safePos).sqrMagnitude < (newPos - safePos).sqrMagnitude) newPos = testZ;
+                    Vector3 testZ = newPos + new Vector3(0, 0, stepDelta.z);
+                    if (IsWalkableWithMargin(testZ)) newPos = testZ;
+                    else if (!currentlyWalkable)
+                    {
+                        if ((testZ - safePos).sqrMagnitude < (newPos - safePos).sqrMagnitude) newPos = testZ;
+                    }
                 }
             }
 
@@ -462,7 +462,11 @@ namespace PerspectiveShift
                 }
                 else
                 {
-                    UpdateRotation(moveInput.normalized);
+                    bool doingJob = pawn.jobs?.curJob != null && pawn.jobs.curJob.def != JobDefOf.Wait && pawn.jobs.curJob.def != JobDefOf.Wait_Combat;
+                    if (!doingJob)
+                    {
+                        UpdateRotation(moveInput.normalized);
+                    }
                 }
             }
         }
@@ -623,7 +627,7 @@ namespace PerspectiveShift
 
                 if (pawn.Drafted && !pawn.InMentalState)
                 {
-                    if (!Find.TickManager.Paused && Find.Selector.NumSelected > 0 && !Find.Selector.SelectedObjects.Any(o => o is Thing t && t != pawn))
+                    if (!Find.TickManager.Paused && Find.Selector.NumSelected > 0)
                         Find.Selector.ClearSelection();
 
                     if (!Find.TickManager.Paused && !State.ControlsFrozen && !(pawn.stances.curStance is Stance_Busy))
@@ -1278,11 +1282,15 @@ namespace PerspectiveShift
             if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, target, target.stackCount))
             {
                 int maxCount = MassUtility.CountToPickUpUntilOverEncumbered(pawn, target);
-                if (maxCount <= 0) return;
+                if (maxCount <= 0)
+                {
+                    Messages.Message("PS_CannotCarryMoreWeight".Translate(), MessageTypeDefOf.RejectInput, false);
+                    return;
+                }
                 target = target.SplitOff(maxCount);
             }
             var reservers = new HashSet<Pawn>();
-            target.Map.reservationManager.ReserversOf(target, reservers);
+            pawn.Map.reservationManager.ReserversOf(target, reservers);
             foreach (var r in reservers.ToList())
             {
                 if (r != pawn && r.jobs != null)
@@ -1291,8 +1299,8 @@ namespace PerspectiveShift
                 }
             }
 
-            target.Map.reservationManager.ReleaseAllForTarget(target);
-            target.Map.physicalInteractionReservationManager.ReleaseAllForTarget(target);
+            pawn.Map.reservationManager.ReleaseAllForTarget(target);
+            pawn.Map.physicalInteractionReservationManager.ReleaseAllForTarget(target);
 
             var pickedUpCount = pawn.carryTracker.TryStartCarry(target, target.stackCount, reserve: true);
 
@@ -1382,53 +1390,57 @@ namespace PerspectiveShift
 
             if (!itemInRange) return false;
 
-            var slotGroup = pawn.Map.haulDestinationManager.SlotGroupAt(cell);
-            if (slotGroup != null)
+            IHaulDestination haulDest = building as IHaulDestination ?? pawn.Map.haulDestinationManager.SlotGroupAt(cell)?.parent;
+
+            if (haulDest != null)
             {
                 Thing itemToDrop = CarriedThing;
-                var parentSettings = slotGroup.parent.GetParentStoreSettings();
+                var parentSettings = haulDest.GetParentStoreSettings();
                 bool isPossible = parentSettings == null || parentSettings.AllowedToAccept(itemToDrop);
 
-                if (!isPossible)
+                if (!isPossible || (!haulDest.GetStoreSettings().AllowedToAccept(itemToDrop) && !haulDest.GetStoreSettings().filter.Allows(itemToDrop.def)))
                 {
-                    Messages.Message("PS_StorageImpossible".Translate(itemToDrop.LabelCap), MessageTypeDefOf.CautionInput, false);
-                    IntVec3 dropCell = cell;
-                    foreach (var adj in GenAdj.AdjacentCells)
+                    if (!isPossible)
                     {
-                        var c = cell + adj;
-                        if (c.InBounds(pawn.Map) && c.Walkable(pawn.Map) && pawn.Map.haulDestinationManager.SlotGroupAt(c) == null)
-                        {
-                            dropCell = c;
-                            break;
-                        }
+                        Messages.Message("PS_StorageImpossible".Translate(itemToDrop.LabelCap), MessageTypeDefOf.RejectInput, false);
+                        DropAdjacent(itemToDrop, cell);
+                        return true;
                     }
-                    if (dropCell == cell) dropCell = pawn.Position;
-                    pawn.carryTracker.TryDropCarriedThing(dropCell, ThingPlaceMode.Near, out _);
-                    return true;
-                }
-                else if (!slotGroup.Settings.AllowedToAccept(itemToDrop))
-                {
-                    string text = "PS_StorageNotPermitted".Translate(itemToDrop.Label, slotGroup.parent.SlotYielderLabel());
-                    Find.WindowStack.Add(new Dialog_MessageBox(text, "Yes".Translate(), () =>
+                    else
                     {
-                        if (itemToDrop != null && !itemToDrop.Destroyed)
+                        string label = (haulDest as ISlotGroupParent)?.SlotYielderLabel() ?? (haulDest as Thing)?.Label ?? "Storage";
+                        string text = "PS_StorageNotPermitted".Translate(itemToDrop.Label, label);
+                        Find.WindowStack.Add(new Dialog_MessageBox(text, "Yes".Translate(), () =>
                         {
-                            slotGroup.Settings.filter.SetAllow(itemToDrop.def, true);
-                            pawn.carryTracker.TryDropCarriedThing(cell, placeMode, out _);
-                        }
-                    }, "No".Translate(), () =>
-                    {
-                        if (itemToDrop != null && !itemToDrop.Destroyed)
+                            if (itemToDrop != null && !itemToDrop.Destroyed)
+                            {
+                                haulDest.GetStoreSettings().filter.SetAllow(itemToDrop.def, true);
+                                if (!TryDepositInDestination(haulDest, itemToDrop, cell, placeMode))
+                                {
+                                    Messages.Message("PS_StorageImpossible".Translate(itemToDrop.LabelCap), MessageTypeDefOf.RejectInput, false);
+                                    DropAdjacent(itemToDrop, cell);
+                                }
+                            }
+                        }, "No".Translate(), () =>
                         {
-                            pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out _);
-                        }
-                    }));
-                    return true;
+                            if (itemToDrop != null && !itemToDrop.Destroyed)
+                            {
+                                pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out _);
+                            }
+                        }));
+                        return true;
+                    }
                 }
                 else
                 {
-                    if (pawn.carryTracker.TryDropCarriedThing(cell, placeMode, out var _))
+                    if (TryDepositInDestination(haulDest, itemToDrop, cell, placeMode))
                     {
+                        return true;
+                    }
+                    else
+                    {
+                        Messages.Message("PS_StorageImpossible".Translate(itemToDrop.LabelCap), MessageTypeDefOf.RejectInput, false);
+                        DropAdjacent(itemToDrop, cell);
                         return true;
                     }
                 }
@@ -1443,6 +1455,45 @@ namespace PerspectiveShift
             }
 
             return false;
+        }
+
+        private bool TryDepositInDestination(IHaulDestination dest, Thing item, IntVec3 cell, ThingPlaceMode placeMode)
+        {
+            if (dest is Building b)
+            {
+                var thingOwner = b.TryGetInnerInteractableThingOwner();
+                if (thingOwner != null)
+                {
+                    if (dest.Accepts(item))
+                    {
+                        int transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(item, thingOwner, item.stackCount);
+                        if (transferred > 0) return true;
+                    }
+                    return false;
+                }
+            }
+            
+            if (dest.Accepts(item))
+            {
+                return pawn.carryTracker.TryDropCarriedThing(cell, placeMode, out _);
+            }
+            return false;
+        }
+
+        private void DropAdjacent(Thing item, IntVec3 cell)
+        {
+            IntVec3 dropCell = cell;
+            foreach (var adj in GenAdj.AdjacentCells)
+            {
+                var c = cell + adj;
+                if (c.InBounds(pawn.Map) && c.Walkable(pawn.Map) && pawn.Map.haulDestinationManager.SlotGroupAt(c) == null && c.GetFirstBuilding(pawn.Map) == null)
+                {
+                    dropCell = c;
+                    break;
+                }
+            }
+            if (dropCell == cell) dropCell = pawn.Position;
+            pawn.carryTracker.TryDropCarriedThing(dropCell, ThingPlaceMode.Near, out _);
         }
 
         private bool TryDepositIntoBill(IBillGiver billGiver, Building building)

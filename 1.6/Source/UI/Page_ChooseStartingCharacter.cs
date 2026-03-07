@@ -143,7 +143,8 @@ namespace PerspectiveShift
         {
             State.Message($"Page_ChooseStartingCharacter.DoNext called. Trace: {new System.Diagnostics.StackTrace()}");
 
-            if (selectedPawn != null) State.Avatar = new Avatar(selectedPawn);
+            if (State.CurrentMode != PlaystyleMode.Director && selectedPawn != null)
+                State.Avatar = new Avatar(selectedPawn);
             base.DoNext();
         }
 
