@@ -12,30 +12,30 @@
 
     <PS_SelectRole>Select your role</PS_SelectRole>
     <PS_RoleDirector>Director</PS_RoleDirector>
-    <PS_RoleDirectorDesc>Play from an omniscient point of view, managing the characters.</PS_RoleDirectorDesc>
-    <PS_RoleCharacter>Character</PS_RoleCharacter>
-    <PS_RoleCharacterDesc>Play from the point of view of one of your characters.</PS_RoleCharacterDesc>
+    <PS_RoleDirectorDesc>Play from an omniscient point of view, only managing the characters. The classic experience.</PS_RoleDirectorDesc>
+    <PS_RoleCharacter>Characters</PS_RoleCharacter>
+    <PS_RoleCharacterDesc>Play from the point of view of your characters. Leader management playstyle.</PS_RoleCharacterDesc>
 
     <PS_SelectPlaystyle>Select your character playstyle</PS_SelectPlaystyle>
-    <PS_ModeAuthentic>Authentic mode</PS_ModeAuthentic>
-    <PS_ModeAuthenticDesc>You must stick with the character you choose forever. You may never switch to omniscient view, and are always in your character's shoes. Recommended for narrative experiences.</PS_ModeAuthenticDesc>
-    <PS_ModeSwap>Swap mode</PS_ModeSwap>
-    <PS_ModeSwapDesc>You may switch between characters, but must always remain in the perspective of the characters. Recommended for players who like the playstyle but want more control over multiple characters.</PS_ModeSwapDesc>
-    <PS_ModeDynamic>Dynamic mode</PS_ModeDynamic>
-    <PS_ModeDynamicDesc>While your primary form of play will be within your characters, you may swap between director style play or playing as any of your characters at any point.</PS_ModeDynamicDesc>
+    <PS_ModeAuthentic>Authentic style</PS_ModeAuthentic>
+    <PS_ModeAuthenticDesc>You must stick with the character you choose forever. You may never switch to omniscient view, and are always in your character's shoes.\n\nRecommended for narrative experiences.</PS_ModeAuthenticDesc>
+    <PS_ModeSwap>Swap style</PS_ModeSwap>
+    <PS_ModeSwapDesc>You may switch between characters, but must always remain in the perspective of the characters.\n\nRecommended for players who like the playstyle but want more control over multiple characters.</PS_ModeSwapDesc>
+    <PS_ModeDynamic>Dynamic style</PS_ModeDynamic>
+    <PS_ModeDynamicDesc>While your primary form of play will be within your characters, you may swap between director style play or playing as any of your characters at any point.\n\nRecommended for players who want the flexibility of all perspective playstyles.</PS_ModeDynamicDesc>
 
     <PS_ZoomSpeed>Zoom speed: {0}</PS_ZoomSpeed>
     <PS_MinZoom>Minimum zoom: {0}</PS_MinZoom>
     <PS_MaxZoom>Maximum zoom: {0}</PS_MaxZoom>
     <PS_GrabRange>Grab range: {0}</PS_GrabRange>
-    <PS_DisableAimingDelay>Disable aiming time for Avatar</PS_DisableAimingDelay>
-    <PS_DisableAimingDelayDesc>When checked, your controlled character fires weapons instantly without having to wait for the weapon's warmup/aiming cycle. Cooldown between shots still applies.</PS_DisableAimingDelayDesc>
+    <PS_DisableAimingDelay>Disable aiming time for player character</PS_DisableAimingDelay>
+    <PS_DisableAimingDelayDesc>When checked, your controlled character fires weapons instantly without having to wait for the weapon's aiming cycle. Cooldown between shots still applies.</PS_DisableAimingDelayDesc>
     
     <PS_MoveSpeedMultiplier>Move speed multiplier: {0}</PS_MoveSpeedMultiplier>
     <PS_ShootAccuracyMultiplier>Shooting accuracy multiplier: {0}</PS_ShootAccuracyMultiplier>
     <PS_GizmoCorner>Gizmo UI position</PS_GizmoCorner>
-    <PS_TotalFreedom>Total Freedom</PS_TotalFreedom>
-    <PS_TotalFreedomDesc>Always allow character switching regardless of current playstyle settings.</PS_TotalFreedomDesc>
+    <PS_TotalFreedom>Total freedom</PS_TotalFreedom>
+    <PS_TotalFreedomDesc>Always allow character switching regardless of any settings.</PS_TotalFreedomDesc>
     <PS_AllowNonHuman>Allow non-human control</PS_AllowNonHuman>
     <PS_AllowNonHumanDesc>Allows possessing animals, mechanoids, and other non-colonist pawns.</PS_AllowNonHumanDesc>
     <PS_RequirePawnInFaction>Require target to be in faction</PS_RequirePawnInFaction>
