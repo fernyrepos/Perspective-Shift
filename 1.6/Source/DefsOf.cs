@@ -13,6 +13,7 @@ namespace PerspectiveShift
         public static KeyBindingDef PS_Sprint;
         public static KeyBindingDef PS_Walk;
         public static KeyBindingDef PS_OpenGearTab;
+        public static SoundDef PS_PackInventory;
         static DefsOf()
         {
             DefOfHelper.EnsureInitializedInCtor(typeof(DefsOf));

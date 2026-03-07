@@ -187,7 +187,7 @@ namespace PerspectiveShift
                     var transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(carried, pawn.inventory.innerContainer, count);
                     if (transferred > 0)
                     {
-                        SoundDefOf.Tick_High.PlayOneShotOnCamera();
+                        DefsOf.PS_PackInventory.PlayOneShotOnCamera();
                         Event.current.Use();
                         return true;
                     }
@@ -224,8 +224,8 @@ namespace PerspectiveShift
 
             if (moveInput.sqrMagnitude > 1f) moveInput.Normalize();
 
-            isSprinting = DefsOf.PS_Sprint.IsDown;
-            isWalking = DefsOf.PS_Walk.IsDown;
+            isSprinting = PerspectiveShiftMod.settings.enableSprinting && DefsOf.PS_Sprint.IsDown;
+            isWalking = PerspectiveShiftMod.settings.enableSneaking && DefsOf.PS_Walk.IsDown;
         }
 
         public void RenderPawn()
@@ -384,20 +384,31 @@ namespace PerspectiveShift
             }
 
             float tickModifier = expectedTicks / Mathf.Max(pawn.TicksPerMoveCardinal, 1f);
-            float speed = baseSpeed * PerspectiveShiftMod.settings.moveSpeedMultiplier * terrainMultiplier * tickModifier * (isSprinting ? 1.3f : isWalking ? 0.5f : 1.0f) * Time.deltaTime * Find.TickManager.TickRateMultiplier;
+            float speed = baseSpeed * PerspectiveShiftMod.settings.moveSpeedMultiplier * terrainMultiplier * tickModifier * (isSprinting ? PerspectiveShiftMod.settings.sprintSpeedMultiplier : isWalking ? PerspectiveShiftMod.settings.sneakSpeedMultiplier : 1.0f) * Time.deltaTime * Find.TickManager.TickRateMultiplier;
             Vector3 delta = deltaRaw * speed;
             Vector3 newPos = physicsPosition.Value;
+
+            bool currentlyWalkable = IsWalkableWithMargin(physicsPosition.Value);
+            Vector3 safePos = pawn.Position.ToVector3Shifted();
 
             if (Mathf.Abs(delta.x) > 0.0001f)
             {
                 Vector3 testX = newPos + new Vector3(delta.x, 0, 0);
                 if (IsWalkableWithMargin(testX)) newPos = testX;
+                else if (!currentlyWalkable)
+                {
+                    if ((testX - safePos).sqrMagnitude < (newPos - safePos).sqrMagnitude) newPos = testX;
+                }
             }
 
             if (Mathf.Abs(delta.z) > 0.0001f)
             {
                 Vector3 testZ = newPos + new Vector3(0, 0, delta.z);
                 if (IsWalkableWithMargin(testZ)) newPos = testZ;
+                else if (!currentlyWalkable)
+                {
+                    if ((testZ - safePos).sqrMagnitude < (newPos - safePos).sqrMagnitude) newPos = testZ;
+                }
             }
 
             var nextCell = newPos.ToIntVec3();
@@ -570,7 +581,7 @@ namespace PerspectiveShift
                 bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(Event.current.mousePosition);
                 bool mouseOverUI = IsMouseOverUI() || IsMouseOverColonistBar();
 
-                if (DefsOf.PS_OpenGearTab.KeyDownEvent)
+                if (DefsOf.PS_OpenGearTab.KeyDownEvent && Find.DesignatorManager.SelectedDesignator == null)
                 {
                     if (Find.Selector.SingleSelectedThing != pawn)
                     {
@@ -1039,19 +1050,27 @@ namespace PerspectiveShift
                 }
             }
 
-            var building = clickCell.GetFirstBuilding(pawn.Map);
-            if (building != null && !building.Destroyed && building.Spawned)
-            {
-                if (InteractWith(building))
-                {
-                    LastManualTarget = building;
-                    return true;
-                }
-            }
+            List<FloatMenuOption> opts = null;
 
             IsAvatarLeftClick = true;
-            var opts = FloatMenuMakerMap.GetOptions(new List<Pawn> { pawn }, clickCell.ToVector3Shifted(), out _);
-            IsAvatarLeftClick = false;
+            try
+            {
+                var building = clickCell.GetFirstBuilding(pawn.Map);
+                if (building != null && !building.Destroyed && building.Spawned)
+                {
+                    if (InteractWith(building))
+                    {
+                        LastManualTarget = building;
+                        return true;
+                    }
+                }
+
+                opts = FloatMenuMakerMap.GetOptions(new List<Pawn> { pawn }, clickCell.ToVector3Shifted(), out _);
+            }
+            finally
+            {
+                IsAvatarLeftClick = false;
+            }
             if (opts != null)
             {
                 if (pawn.equipment?.Primary != null)
@@ -1069,6 +1088,13 @@ namespace PerspectiveShift
             if (bestOption != null)
             {
                 bestOption.action.Invoke();
+
+                var clickedPawn = clickCell.GetFirstPawn(pawn.Map);
+                if (clickedPawn != null && clickedPawn != pawn)
+                {
+                    Find.Selector.ClearSelection();
+                    Find.Selector.Select(clickedPawn);
+                }
                 return true;
             }
 
@@ -1281,6 +1307,20 @@ namespace PerspectiveShift
                 }
             }
 
+            bool wouldWipe = false;
+            if (cellThings != null)
+            {
+                foreach (var t in cellThings)
+                {
+                    if (GenSpawn.SpawningWipes(CarriedThing.def, t.def))
+                    {
+                        wouldWipe = true;
+                        break;
+                    }
+                }
+            }
+            ThingPlaceMode placeMode = wouldWipe ? ThingPlaceMode.Near : ThingPlaceMode.Direct;
+
             if (!itemInRange) return false;
 
             var slotGroup = pawn.Map.haulDestinationManager.SlotGroupAt(cell);
@@ -1288,7 +1328,7 @@ namespace PerspectiveShift
             {
                 if (slotGroup.Settings.AllowedToAccept(CarriedThing))
                 {
-                    if (pawn.carryTracker.TryDropCarriedThing(cell, ThingPlaceMode.Direct, out var _))
+                    if (pawn.carryTracker.TryDropCarriedThing(cell, placeMode, out var _))
                     {
                         return true;
                     }
@@ -1297,7 +1337,7 @@ namespace PerspectiveShift
 
             if (cell.Walkable(pawn.Map))
             {
-                if (pawn.carryTracker.TryDropCarriedThing(cell, ThingPlaceMode.Direct, out var _))
+                if (pawn.carryTracker.TryDropCarriedThing(cell, placeMode, out var _))
                 {
                     return true;
                 }
@@ -1343,13 +1383,10 @@ namespace PerspectiveShift
 
         private void TryStartBillJob(IBillGiver billGiver)
         {
-            if (pawn == null || billGiver == null) return;
             Thing billGiverThing = billGiver as Thing;
             if (billGiverThing == null) return;
-
             WorkGiver_DoBill workGiver = null;
             List<WorkGiverDef> allDefs = DefDatabase<WorkGiverDef>.AllDefsListForReading;
-
             for (int i = 0; i < allDefs.Count; i++)
             {
                 var def = allDefs[i];
@@ -1362,27 +1399,10 @@ namespace PerspectiveShift
 
             if (workGiver != null)
             {
-                var originalRadii = new Dictionary<Bill, float>();
-                try
+                var job = workGiver.JobOnThing(pawn, billGiverThing, forced: true);
+                if (job != null)
                 {
-                    foreach (var bill in billGiver.BillStack)
-                    {
-                        originalRadii[bill] = bill.ingredientSearchRadius;
-                        bill.ingredientSearchRadius = 3f;
-                    }
-
-                    var job = workGiver.JobOnThing(pawn, billGiverThing, forced: true);
-                    if (job != null)
-                    {
-                        pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
-                    }
-                }
-                finally
-                {
-                    foreach (var kvp in originalRadii)
-                    {
-                        kvp.Key.ingredientSearchRadius = kvp.Value;
-                    }
+                    pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
                 }
             }
         }
@@ -1417,7 +1437,7 @@ namespace PerspectiveShift
                 startX = gizmoBounds.xMin + 10f;
             }
 
-            var unifiedBg = new Rect(startX - 10f, startY - 5f, width + 20f, totalHeight + 10f);
+            var unifiedBg = new Rect(startX - 20f, startY - 5f, width + 30f, totalHeight + 10f);
             Widgets.DrawBoxSolid(unifiedBg, new ColorInt(32, 32, 32).ToColor.WithAlpha(0.7f));
 
             DrawingAvatarNeeds = true;

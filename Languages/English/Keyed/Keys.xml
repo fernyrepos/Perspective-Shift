@@ -31,6 +31,10 @@
     <PS_DisableAimingDelay>Disable aiming time for player character</PS_DisableAimingDelay>
     <PS_DisableAimingDelayDesc>When checked, your controlled character fires weapons instantly without having to wait for the weapon's aiming cycle. Cooldown between shots still applies.</PS_DisableAimingDelayDesc>
     
+    <PS_EnableSprinting>Enable Sprinting</PS_EnableSprinting>
+    <PS_SprintSpeedMultiplier>Sprint speed multiplier: {0}</PS_SprintSpeedMultiplier>
+    <PS_EnableSneaking>Enable Sneaking</PS_EnableSneaking>
+    <PS_SneakSpeedMultiplier>Sneak speed multiplier: {0}</PS_SneakSpeedMultiplier>
     <PS_MoveSpeedMultiplier>Move speed multiplier: {0}</PS_MoveSpeedMultiplier>
     <PS_ShootAccuracyMultiplier>Shooting accuracy multiplier: {0}</PS_ShootAccuracyMultiplier>
     <PS_GizmoCorner>Gizmo UI position</PS_GizmoCorner>

@@ -35,6 +35,19 @@ namespace PerspectiveShift
 
             listing.CheckboxLabeled("PS_DisableAimingDelay".Translate(), ref settings.disableAimingDelay, "PS_DisableAimingDelayDesc".Translate());
 
+            listing.CheckboxLabeled("PS_EnableSprinting".Translate(), ref settings.enableSprinting);
+            if (settings.enableSprinting)
+            {
+                listing.Label("PS_SprintSpeedMultiplier".Translate(settings.sprintSpeedMultiplier.ToString("F1")));
+                settings.sprintSpeedMultiplier = listing.Slider(settings.sprintSpeedMultiplier, 1.1f, 3f);
+            }
+            listing.CheckboxLabeled("PS_EnableSneaking".Translate(), ref settings.enableSneaking);
+            if (settings.enableSneaking)
+            {
+                listing.Label("PS_SneakSpeedMultiplier".Translate(settings.sneakSpeedMultiplier.ToString("F1")));
+                settings.sneakSpeedMultiplier = listing.Slider(settings.sneakSpeedMultiplier, 0.1f, 0.9f);
+            }
+
             listing.Label("PS_MoveSpeedMultiplier".Translate(settings.moveSpeedMultiplier.ToString("P0")));
             settings.moveSpeedMultiplier = listing.Slider(settings.moveSpeedMultiplier, 0.1f, 5f);
 
