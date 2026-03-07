@@ -29,7 +29,7 @@ namespace PerspectiveShift
 
         private static Texture2D _authenticIcon;
         private static Texture2D AuthenticIcon =>
-            _authenticIcon ??= ContentFinder<Texture2D>.Get("MainMenu/CharacterMode");
+            _authenticIcon ??= ContentFinder<Texture2D>.Get("MainMenu/AuthenticMode");
 
         private static Texture2D _swapIcon;
         private static Texture2D SwapIcon =>
@@ -59,7 +59,8 @@ namespace PerspectiveShift
             else
                 DrawPlaystyleSelection(mainRect);
 
-            DoBottomButtons(rect);
+            string nextLabel = (step == PageStep.Role && !roleIsCharacter) ? "Start".Translate() : "Next".Translate();
+            DoBottomButtons(rect, nextLabel, null, null, true, true);
         }
 
         private void DrawRoleOption(Rect rect, string label, string desc, Texture2D icon, bool selected, System.Action onSelect)
@@ -82,7 +83,7 @@ namespace PerspectiveShift
             if (icon != null)
             {
                 var iconRect = new Rect(rect.x, rect.y, rect.width, rect.width);
-                GUI.DrawTexture(iconRect, icon, ScaleMode.StretchToFill);
+                GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
             }
 
             Text.Font = GameFont.Medium;

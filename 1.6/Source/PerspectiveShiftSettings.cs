@@ -18,6 +18,11 @@ namespace PerspectiveShift
         public float maxZoom = 60f;
         public float grabRange = 1.5f;
         public bool disableAimingDelay = true;
+        
+        public bool enableSprinting = true;
+        public bool enableSneaking = true;
+        public float sprintSpeedMultiplier = 1.3f;
+        public float sneakSpeedMultiplier = 0.5f;
 
         public float moveSpeedMultiplier = 1.0f;
         public float shootAccuracyMultiplier = 1.0f;
@@ -34,6 +39,12 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref maxZoom, "maxZoom", 60f);
             Scribe_Values.Look(ref grabRange, "grabRange", 1.5f);
             Scribe_Values.Look(ref disableAimingDelay, "disableAimingDelay", true);
+            
+            Scribe_Values.Look(ref enableSprinting, "enableSprinting", true);
+            Scribe_Values.Look(ref enableSneaking, "enableSneaking", true);
+            Scribe_Values.Look(ref sprintSpeedMultiplier, "sprintSpeedMultiplier", 1.3f);
+            Scribe_Values.Look(ref sneakSpeedMultiplier, "sneakSpeedMultiplier", 0.5f);
+            
             Scribe_Values.Look(ref moveSpeedMultiplier, "moveSpeedMultiplier", 1.0f);
             Scribe_Values.Look(ref shootAccuracyMultiplier, "shootAccuracyMultiplier", 1.0f);
             Scribe_Values.Look(ref gizmoCorner, "gizmoCorner", GizmoCorner.TopRight);

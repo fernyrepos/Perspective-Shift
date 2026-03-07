@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+    <SoundDef>
+        <defName>PS_PackInventory</defName>
+        <context>MapOnly</context>
+        <maxSimultaneous>1</maxSimultaneous>
+        <subSounds>
+            <li>
+                <grains>
+                    <li Class="AudioGrain_Clip">
+                        <clipPath>UI/TinyBell</clipPath>
+                    </li>
+                </grains>
+                <volumeRange>20~20</volumeRange>
+            </li>
+        </subSounds>
+    </SoundDef>
+</Defs>

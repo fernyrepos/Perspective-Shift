@@ -6,6 +6,7 @@ using Verse;
 namespace PerspectiveShift
 {
     [HotSwappable]
+    [StaticConstructorOnStartup]
     [HarmonyPatch(typeof(Need), nameof(Need.DrawOnGUI))]
     public static class Need_DrawOnGUI_Patch
     {
@@ -23,8 +24,7 @@ namespace PerspectiveShift
             float pinSize = 16f * pinScale;
             float pinOffset = 12f * pinScale;
             if (rect.height > 50f) pinOffset += 4f;
-            float pinXOffset = 50f - (50f - 50f * pinScale) * 0.5f;
-            Rect pinRect = new Rect(rect.xMax - pinXOffset, rect.y + pinOffset, pinSize, pinSize);
+            Rect pinRect = new Rect(rect.x + 30, rect.y + pinOffset, pinSize, pinSize);
             bool isPinned = PerspectiveShiftMod.settings.pinnedNeeds.Contains(__instance.def.defName);            
             Texture2D tex = isPinned ? PinTex : PinOutlineTex;
             Color prevColor = GUI.color;
