@@ -1001,6 +1001,7 @@ namespace PerspectiveShift
 
         private bool HandleLeftClick()
         {
+            if (pawn.Map == null || !pawn.Spawned) return false;
             var clickCell = UI.MouseCell();
             bool itemInRange = pawn.Position.DistanceTo(clickCell) <= PerspectiveShiftMod.settings.grabRange;
             bool inRange = itemInRange;
@@ -1111,6 +1112,36 @@ namespace PerspectiveShift
                     Find.Selector.Select(clickedPawn);
                 }
                 return true;
+            }
+
+            return TryExecuteDesignatorlessFallback(clickCell, itemInRange);
+        }
+
+        private bool TryExecuteDesignatorlessFallback(IntVec3 clickCell, bool itemInRange)
+        {
+            if (!itemInRange) return false;
+
+            var plant = clickCell.GetPlant(pawn.Map);
+            if (plant != null
+                && plant.HarvestableNow
+                && plant.CanYieldNow()
+                && pawn.CanReserve(plant)
+                && (plant.def.plant.IsTree
+                    ? (!pawn.WorkTypeIsDisabled(WorkTypeDefOf.PlantCutting) && PlantUtility.PawnWillingToCutPlant_Job(plant, pawn))
+                    : (plant.def.plant.harvestTag == "Standard" && !pawn.WorkTypeIsDisabled(WorkTypeDefOf.Growing))))
+            {
+                var job = JobMaker.MakeJob(JobDefOf.Harvest, plant);
+                if (TryStartForcedJob(job)) return true;
+            }
+
+            var mineable = clickCell.GetFirstMineable(pawn.Map);
+            if (mineable != null
+                && !pawn.WorkTypeIsDisabled(WorkTypeDefOf.Mining)
+                && pawn.CanReserve(mineable))
+            {
+                var job = JobMaker.MakeJob(JobDefOf.Mine, mineable, 20000, checkOverrideOnExpiry: true);
+                job.ignoreDesignations = true;
+                if (TryStartForcedJob(job)) return true;
             }
 
             return false;
