@@ -8,7 +8,7 @@
             <li>
                 <grains>
                     <li Class="AudioGrain_Clip">
-                        <clipPath>UI/TinyBell</clipPath>
+                        <clipPath>PS_PackInventory</clipPath>
                     </li>
                 </grains>
                 <volumeRange>20~20</volumeRange>

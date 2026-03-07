@@ -53,6 +53,6 @@
     <PS_StatPart_AvatarAimingDelay>Direct control</PS_StatPart_AvatarAimingDelay>
     <PS_StatPart_AvatarShootingAccuracy>Direct control accuracy bonus</PS_StatPart_AvatarShootingAccuracy>
 
-    <PS_StorageNotPermitted>You are trying to place {0} into {1}, but it is not permitted to be stored there in it's storage settings. Would you like to enable storing this item? Note: This will let other colonists store this item here too.</PS_StorageNotPermitted>
+    <PS_StorageNotPermitted>You are trying to place {0} into {1}, but it is not permitted to be stored there in it's storage settings. Would you like to enable storing this item?\n\nNote: This will let other colonists store this item here too.</PS_StorageNotPermitted>
     <PS_StorageImpossible>{0} cannot be stored here.</PS_StorageImpossible>
 </LanguageData>
