@@ -57,7 +57,12 @@ namespace PerspectiveShift
 
         public void UpdatePhysics()
         {
-            if (pawn == null || pawn.Dead || pawn.Downed || !pawn.Spawned || pawn.Map == null) return;
+            if (pawn == null || pawn.Dead || pawn.Downed || !pawn.Spawned || pawn.Map == null)
+            {
+                physicsPosition = null;
+                wasMovingLastFrame = false;
+                return;
+            }
             if (WorldComponent_GravshipController.CutsceneInProgress) return;
 
             if (pawn.InMentalState)
@@ -363,6 +368,7 @@ namespace PerspectiveShift
             {
                 if (physicsPosition.Value.ToIntVec3() != pawn.Position)
                 {
+                    State.Warning($"Physics desync detected: physicsPosition={physicsPosition.Value.ToIntVec3()}, pawn.Position={pawn.Position} | Resetting physicsPosition");
                     physicsPosition = null;
                 }
             }
@@ -683,6 +689,8 @@ namespace PerspectiveShift
             bool shouldLogMovement = false;
             if (shouldLogMovement)
             {
+                bool desyncDetected = physicsPosition.HasValue && physicsPosition.Value.ToIntVec3() != pawn.Position;
+                string desyncMsg = desyncDetected ? " [DESYNC]" : "";
                 State.Message($"Frame={Time.frameCount} " +
                     $"physPos={physicsPosition} " +
                     $"pawn.Pos={pawn.Position} " +
@@ -693,7 +701,8 @@ namespace PerspectiveShift
                     $"mouseUI={UI.MousePositionOnUI} " +
                     $"mouseCell={UI.MouseCell()} " +
                     $"IsMoving={IsMoving} " +
-                    $"paused={Find.TickManager.Paused}");
+                    $"paused={Find.TickManager.Paused}" +
+                    desyncMsg);
             }
             bool shouldLogJobs = true;
             if (shouldLogJobs)
