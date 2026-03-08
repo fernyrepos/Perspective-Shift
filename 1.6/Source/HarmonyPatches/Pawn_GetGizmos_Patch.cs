@@ -31,6 +31,8 @@ namespace PerspectiveShift
                 {
                     foreach (var g in __instance.drafter.GetGizmos())
                     {
+                        if (g is Command_Toggle toggle && toggle.tutorTag == "FireAtWillToggle")
+                            continue;
                         yield return g;
                     }
                 }
