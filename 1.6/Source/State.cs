@@ -1,7 +1,6 @@
 using RimWorld;
 using UnityEngine;
 using Verse;
-using Verse.AI.Group;
 
 namespace PerspectiveShift
 {
@@ -43,10 +42,6 @@ namespace PerspectiveShift
             Message($"PerspectiveState.SetAvatar - Setting avatar to {pawn.Name}, Mode: {CurrentMode}");
             Avatar = new Avatar(pawn);
             CameraLockPosition = null;
-
-            var lord = pawn.GetLord();
-            if (lord != null)
-                lord.Notify_PawnLost(pawn, PawnLostCondition.Undefined);
 
             if (showMessage)
                 Messages.Message("PS_ControlTaken".Translate(pawn.LabelShort), pawn, MessageTypeDefOf.NeutralEvent);
