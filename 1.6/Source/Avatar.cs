@@ -443,8 +443,7 @@ namespace PerspectiveShift
             }
 
             var nextCell = newPos.ToIntVec3();
-
-            if (nextCell.InBounds(pawn.Map) && nextCell.OnEdge(pawn.Map) && pawn.Map.exitMapGrid.IsExitCell(nextCell))
+            if (nextCell.InBounds(pawn.Map) && nextCell.OnEdge(pawn.Map) && pawn.Map.exitMapGrid.IsExitCell(nextCell) && !pawn.Position.OnEdge(pawn.Map))
             {
                 pawn.ExitMap(true, pawn.Rotation);
                 return;
