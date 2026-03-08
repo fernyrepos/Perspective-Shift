@@ -36,4 +36,69 @@
         </value>
     </Operation>
 
+    <Operation Class="PatchOperationAdd">
+        <xpath>/Defs/JobDef[defName="HarvestDesignated"]</xpath>
+        <value>
+            <modExtensions>
+                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
+            </modExtensions>
+        </value>
+    </Operation>
+
+    <Operation Class="PatchOperationAdd">
+        <xpath>/Defs/JobDef[defName="Deconstruct"]</xpath>
+        <value>
+            <modExtensions>
+                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
+            </modExtensions>
+        </value>
+    </Operation>
+
+    <Operation Class="PatchOperationAdd">
+        <xpath>/Defs/JobDef[defName="DeconstructForBlueprint"]</xpath>
+        <value>
+            <modExtensions>
+                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
+            </modExtensions>
+        </value>
+    </Operation>
+
+    <Operation Class="PatchOperationAdd">
+        <xpath>/Defs/JobDef[defName="SmoothFloor"]</xpath>
+        <value>
+            <modExtensions>
+                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
+            </modExtensions>
+        </value>
+    </Operation>
+
+    <Operation Class="PatchOperationAdd">
+        <xpath>/Defs/JobDef[defName="RemoveFloor"]</xpath>
+        <value>
+            <modExtensions>
+                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
+            </modExtensions>
+        </value>
+    </Operation>
+
+    <Operation Class="PatchOperationAdd">
+        <xpath>/Defs/JobDef[defName="RemoveFoundation"]</xpath>
+        <value>
+            <modExtensions>
+                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
+            </modExtensions>
+        </value>
+    </Operation>
+
+    <Operation Class="PatchOperationAdd">
+        <xpath>/Defs/JobDef[defName="SmoothWall"]</xpath>
+        <value>
+            <modExtensions>
+                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
+            </modExtensions>
+        </value>
+    </Operation>
+
+
+
 </Patch>
