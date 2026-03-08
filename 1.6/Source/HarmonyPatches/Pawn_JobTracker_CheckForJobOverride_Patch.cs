@@ -18,6 +18,7 @@ namespace PerspectiveShift
             {
                 return true;
             }
+            if (pawn.Drafted) return false;
             if (pawn.GetLord() != null || pawn.mindState.duty != null) return true;
             if (curJob.playerForced)
             {
