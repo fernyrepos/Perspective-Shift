@@ -193,6 +193,19 @@ namespace PerspectiveShift
                 {
                     var carried = pawn.carryTracker.CarriedThing;
                     int count = carried.stackCount;
+
+                    if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, carried, count))
+                    {
+                        int maxCount = MassUtility.CountToPickUpUntilOverEncumbered(pawn, carried);
+                        if (maxCount <= 0)
+                        {
+                            Messages.Message("PS_CannotCarryMoreWeight".Translate(), MessageTypeDefOf.RejectInput, false);
+                            Event.current.Use();
+                            return true;
+                        }
+                        count = maxCount;
+                    }
+
                     var transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(carried, pawn.inventory.innerContainer, count);
                     if (transferred > 0)
                     {
@@ -314,7 +327,7 @@ namespace PerspectiveShift
             if (pawn == null || pawn.Map == null || !pawn.Spawned) return;
             if (interactingDoor != null) return;
 
-            if (!pawn.Drafted && pawn.GetLord() != null)
+            if (!pawn.Drafted && (pawn.GetLord() != null || pawn.mindState?.duty != null))
             {
                 physicsPosition = null;
                 return;
@@ -470,7 +483,7 @@ namespace PerspectiveShift
 
         private bool IsWalkableWithMargin(Vector3 pos)
         {
-            float margin = 0.2f;
+            float margin = 0.15f;
             var cCenter = pos.ToIntVec3();
 
             if (!IsWalkableCell(cCenter)) return false;
@@ -493,10 +506,18 @@ namespace PerspectiveShift
         private bool IsWalkableCell(IntVec3 cell)
         {
             if (!cell.InBounds(pawn.Map)) return false;
-            if (!cell.Walkable(pawn.Map)) return false;
 
             var door = cell.GetDoor(pawn.Map);
             if (door != null && !door.Open && !door.PawnCanOpen(pawn)) return false;
+
+            var edifice = cell.GetEdifice(pawn.Map);
+            if (edifice != null && edifice.def.passability == Traversability.Impassable) return false;
+
+            if (!cell.Walkable(pawn.Map))
+            {
+                if (edifice != null && edifice.def.building != null && edifice.def.building.isFence) return true;
+                return false;
+            }
 
             return true;
         }
@@ -1302,16 +1323,6 @@ namespace PerspectiveShift
 
         private void ExecutePickup(Thing target)
         {
-            if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, target, target.stackCount))
-            {
-                int maxCount = MassUtility.CountToPickUpUntilOverEncumbered(pawn, target);
-                if (maxCount <= 0)
-                {
-                    Messages.Message("PS_CannotCarryMoreWeight".Translate(), MessageTypeDefOf.RejectInput, false);
-                    return;
-                }
-                target = target.SplitOff(maxCount);
-            }
             var reservers = new HashSet<Pawn>();
             pawn.Map.reservationManager.ReserversOf(target, reservers);
             foreach (var r in reservers.ToList())
