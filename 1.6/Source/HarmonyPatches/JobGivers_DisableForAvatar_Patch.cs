@@ -19,6 +19,8 @@ namespace PerspectiveShift
             yield return AccessTools.Method(typeof(WorkGiver_ConstructDeliverResourcesToBlueprints), "JobOnThing");
             yield return AccessTools.Method(typeof(WorkGiver_ConstructDeliverResourcesToFrames), "JobOnThing");
             yield return AccessTools.Method(typeof(JobGiver_Wander), "TryGiveJob");
+            yield return AccessTools.Method(typeof(JobGiver_ExitMapBest), "TryGiveJob");
+            yield return AccessTools.Method(typeof(JobGiver_ExitMap), "TryGiveJob");
         }
 
         public static bool Prefix(Pawn pawn, ref Job __result)
