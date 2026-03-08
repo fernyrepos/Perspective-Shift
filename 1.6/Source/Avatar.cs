@@ -16,6 +16,7 @@ namespace PerspectiveShift
     {
         public static bool IsAvatarLeftClick = false;
         public Pawn pawn;
+        public Lord savedLord;
         public Vector3 moveInput;
         public bool isSprinting;
         public bool isWalking;
@@ -51,6 +52,7 @@ namespace PerspectiveShift
         {
             Scribe_References.Look(ref pawn, "pawn");
             Scribe_References.Look(ref interactingDoor, "interactingDoor");
+            Scribe_References.Look(ref savedLord, "savedLord");
         }
 
         public void UpdatePhysics()

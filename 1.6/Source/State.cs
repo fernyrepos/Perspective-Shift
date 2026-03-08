@@ -46,7 +46,10 @@ namespace PerspectiveShift
 
             var lord = pawn.GetLord();
             if (lord != null)
+            {
+                Avatar.savedLord = lord;
                 lord.Notify_PawnLost(pawn, PawnLostCondition.Undefined);
+            }
 
             if (showMessage)
                 Messages.Message("PS_ControlTaken".Translate(pawn.LabelShort), pawn, MessageTypeDefOf.NeutralEvent);
@@ -78,6 +81,13 @@ namespace PerspectiveShift
             {
                 pawn.drafter.Drafted = false;
             }
+
+            if (Avatar?.savedLord != null && Avatar.savedLord.lordManager != null && Avatar.savedLord.lordManager.lords.Contains(Avatar.savedLord))
+            {
+                Avatar.savedLord.AddPawn(pawn);
+                Avatar.savedLord.CurLordToil?.UpdateAllDuties();
+            }
+            Avatar.savedLord = null;
         }
 
         public static void RevokeControl(Pawn pawn)
