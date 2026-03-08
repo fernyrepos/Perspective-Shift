@@ -17,11 +17,25 @@ namespace PerspectiveShift
 
 			if (pawn.mindState?.duty != null) return;
 			if (pawn.GetLord() != null) return;
+			if (HasVoluntarilyJoinableLord(pawn)) return;
 
 			var wait = JobMaker.MakeJob(JobDefOf.Wait);
 			wait.expiryInterval = 60;
 			wait.checkOverrideOnExpire = true;
 			__result = wait;
+		}
+
+		private static bool HasVoluntarilyJoinableLord(Pawn pawn)
+		{
+			if (pawn.Map == null) return false;
+			foreach (var lord in pawn.Map.lordManager.lords)
+			{
+				if (lord.LordJob is LordJob_VoluntarilyJoinable joinable
+					&& !lord.ownedPawns.Contains(pawn)
+					&& joinable.VoluntaryJoinPriorityFor(pawn) > 0f)
+					return true;
+			}
+			return false;
 		}
 	}
 }
