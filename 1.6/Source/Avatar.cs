@@ -1192,6 +1192,16 @@ namespace PerspectiveShift
                 var building = clickCell.GetFirstBuilding(pawn.Map);
                 if (building != null && !building.Destroyed && building.Spawned)
                 {
+                    if (building.def.Minifiable && (building.Faction == pawn.Faction || building.def.building.alwaysUninstallable))
+                    {
+                        if (pawn.Map.designationManager.DesignationOn(building, DesignationDefOf.Uninstall) == null)
+                        {
+                            var unJob = JobMaker.MakeJob(JobDefOf.Uninstall, building);
+                            unJob.ignoreDesignations = true;
+                            if (TryStartForcedJob(unJob)) return true;
+                        }
+                    }
+
                     if (InteractWith(building))
                     {
                         LastManualTarget = building;
@@ -1431,9 +1441,23 @@ namespace PerspectiveShift
                 return false;
             }
 
+            var frame = cell.GetFirstThing<Frame>(pawn.Map);
+            if (frame != null && frame.IsCompleted())
+            {
+                Messages.Message("PS_BlueprintFull".Translate(), MessageTypeDefOf.RejectInput, false);
+                return true;
+            }
+
             var cellThings = cell.GetThingList(pawn.Map);
             if (cellThings != null)
             {
+                var installBp = cellThings.OfType<Blueprint_Install>().FirstOrDefault();
+                if (installBp != null && installBp.MiniToInstallOrBuildingToReinstall == CarriedThing)
+                {
+                    installBp.TryReplaceWithSolidThing(pawn, out _, out _);
+                    return true;
+                }
+
                 var refuelableThing = cellThings.FirstOrDefault(t => t.TryGetComp<CompRefuelable>() != null);
                 if (refuelableThing != null)
                 {
@@ -1449,20 +1473,14 @@ namespace PerspectiveShift
                 }
 
                 var blueprint = cellThings.OfType<Blueprint_Build>().FirstOrDefault();
-                if (blueprint != null && blueprint.ThingCountNeeded(CarriedThing.def) > 0)
+                if (blueprint != null && blueprint.ThingCountNeeded(CarriedThing.def) > 0 && blueprint.TryReplaceWithSolidThing(pawn, out Thing frameThing, out _) && frameThing is Frame frame1)
                 {
-                    if (blueprint.TryReplaceWithSolidThing(pawn, out Thing frameThing, out _))
+                    var needed = frame1.ThingCountNeeded(CarriedThing.def);
+                    if (needed > 0)
                     {
-                        if (frameThing is Frame frame)
-                        {
-                            var needed = frame.ThingCountNeeded(CarriedThing.def);
-                            if (needed > 0)
-                            {
-                                pawn.carryTracker.innerContainer.TryTransferToContainer(CarriedThing, frame.resourceContainer, Mathf.Min(CarriedThing.stackCount, needed));
-                            }
-                            return true;
-                        }
+                        pawn.carryTracker.innerContainer.TryTransferToContainer(CarriedThing, frame1.resourceContainer, Mathf.Min(CarriedThing.stackCount, needed));
                     }
+                    return true;
                 }
 
                 var frame2 = cellThings.OfType<Frame>().FirstOrDefault();

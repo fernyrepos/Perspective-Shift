@@ -56,4 +56,5 @@
     <PS_StorageNotPermitted>You are trying to place {0} into {1}, but it is not permitted to be stored there in it's storage settings. Would you like to enable storing this item?\n\nNote: This will let other colonists store this item here too.</PS_StorageNotPermitted>
     <PS_StorageImpossible>{0} cannot be stored here.</PS_StorageImpossible>
     <PS_CannotCarryMoreWeight>You cannot carry any more weight. Consider dropping some items.</PS_CannotCarryMoreWeight>
+    <PS_BlueprintFull>This blueprint has all materials necessary to build.</PS_BlueprintFull>
 </LanguageData>

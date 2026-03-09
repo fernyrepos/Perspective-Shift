@@ -568,7 +568,6 @@ namespace PerspectiveShift
 
                 if ((bool)movingProperty.GetValue(vPather, null))
                 {
-                    Log.Message("Distance: " + dist);
                     return true;
                 }
             }
