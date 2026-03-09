@@ -26,6 +26,9 @@ namespace PerspectiveShift
         public Vector3 LeanTarget = Vector3.zero;
         public Vector3 LeanSmoothed = Vector3.zero;
         private float moveInputDuration = 0f;
+        private Vector3 lastVehicleMoveInput = Vector3.zero;
+        private int vehicleStopGraceTicks = 0;
+        private int vehiclePathFailCooldown = 0;
         public float aimAngle = -1f;
         private Vector3 _leanVelocity = Vector3.zero;
 
@@ -57,20 +60,72 @@ namespace PerspectiveShift
 
         public void UpdatePhysics()
         {
-            if (pawn == null || pawn.Dead || pawn.Downed || !pawn.Spawned || pawn.Map == null)
+            if (pawn.Downed)
             {
                 physicsPosition = null;
                 wasMovingLastFrame = false;
                 return;
             }
-            if (WorldComponent_GravshipController.CutsceneInProgress) return;
+
+            var inVehicle = ModCompatibility.IsPawnInVehicle(pawn, out Pawn vehicle, out bool isDriver, out bool isGunner);
+
+            if (inVehicle)
+            {
+                if (isDriver)
+                {
+                    if (State.ControlsFrozen || State.CameraLockPosition.HasValue) moveInput = Vector3.zero;
+                    else UpdateInput();
+
+                    if (vehiclePathFailCooldown > 0) vehiclePathFailCooldown--;
+
+                    if (IsMoving)
+                    {
+                        vehicleStopGraceTicks = 10;
+                        if (vehiclePathFailCooldown <= 0)
+                        {
+                            var success = ModCompatibility.ProcessVehicleMovement(vehicle, moveInput);
+                            if (!success)
+                            {
+                                vehiclePathFailCooldown = 5;
+                            }
+                            else
+                            {
+                                lastVehicleMoveInput = moveInput;
+                            }
+                        }
+                    }
+                    else if (lastVehicleMoveInput != Vector3.zero)
+                    {
+                        if (vehicleStopGraceTicks > 0)
+                        {
+                            vehicleStopGraceTicks--;
+                        }
+                        else
+                        {
+                            ModCompatibility.StopVehicle(vehicle);
+                            lastVehicleMoveInput = Vector3.zero;
+                            vehiclePathFailCooldown = 0;
+                        }
+                    }
+                }
+                physicsPosition = null;
+                wasMovingLastFrame = false;
+                return;
+            }
+
+            if (!pawn.Spawned || pawn.Map == null)
+            {
+                physicsPosition = null;
+                wasMovingLastFrame = false;
+                return;
+            }
 
             if (pawn.InMentalState)
             {
                 moveInput = Vector3.zero;
                 if (wasMovingLastFrame)
                 {
-                    if (pawn.pather.curPath != null) pawn.pather.StopDead();
+                    if (pawn.pather?.curPath != null) pawn.pather.StopDead();
                     wasMovingLastFrame = false;
                 }
                 physicsPosition = null;
@@ -171,8 +226,28 @@ namespace PerspectiveShift
 
         public bool HandleSelectorClick()
         {
-            if (pawn == null || pawn.Dead || pawn.Downed) return false;
+            if (pawn.Downed) return false;
             if (pawn.InMentalState) return false;
+
+            if (ModCompatibility.IsPawnInVehicle(pawn, out Pawn veh, out bool isDriver, out bool isGunner))
+            {
+                if (isGunner && Event.current.type == EventType.MouseDown)
+                {
+                    if (Event.current.button == 0)
+                    {
+                        ModCompatibility.FireVehicleWeapons(veh, pawn, UI.MouseMapPosition());
+                        Event.current.Use();
+                        return true;
+                    }
+                    else if (Event.current.button == 1)
+                    {
+                        ModCompatibility.ClearVehicleWeapons(veh, pawn);
+                        Event.current.Use();
+                        return true;
+                    }
+                }
+                return false;
+            }
 
             if (Find.TickManager.Paused) return false;
             if (State.CameraLockPosition.HasValue) return false;
@@ -203,7 +278,7 @@ namespace PerspectiveShift
 
                     if (MassUtility.WillBeOverEncumberedAfterPickingUp(pawn, carried, count))
                     {
-                        int maxCount = MassUtility.CountToPickUpUntilOverEncumbered(pawn, carried);
+                        var maxCount = MassUtility.CountToPickUpUntilOverEncumbered(pawn, carried);
                         if (maxCount <= 0)
                         {
                             Messages.Message("PS_CannotCarryMoreWeight".Translate(), MessageTypeDefOf.RejectInput, false);
@@ -224,7 +299,7 @@ namespace PerspectiveShift
 
                 if (pawn.Drafted)
                 {
-                    bool otherPawnsSelected = Find.Selector.SelectedObjects
+                    var otherPawnsSelected = Find.Selector.SelectedObjects
                         .Any(o => o is Pawn p && p != pawn);
                     if (otherPawnsSelected)
                         return false;
@@ -259,8 +334,7 @@ namespace PerspectiveShift
 
         public void RenderPawn()
         {
-            if (pawn == null || pawn.Map == null || !pawn.Spawned) return;
-            if (WorldComponent_GravshipController.CutsceneInProgress) return;
+            if (pawn.Map == null || !pawn.Spawned) return;
 
             LeanSmoothed = Vector3.SmoothDamp(LeanSmoothed, LeanTarget, ref _leanVelocity, 0.07f, 10f, Time.deltaTime);
 
@@ -331,7 +405,6 @@ namespace PerspectiveShift
 
         private void ProcessMovement()
         {
-            if (pawn == null || pawn.Map == null || !pawn.Spawned) return;
             if (interactingDoor != null) return;
 
             if (!pawn.Drafted && (pawn.GetLord() != null || pawn.mindState?.duty != null))
@@ -414,12 +487,12 @@ namespace PerspectiveShift
             float distanceRemaining = speed;
             while (distanceRemaining > 0)
             {
-                float step = Mathf.Min(distanceRemaining, 0.05f);
+                var step = Mathf.Min(distanceRemaining, 0.05f);
                 distanceRemaining -= step;
 
                 Vector3 stepDelta = deltaRaw * step;
-                bool currentlyWalkable = IsWalkableWithMargin(newPos);
-                Vector3 safePos = pawn.Position.ToVector3Shifted();
+                var currentlyWalkable = IsWalkableWithMargin(newPos);
+                var safePos = pawn.Position.ToVector3Shifted();
 
                 if (Mathf.Abs(stepDelta.x) > 0.0001f)
                 {
@@ -599,87 +672,84 @@ namespace PerspectiveShift
 
         public void OnGUI()
         {
-            if (pawn != null)
+            DebugLog();
+            if (State.CameraLockPosition.HasValue)
             {
-                DebugLog();
-                if (State.CameraLockPosition.HasValue)
+                float btnW = 220f;
+                float panelH = 70f;
+                float panelY = UI.screenHeight - 150f - panelH;
+                var panelRect = new Rect(UI.screenWidth / 2f - btnW / 2f - 10f, panelY, btnW + 20f, panelH);
+                Widgets.DrawWindowBackground(panelRect);
+                var btnRect = new Rect(panelRect.xMin + 10f, panelRect.yMin + 10f, btnW, 50f);
+                if (Widgets.ButtonText(btnRect, "PS_ReturnToCharacter".Translate()))
                 {
-                    float btnW = 220f;
-                    float panelH = 70f;
-                    float panelY = UI.screenHeight - 150f - panelH;
-                    var panelRect = new Rect(UI.screenWidth / 2f - btnW / 2f - 10f, panelY, btnW + 20f, panelH);
-                    Widgets.DrawWindowBackground(panelRect);
-                    var btnRect = new Rect(panelRect.xMin + 10f, panelRect.yMin + 10f, btnW, 50f);
-                    if (Widgets.ButtonText(btnRect, "PS_ReturnToCharacter".Translate()))
-                    {
-                        State.CameraLockPosition = null;
-                    }
+                    State.CameraLockPosition = null;
                 }
-                if (!pawn.InMentalState)
+            }
+            if (!pawn.InMentalState)
+            {
+                DrawPlayerGizmos();
+                DrawNeeds();
+            }
+            bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(Event.current.mousePosition);
+            bool mouseOverUI = IsMouseOverUI() || IsMouseOverColonistBar();
+
+            if (DefsOf.PS_OpenGearTab.KeyDownEvent && Find.DesignatorManager.SelectedDesignator == null)
+            {
+                if (Find.Selector.SingleSelectedThing != pawn)
                 {
-                    DrawPlayerGizmos();
-                    DrawNeeds();
+                    Find.Selector.ClearSelection();
+                    Find.Selector.Select(pawn);
                 }
-                bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(Event.current.mousePosition);
-                bool mouseOverUI = IsMouseOverUI() || IsMouseOverColonistBar();
-
-                if (DefsOf.PS_OpenGearTab.KeyDownEvent && Find.DesignatorManager.SelectedDesignator == null)
+                if (Find.MainTabsRoot.OpenTab != MainButtonDefOf.Inspect)
                 {
-                    if (Find.Selector.SingleSelectedThing != pawn)
-                    {
-                        Find.Selector.ClearSelection();
-                        Find.Selector.Select(pawn);
-                    }
-                    if (Find.MainTabsRoot.OpenTab != MainButtonDefOf.Inspect)
-                    {
-                        Find.MainTabsRoot.SetCurrentTab(MainButtonDefOf.Inspect);
-                    }
-
-                    var inspectPane = (MainTabWindow_Inspect)MainButtonDefOf.Inspect.TabWindow;
-                    if (inspectPane != null)
-                    {
-                        var gearTab = inspectPane.CurTabs.FirstOrDefault(t => t is ITab_Pawn_Gear);
-                        if (gearTab != null)
-                        {
-                            if (inspectPane.OpenTabType == gearTab.GetType())
-                                inspectPane.CloseOpenTab();
-                            else
-                                inspectPane.OpenTabType = gearTab.GetType();
-                        }
-                    }
-                    Event.current.Use();
+                    Find.MainTabsRoot.SetCurrentTab(MainButtonDefOf.Inspect);
                 }
 
-                if (pawn.Drafted && !pawn.InMentalState)
+                var inspectPane = (MainTabWindow_Inspect)MainButtonDefOf.Inspect.TabWindow;
+                if (inspectPane != null)
                 {
-                    if (!Find.TickManager.Paused && Find.Selector.NumSelected > 0)
-                        Find.Selector.ClearSelection();
-
-                    if (!Find.TickManager.Paused && !State.ControlsFrozen && !(pawn.stances.curStance is Stance_Busy))
+                    var gearTab = inspectPane.CurTabs.FirstOrDefault(t => t is ITab_Pawn_Gear);
+                    if (gearTab != null)
                     {
-                        Vector3 toMouse = UI.MouseMapPosition() - pawn.DrawPos;
-                        toMouse.y = 0f;
-                        if (toMouse.sqrMagnitude >= 0.01f)
-                        {
-                            aimAngle = Mathf.Atan2(toMouse.x, toMouse.z) * Mathf.Rad2Deg;
-                            if (aimAngle < 0f) aimAngle += 360f;
-                        }
-                    }
-
-                    if (mouseOverUI || mouseOverGizmo || Find.TickManager.Paused || State.ControlsFrozen)
-                    {
-                        Cursor.visible = true;
-                    }
-                    else
-                    {
-                        Cursor.visible = false;
-                        DrawReticle(Event.current.mousePosition);
+                        if (inspectPane.OpenTabType == gearTab.GetType())
+                            inspectPane.CloseOpenTab();
+                        else
+                            inspectPane.OpenTabType = gearTab.GetType();
                     }
                 }
-                else
+                Event.current.Use();
+            }
+
+            if (pawn.Drafted && !pawn.InMentalState)
+            {
+                if (!Find.TickManager.Paused && Find.Selector.NumSelected > 0)
+                    Find.Selector.ClearSelection();
+
+                if (!Find.TickManager.Paused && !State.ControlsFrozen && !(pawn.stances.curStance is Stance_Busy))
+                {
+                    Vector3 toMouse = UI.MouseMapPosition() - pawn.DrawPos;
+                    toMouse.y = 0f;
+                    if (toMouse.sqrMagnitude >= 0.01f)
+                    {
+                        aimAngle = Mathf.Atan2(toMouse.x, toMouse.z) * Mathf.Rad2Deg;
+                        if (aimAngle < 0f) aimAngle += 360f;
+                    }
+                }
+
+                if (mouseOverUI || mouseOverGizmo || Find.TickManager.Paused || State.ControlsFrozen)
                 {
                     Cursor.visible = true;
                 }
+                else
+                {
+                    Cursor.visible = false;
+                    DrawReticle(Event.current.mousePosition);
+                }
+            }
+            else
+            {
+                Cursor.visible = true;
             }
         }
 
@@ -898,7 +968,6 @@ namespace PerspectiveShift
 
         public void DrawPlayerGizmos()
         {
-            if (pawn == null) return;
             if (Event.current.type == EventType.Layout) return;
 
             State.DrawingTopRightGizmos = true;
@@ -1453,7 +1522,7 @@ namespace PerspectiveShift
                     else
                     {
                         string label = (haulDest as ISlotGroupParent)?.SlotYielderLabel() ?? (haulDest as Thing)?.Label ?? "Storage";
-                        string text = "PS_StorageNotPermitted".Translate(itemToDrop.Label, label);
+                        var text = "PS_StorageNotPermitted".Translate(itemToDrop.Label, label);
                         Find.WindowStack.Add(new Dialog_MessageBox(text, "Yes".Translate(), () =>
                         {
                             if (itemToDrop != null && !itemToDrop.Destroyed)
@@ -1510,7 +1579,7 @@ namespace PerspectiveShift
                 {
                     if (dest.Accepts(item))
                     {
-                        int transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(item, thingOwner, item.stackCount);
+                        var transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(item, thingOwner, item.stackCount);
                         if (transferred > 0) return true;
                     }
                     return false;
@@ -1603,7 +1672,7 @@ namespace PerspectiveShift
 
         private void DrawNeeds()
         {
-            if (pawn?.needs == null || gizmoBounds == Rect.zero) return;
+            if (pawn.needs == null || gizmoBounds == Rect.zero) return;
 
             var needs = pawn.needs.AllNeeds
                 .Where(n => PerspectiveShiftMod.settings.pinnedNeeds.Contains(n.def.defName))
@@ -1647,7 +1716,7 @@ namespace PerspectiveShift
 
         public void Tick()
         {
-            if (pawn == null || pawn.Dead || pawn.Downed || !pawn.Spawned || pawn.Map == null || pawn.GetLord() != null || pawn.mindState.duty != null) return;
+            if (pawn.Downed || !pawn.Spawned || pawn.Map == null || pawn.GetLord() != null || pawn.mindState.duty != null) return;
             if (pawn.InMentalState) return;
 
             if (pawn.carryTracker?.CarriedThing != null && pawn.CurJob != null)

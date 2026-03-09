@@ -9,6 +9,7 @@ namespace PerspectiveShift
         public static void Prefix()
         {
             State.ClearAvatar();
+            ModCompatibility.ClearCaches();
         }
     }
 }

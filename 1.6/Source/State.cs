@@ -76,7 +76,7 @@ namespace PerspectiveShift
 
         private static void CleanupPawnState(Pawn pawn)
         {
-            if (pawn == null || pawn.drafter == null) return;
+            if (pawn.drafter == null) return;
             if (pawn.Drafted)
             {
                 pawn.drafter.Drafted = false;
