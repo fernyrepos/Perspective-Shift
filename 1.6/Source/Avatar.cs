@@ -226,6 +226,7 @@ namespace PerspectiveShift
 
         public bool HandleSelectorClick()
         {
+            if (Find.Targeter.IsTargeting) return false;
             if (pawn.Downed) return false;
             if (pawn.InMentalState) return false;
 
@@ -447,6 +448,12 @@ namespace PerspectiveShift
             }
 
             if (!physicsPosition.HasValue)
+            {
+                physicsPosition = pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
+            }
+
+            float distSq = (physicsPosition.Value.ToIntVec3() - pawn.Position).LengthHorizontalSquared;
+            if (distSq > 2.25f)
             {
                 physicsPosition = pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
             }
@@ -723,7 +730,7 @@ namespace PerspectiveShift
 
             if (pawn.Drafted && !pawn.InMentalState)
             {
-                if (!Find.TickManager.Paused && Find.Selector.NumSelected > 0)
+                if (!Find.TickManager.Paused && Find.Selector.NumSelected > 0 && !Find.Targeter.IsTargeting)
                     Find.Selector.ClearSelection();
 
                 if (!Find.TickManager.Paused && !State.ControlsFrozen && !(pawn.stances.curStance is Stance_Busy))
@@ -737,7 +744,7 @@ namespace PerspectiveShift
                     }
                 }
 
-                if (mouseOverUI || mouseOverGizmo || Find.TickManager.Paused || State.ControlsFrozen)
+                if (mouseOverUI || mouseOverGizmo || Find.TickManager.Paused || State.ControlsFrozen || Find.Targeter.IsTargeting)
                 {
                     Cursor.visible = true;
                 }

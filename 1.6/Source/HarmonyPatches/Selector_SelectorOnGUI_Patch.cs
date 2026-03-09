@@ -1,5 +1,6 @@
 using HarmonyLib;
 using RimWorld;
+using Verse;
 
 namespace PerspectiveShift
 {
@@ -8,6 +9,7 @@ namespace PerspectiveShift
     {
         public static bool Prefix()
         {
+            if (Find.Targeter.IsTargeting) return true;
             if (!State.IsActive || State.Current == null) return true;
 
             return !State.Current.HandleSelectorClick();

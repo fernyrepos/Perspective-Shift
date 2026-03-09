@@ -25,29 +25,20 @@ namespace PerspectiveShift
         {
             base.PreOpen();
             selectedPawn = StartingPawns.FirstOrDefault();
-            State.Message($"Page_ChooseStartingCharacter.PreOpen - Mode: {State.CurrentMode}, StartingPawns.Count: {StartingPawns.Count}, selectedPawn: {selectedPawn?.Name}");
         }
 
         public override void PostOpen()
         {
             base.PostOpen();
-            State.Message($"Page_ChooseStartingCharacter.PostOpen - Mode: {State.CurrentMode}, StartingPawns.Count: {StartingPawns.Count}");
-
             if (State.CurrentMode == PlaystyleMode.Director || StartingPawns.Count <= 1)
             {
-                State.Message($"Skipping character selection - Director: {State.CurrentMode == PlaystyleMode.Director}, Count <= 1: {StartingPawns.Count <= 1}");
-
                 if (State.CurrentMode != PlaystyleMode.Director && StartingPawns.Count == 1)
                 {
                     State.Avatar = new Avatar(StartingPawns[0]);
-                    State.Message($"Auto-selected single pawn: {StartingPawns[0].Name}");
                 }
                 DoNext();
-                State.Message($"Page_ChooseStartingCharacter.PostOpen - Auto-skipping, returning");
                 return;
             }
-
-            State.Message($"Rendering character selection UI with {StartingPawns.Count} pawns");
         }
 
         public override void DoWindowContents(Rect rect)
@@ -126,23 +117,18 @@ namespace PerspectiveShift
         {
             if (State.CurrentMode == PlaystyleMode.Director)
             {
-                State.Message($"Page_ChooseStartingCharacter.CanDoNext - Director mode, returning true");
                 return true;
             }
             if (selectedPawn == null)
             {
-                State.Message($"Page_ChooseStartingCharacter.CanDoNext - No pawn selected, returning false");
                 Messages.Message("PS_MustSelectCharacter".Translate(), MessageTypeDefOf.RejectInput, false);
                 return false;
             }
-            State.Message($"Page_ChooseStartingCharacter.CanDoNext - Pawn selected: {selectedPawn.Name}, returning true");
             return true;
         }
 
         public override void DoNext()
         {
-            State.Message($"Page_ChooseStartingCharacter.DoNext called. Trace: {new System.Diagnostics.StackTrace()}");
-
             if (State.CurrentMode != PlaystyleMode.Director && selectedPawn != null)
                 State.Avatar = new Avatar(selectedPawn);
             base.DoNext();
@@ -150,15 +136,8 @@ namespace PerspectiveShift
 
         public override void DoBack()
         {
-            State.Message($"Page_ChooseStartingCharacter.DoBack called");
             State.Avatar = null;
             base.DoBack();
-        }
-
-        public override void Close(bool doCloseSound = true)
-        {
-            State.Message($"Page_ChooseStartingCharacter.Close called - doCloseSound: {doCloseSound}. Trace: {new System.Diagnostics.StackTrace()}");
-            base.Close(doCloseSound);
         }
     }
 }
