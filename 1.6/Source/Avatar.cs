@@ -351,11 +351,6 @@ namespace PerspectiveShift
                 pawn.Drawer.leaner.shootSourceOffset = snapped;
             }
 
-            if (pawn.pather != null && IsMoving)
-            {
-                var baseSpeed = pawn.GetStatValue(StatDefOf.MoveSpeed);
-                pawn.pather.nextCellCostTotal = 60f / Mathf.Max(baseSpeed, 0.1f);
-            }
 
             if (!physicsPosition.HasValue) return;
             var tweener = pawn.Drawer.tweener;
@@ -1773,7 +1768,10 @@ namespace PerspectiveShift
             {
                 pawn.pather.lastMovedTick = Find.TickManager.TicksGame;
                 var baseSpeed = pawn.GetStatValue(StatDefOf.MoveSpeed);
-                pawn.pather.nextCellCostTotal = 60f / Mathf.Max(baseSpeed, 0.1f);
+                float speedMult = isSprinting ? PerspectiveShiftMod.settings.sprintSpeedMultiplier
+                                : isWalking  ? PerspectiveShiftMod.settings.sneakSpeedMultiplier
+                                : 1f;
+                pawn.pather.nextCellCostTotal = Mathf.Max(60f / Mathf.Max(baseSpeed, 0.1f) / speedMult, 1f);
             }
         }
     }
