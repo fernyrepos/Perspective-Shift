@@ -152,6 +152,8 @@ namespace PerspectiveShift
                         Find.CameraDriver.config = new CameraMapConfig_Avatar();
                     }
                     Find.CameraDriver.rootPos = container.DrawPos;
+                    if (ModCompatibility.IsPawnInVehicle(Avatar.pawn, out _, out _, out _))
+                        Avatar.OnGUI();
                 }
                 else
                 {

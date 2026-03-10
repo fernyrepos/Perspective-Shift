@@ -351,7 +351,6 @@ namespace PerspectiveShift
                 pawn.Drawer.leaner.shootSourceOffset = snapped;
             }
 
-
             if (!physicsPosition.HasValue) return;
             var tweener = pawn.Drawer.tweener;
             tweener.tweenedPos = physicsPosition.Value;
@@ -973,7 +972,10 @@ namespace PerspectiveShift
             if (Event.current.type == EventType.Layout) return;
 
             State.DrawingTopRightGizmos = true;
-            var gizmos = pawn.GetGizmos()
+            var gizmoSource = ModCompatibility.IsPawnInVehicle(pawn, out Pawn vehicle, out bool isDriver, out _)
+                ? vehicle
+                : (Thing)pawn;
+            var gizmos = gizmoSource.GetGizmos()
                 .Distinct()
                 .OrderByDescending(g => g.Order)
                 .OfType<Command>()

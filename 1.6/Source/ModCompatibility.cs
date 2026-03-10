@@ -311,8 +311,28 @@ namespace PerspectiveShift
                 Log.Error("[PS] VehicleFramework: PatherDraw method not found");
                 return false;
             }
-            new Harmony("PerspectiveShift.VehicleCompat").Patch(patherDrawMethod,
+
+            var getGizmosMethod = AccessTools.Method(vehiclePawnType, "GetGizmos");
+            if (getGizmosMethod == null)
+            {
+                Log.Error("[PS] VehicleFramework: GetGizmos method not found");
+                return false;
+            }
+
+            var allowDeconstructMethod = AccessTools.Method("Vehicles.Patch_Construction:AllowDeconstructVehicle");
+            if (allowDeconstructMethod == null)
+            {
+                Log.Error("[PS] VehicleFramework: AllowDeconstructVehicle method not found");
+                return false;
+            }
+
+            var vehicleCompatHarmony = new Harmony("PerspectiveShift.VehicleCompat");
+            vehicleCompatHarmony.Patch(patherDrawMethod,
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(ModCompatibility), nameof(VehiclePathFollowerPatherDrawPrefix))));
+            vehicleCompatHarmony.Patch(getGizmosMethod,
+                postfix: new HarmonyMethod(AccessTools.Method(typeof(ModCompatibility), nameof(VehiclePawnGetGizmosPostfix))));
+            vehicleCompatHarmony.Patch(allowDeconstructMethod,
+                postfix: new HarmonyMethod(AccessTools.Method(typeof(ModCompatibility), nameof(AllowDeconstructVehiclePostfix))));
 
             return true;
         }
@@ -354,7 +374,8 @@ namespace PerspectiveShift
                 return false;
             }
 
-            new Harmony("PerspectiveShift.VVECompat").Patch(slowdownMethod,
+            var vveHarmony = new Harmony("PerspectiveShift.VVECompat");
+            vveHarmony.Patch(slowdownMethod,
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(ModCompatibility), nameof(VVESlowdownPrefix))));
 
             return true;
@@ -663,6 +684,22 @@ namespace PerspectiveShift
             return true;
         }
 
+        public static IEnumerable<Gizmo> VehiclePawnGetGizmosPostfix(IEnumerable<Gizmo> __result, object __instance)
+        {
+            if (State.IsActive && !State.DrawingTopRightGizmos && IsPawnInVehicle(State.Avatar?.pawn, out Pawn vehicle, out bool isDriver, out _))
+            {
+                if (vehicle == __instance && isDriver)
+                {
+                    yield break;
+                }
+            }
+
+            foreach (var g in __result)
+            {
+                yield return g;
+            }
+        }
+
         public static bool VVESlowdownPrefix(ThingComp __instance)
         {
             try
@@ -688,6 +725,14 @@ namespace PerspectiveShift
             }
 
             return true;
+        }
+
+        public static void AllowDeconstructVehiclePostfix(object __0, object __1, ref AcceptanceReport __2)
+        {
+            if (!__2.Accepted) return;
+            if (!State.IsActive) return;
+            if (__1 is Thing t && IsPawnInVehicle(State.Avatar.pawn, out Pawn vehicle, out _, out _) && vehicle == t)
+                __2 = false;
         }
     }
 }
