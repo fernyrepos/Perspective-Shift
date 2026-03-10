@@ -724,8 +724,10 @@ namespace PerspectiveShift
 
             if (pawn.Drafted && !pawn.InMentalState)
             {
-                if (!Find.TickManager.Paused && Find.Selector.NumSelected > 0 && !Find.Targeter.IsTargeting)
-                    Find.Selector.ClearSelection();
+                if (!Find.TickManager.Paused && Find.Selector.IsSelected(pawn) && !Find.Targeter.IsTargeting)
+                {
+                    Find.Selector.Deselect(pawn);
+                }
 
                 if (!Find.TickManager.Paused && !State.ControlsFrozen && !(pawn.stances.curStance is Stance_Busy))
                 {
@@ -1198,7 +1200,7 @@ namespace PerspectiveShift
                 {
                     if (building.def.Minifiable && (building.Faction == pawn.Faction || building.def.building.alwaysUninstallable))
                     {
-                        if (pawn.Map.designationManager.DesignationOn(building, DesignationDefOf.Uninstall) == null)
+                        if (pawn.Map.designationManager.DesignationOn(building, DesignationDefOf.Uninstall) != null)
                         {
                             var unJob = JobMaker.MakeJob(JobDefOf.Uninstall, building);
                             unJob.ignoreDesignations = true;
