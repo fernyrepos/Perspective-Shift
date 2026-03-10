@@ -1597,7 +1597,7 @@ namespace PerspectiveShift
 
         private bool TryDepositInDestination(IHaulDestination dest, Thing item, IntVec3 cell, ThingPlaceMode placeMode)
         {
-            if (dest is Building b)
+            if (dest is Building b && !(b is ISlotGroupParent))
             {
                 var thingOwner = b.TryGetInnerInteractableThingOwner();
                 if (thingOwner != null)
@@ -1647,7 +1647,7 @@ namespace PerspectiveShift
 
                     var container = building.TryGetInnerInteractableThingOwner();
 
-                    if (building is Building_Storage || container != null)
+                    if (container != null && !(building is ISlotGroupParent))
                     {
                         int transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(heldItem, container, heldItem.stackCount);
 
