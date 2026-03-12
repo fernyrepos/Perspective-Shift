@@ -38,6 +38,7 @@ namespace PerspectiveShift
         private Building_Door interactingDoor;
         private bool wasMovingLastFrame;
         private Rect gizmoBounds;
+        private List<object> prevSelected;
         private static Texture2D _reticleTex;
         public static Texture2D ReticleTex => _reticleTex ??= ContentFinder<Texture2D>.Get("UI/Reticle");
         private static Texture2D _reticleCooldownTex;
@@ -977,12 +978,23 @@ namespace PerspectiveShift
             var gizmoSource = ModCompatibility.IsPawnInVehicle(pawn, out Pawn vehicle, out bool isDriver, out _)
                 ? vehicle
                 : (Thing)pawn;
+            bool wasSelected = Find.Selector.IsSelected(gizmoSource);
+            if (!wasSelected)
+            {
+                prevSelected = new List<object>(Find.Selector.SelectedObjects);
+                Find.Selector.selected.Clear();
+                Find.Selector.selected.Add(gizmoSource);
+            }
             var gizmos = gizmoSource.GetGizmos()
                 .Distinct()
                 .OrderByDescending(g => g.Order)
-                .OfType<Command>()
                 .Where(g => g.Visible)
                 .ToList();
+            if (!wasSelected)
+            {
+                Find.Selector.selected.Clear();
+                Find.Selector.selected.AddRange(prevSelected);
+            }
             State.DrawingTopRightGizmos = false;
 
             float scale = 0.85f;
@@ -995,16 +1007,16 @@ namespace PerspectiveShift
             switch (PerspectiveShiftMod.settings.gizmoCorner)
             {
                 case GizmoCorner.TopRight:
-                    startX = (UI.screenWidth - 10f) / scale - actualSize;
+                    startX = (Screen.width - 10f) / scale - actualSize;
                     startY = 10f / scale;
                     break;
                 case GizmoCorner.BottomRight:
-                    startX = (UI.screenWidth - 10f) / scale - actualSize;
-                    startY = (UI.screenHeight - 10f) / scale - actualSize;
+                    startX = (Screen.width - 10f) / scale - actualSize;
+                    startY = (Screen.height - 10f) / scale - actualSize;
                     break;
                 case GizmoCorner.BottomLeft:
                     startX = 10f / scale;
-                    startY = (UI.screenHeight - 10f) / scale - actualSize;
+                    startY = (Screen.height - 10f) / scale - actualSize;
                     break;
                 case GizmoCorner.TopLeft:
                     startX = 10f / scale;
@@ -1040,12 +1052,16 @@ namespace PerspectiveShift
 
             foreach (var cmd in gizmos)
             {
-                KeyBindingDef tempHotkey = cmd.hotKey;
-                if (suppressHotkeys) cmd.hotKey = null;
-                float screenX = x * scale;
-                float screenY = y * scale;
-                float screenW = actualSize * scale;
-                float screenH = actualSize * scale;
+                KeyBindingDef tempHotkey = null;
+                if (cmd is Command command)
+                {
+                    tempHotkey = command.hotKey;
+                    if (suppressHotkeys) command.hotKey = null;
+                }
+                float screenX = x * 0.85f / Prefs.UIScale;
+                float screenY = y * 0.85f / Prefs.UIScale;
+                float screenW = actualSize * 0.85f / Prefs.UIScale;
+                float screenH = actualSize * 0.85f / Prefs.UIScale;
 
                 boundsMinX = Mathf.Min(boundsMinX, screenX);
                 boundsMaxX = Mathf.Max(boundsMaxX, screenX + screenW);
@@ -1056,7 +1072,10 @@ namespace PerspectiveShift
                 parms.isFirst = isFirst;
                 GizmoResult result = cmd.GizmoOnGUI(new Vector2(x, y), actualSize, parms);
 
-                if (suppressHotkeys) cmd.hotKey = tempHotkey;
+                if (cmd is Command command2)
+                {
+                    if (suppressHotkeys) command2.hotKey = tempHotkey;
+                }
 
                 GenUI.AbsorbClicksInRect(new Rect(x, y, actualSize, actualSize));
 
