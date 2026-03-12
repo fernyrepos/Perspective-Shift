@@ -987,7 +987,7 @@ namespace PerspectiveShift
             }
             var gizmos = gizmoSource.GetGizmos()
                 .Distinct()
-                .OrderByDescending(g => g.Order)
+                .OrderBy(g => g.Order)
                 .Where(g => g.Visible)
                 .ToList();
             if (!wasSelected)
@@ -997,7 +997,7 @@ namespace PerspectiveShift
             }
             State.DrawingTopRightGizmos = false;
 
-            float scale = 0.85f;
+            float scale = 0.85f * Prefs.UIScale;
             float actualSize = 75f;
             float spacing = 8f;
 
@@ -1007,31 +1007,32 @@ namespace PerspectiveShift
             switch (PerspectiveShiftMod.settings.gizmoCorner)
             {
                 case GizmoCorner.TopRight:
-                    startX = (Screen.width - 10f) / scale - actualSize;
-                    startY = 10f / scale;
+                    startX = (UI.screenWidth - 10f) / 0.85f - actualSize;
+                    startY = 10f / 0.85f;
                     break;
                 case GizmoCorner.BottomRight:
-                    startX = (Screen.width - 10f) / scale - actualSize;
-                    startY = (Screen.height - 10f) / scale - actualSize;
+                    startX = (UI.screenWidth - 10f) / 0.85f - actualSize;
+                    startY = (UI.screenHeight - 10f) / 0.85f - actualSize;
                     break;
                 case GizmoCorner.BottomLeft:
-                    startX = 10f / scale;
-                    startY = (Screen.height - 10f) / scale - actualSize;
+                    startX = 10f / 0.85f;
+                    startY = (UI.screenHeight - 10f) / 0.85f - actualSize;
                     break;
                 case GizmoCorner.TopLeft:
-                    startX = 10f / scale;
-                    startY = 10f / scale;
+                    startX = 10f / 0.85f;
+                    startY = 10f / 0.85f;
                     break;
             }
 
-            float x = startX;
             float y = startY;
 
-            float xStep = (PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.TopLeft || PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomLeft) ? (actualSize + spacing) : -(actualSize + spacing);
             float yStep = (PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.TopLeft || PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.TopRight) ? (actualSize + spacing) : -(actualSize + spacing);
 
-            float minX = startX - (actualSize + spacing) * 4f;
-            float maxX = startX + (actualSize + spacing) * 4f;
+            float maxRowWidth = (actualSize + spacing) * 4f;
+            float rowWidth = 0f;
+
+            bool rightAnchored = PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.TopRight || PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomRight;
+            float cursor = rightAnchored ? startX + actualSize : startX;
 
             GizmoGridDrawer.drawnHotKeys.Clear();
 
@@ -1052,16 +1053,27 @@ namespace PerspectiveShift
 
             foreach (var cmd in gizmos)
             {
+                float gizmoWidth = cmd.GetWidth(actualSize);
+
+                if (rowWidth > 0 && rowWidth + gizmoWidth > maxRowWidth)
+                {
+                    cursor = rightAnchored ? startX + actualSize : startX;
+                    y += yStep;
+                    rowWidth = 0f;
+                }
+
+                float drawX = rightAnchored ? cursor - gizmoWidth : cursor;
+
                 KeyBindingDef tempHotkey = null;
                 if (cmd is Command command)
                 {
                     tempHotkey = command.hotKey;
                     if (suppressHotkeys) command.hotKey = null;
                 }
-                float screenX = x * 0.85f / Prefs.UIScale;
-                float screenY = y * 0.85f / Prefs.UIScale;
-                float screenW = actualSize * 0.85f / Prefs.UIScale;
-                float screenH = actualSize * 0.85f / Prefs.UIScale;
+                float screenX = drawX * 0.85f;
+                float screenY = y * 0.85f;
+                float screenW = gizmoWidth * 0.85f;
+                float screenH = actualSize * 0.85f;
 
                 boundsMinX = Mathf.Min(boundsMinX, screenX);
                 boundsMaxX = Mathf.Max(boundsMaxX, screenX + screenW);
@@ -1070,14 +1082,14 @@ namespace PerspectiveShift
 
                 GizmoRenderParms parms = default;
                 parms.isFirst = isFirst;
-                GizmoResult result = cmd.GizmoOnGUI(new Vector2(x, y), actualSize, parms);
+                GizmoResult result = cmd.GizmoOnGUI(new Vector2(drawX, y), actualSize, parms);
 
                 if (cmd is Command command2)
                 {
                     if (suppressHotkeys) command2.hotKey = tempHotkey;
                 }
 
-                GenUI.AbsorbClicksInRect(new Rect(x, y, actualSize, actualSize));
+                GenUI.AbsorbClicksInRect(new Rect(drawX, y, gizmoWidth, actualSize));
 
                 if (result.State == GizmoState.Interacted ||
                     (result.State == GizmoState.OpenedFloatMenu
@@ -1092,13 +1104,9 @@ namespace PerspectiveShift
                 }
 
                 isFirst = false;
-
-                x += xStep;
-                if ((xStep < 0 && x < minX) || (xStep > 0 && x > maxX))
-                {
-                    x = startX;
-                    y += yStep;
-                }
+                rowWidth += gizmoWidth + spacing;
+                if (rightAnchored) cursor -= gizmoWidth + spacing;
+                else cursor += gizmoWidth + spacing;
             }
 
             GUI.matrix = prevMatrix;
@@ -1726,7 +1734,7 @@ namespace PerspectiveShift
             float height = 40f;
             float totalHeight = needs.Count * height;
 
-            float startX = gizmoBounds.xMax - width - 10f;
+            float startX = Mathf.Min(gizmoBounds.xMax - width - 10f, UI.screenWidth - width - 10f);
             float startY = gizmoBounds.yMax + 35f;
 
             if (PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomRight)
