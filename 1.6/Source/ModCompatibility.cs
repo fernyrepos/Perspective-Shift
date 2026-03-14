@@ -326,6 +326,13 @@ namespace PerspectiveShift
                 return false;
             }
 
+            var getFloatMenuOptionsMethod = AccessTools.Method(vehiclePawnType, "GetFloatMenuOptions");
+            if (getFloatMenuOptionsMethod == null)
+            {
+                Log.Error("[PS] VehicleFramework: GetFloatMenuOptions method not found");
+                return false;
+            }
+
             var vehicleCompatHarmony = new Harmony("PerspectiveShift.VehicleCompat");
             vehicleCompatHarmony.Patch(patherDrawMethod,
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(ModCompatibility), nameof(VehiclePathFollowerPatherDrawPrefix))));
@@ -333,6 +340,8 @@ namespace PerspectiveShift
                 postfix: new HarmonyMethod(AccessTools.Method(typeof(ModCompatibility), nameof(VehiclePawnGetGizmosPostfix))));
             vehicleCompatHarmony.Patch(allowDeconstructMethod,
                 postfix: new HarmonyMethod(AccessTools.Method(typeof(ModCompatibility), nameof(AllowDeconstructVehiclePostfix))));
+            vehicleCompatHarmony.Patch(getFloatMenuOptionsMethod,
+                postfix: new HarmonyMethod(AccessTools.Method(typeof(ModCompatibility), nameof(VehiclePawnGetFloatMenuOptionsPostfix))));
 
             return true;
         }
@@ -733,6 +742,21 @@ namespace PerspectiveShift
             if (!State.IsActive) return;
             if (__1 is Thing t && IsPawnInVehicle(State.Avatar.pawn, out Pawn vehicle, out _, out _) && vehicle == t)
                 __2 = false;
+        }
+
+        public static IEnumerable<FloatMenuOption> VehiclePawnGetFloatMenuOptionsPostfix(IEnumerable<FloatMenuOption> options, Pawn selPawn)
+        {
+            if (Avatar.IsAvatarLeftClick)
+            {
+                yield break;
+            }
+            else
+            {
+                foreach (var option in options)
+                {
+                    yield return option;
+                }
+            }
         }
     }
 }

@@ -35,6 +35,7 @@ namespace PerspectiveShift
         public Thing CarriedThing => pawn.carryTracker?.CarriedThing;
         public Thing LastManualTarget;
 
+        private Building pendingMinifiedPickup;
         private Building_Door interactingDoor;
         private bool wasMovingLastFrame;
         private Rect gizmoBounds;
@@ -57,6 +58,7 @@ namespace PerspectiveShift
             Scribe_References.Look(ref pawn, "pawn");
             Scribe_References.Look(ref interactingDoor, "interactingDoor");
             Scribe_References.Look(ref savedLord, "savedLord");
+            Scribe_References.Look(ref pendingMinifiedPickup, "pendingMinifiedPickup");
         }
 
         public void UpdatePhysics()
@@ -715,7 +717,10 @@ namespace PerspectiveShift
                     if (gearTab != null)
                     {
                         if (inspectPane.OpenTabType == gearTab.GetType())
+                        {
                             inspectPane.CloseOpenTab();
+                            Find.Selector.Deselect(pawn);
+                        }
                         else
                             inspectPane.OpenTabType = gearTab.GetType();
                     }
@@ -1227,6 +1232,17 @@ namespace PerspectiveShift
                 {
                     if (building.def.Minifiable && (building.Faction == pawn.Faction || building.def.building.alwaysUninstallable))
                     {
+                        var reinstallBp = InstallBlueprintUtility.ExistingBlueprintFor(building);
+                        if (reinstallBp != null)
+                        {
+                            var unJob = JobMaker.MakeJob(JobDefOf.Uninstall, building);
+                            unJob.ignoreDesignations = true;
+                            if (TryStartForcedJob(unJob))
+                            {
+                                pendingMinifiedPickup = building;
+                                return true;
+                            }
+                        }
                         if (pawn.Map.designationManager.DesignationOn(building, DesignationDefOf.Uninstall) != null)
                         {
                             var unJob = JobMaker.MakeJob(JobDefOf.Uninstall, building);
@@ -1784,6 +1800,31 @@ namespace PerspectiveShift
 
             HandleDoorInteraction();
             HandleCombatStance();
+
+            if (pendingMinifiedPickup != null)
+            {
+                if (pawn.CurJob == null || pawn.CurJob.def != JobDefOf.Uninstall)
+                {
+                    var minified = GenClosest.ClosestThingReachable(pawn.Position, pawn.Map, ThingRequest.ForGroup(ThingRequestGroup.MinifiedThing), PathEndMode.ClosestTouch, TraverseParms.For(pawn, Danger.Some));
+                    if (minified != null && minified is MinifiedThing mt && mt.InnerThing == pendingMinifiedPickup)
+                    {
+                        if (pawn.Position.DistanceTo(minified.Position) <= PerspectiveShiftMod.settings.grabRange)
+                        {
+                            ExecutePickup(minified);
+                            pendingMinifiedPickup = null;
+                        }
+                        else
+                        {
+                            Log.Error("[PerspectiveShift] Minified thing is not in range, cannot pick it up");
+                            pendingMinifiedPickup = null;
+                        }
+                    }
+                    else
+                    {
+                        pendingMinifiedPickup = null;
+                    }
+                }
+            }
 
             if (pawn.Drafted && pawn.carryTracker?.CarriedThing != null)
             {
