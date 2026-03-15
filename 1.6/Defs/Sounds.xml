@@ -35,17 +35,17 @@
 
     <SoundDef>
         <defName>PS_SprintSound</defName>
-        <maxSimultaneous>1</maxSimultaneous>
+        <maxSimultaneous>99</maxSimultaneous>
         <subSounds>
             <li>
                 <onCamera>True</onCamera>
                 <grains>
                     <li Class="AudioGrain_Clip">
-                        <clipPath>UI/TinyBell</clipPath>
+                        <clipPath>PS_Sprint</clipPath>
                     </li>
                 </grains>
-                <volumeRange>9~9</volumeRange>
-                <pitchRange>0.85~1.15</pitchRange>
+                <volumeRange>10~20</volumeRange>
+                <pitchRange>1~1.2</pitchRange>
             </li>
         </subSounds>
     </SoundDef>
