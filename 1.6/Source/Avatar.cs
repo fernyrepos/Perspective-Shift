@@ -1248,6 +1248,14 @@ namespace PerspectiveShift
                     ExecutePickup(item);
                     return true;
                 }
+
+                var downedPawn = clickCell.GetFirstPawn(pawn.Map);
+                if (downedPawn != null && downedPawn != pawn && downedPawn.Downed && itemInRange)
+                {
+                    if (!pawn.Awake()) RestUtility.WakeUp(pawn);
+                    ExecutePickup(downedPawn);
+                    return true;
+                }
             }
 
             List<FloatMenuOption> opts = null;

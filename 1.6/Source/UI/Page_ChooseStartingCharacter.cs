@@ -12,18 +12,44 @@ namespace PerspectiveShift
     {
         private Pawn selectedPawn;
         private Vector2 scrollPosition;
+        private List<Pawn> _allPawnsCache;
         public override string PageTitle => State.CurrentMode == PlaystyleMode.Authentic
             ? "PS_ChooseYourCharacter".Translate()
             : "PS_ChooseYourStartingCharacter".Translate();
 
-        private List<Pawn> StartingPawns =>
-            Find.GameInitData.startingAndOptionalPawns
-                .Take(Find.GameInitData.startingPawnCount)
-                .ToList();
+        private List<Pawn> StartingPawns
+        {
+            get
+            {
+                if (_allPawnsCache != null) return _allPawnsCache;
+                var list = Find.GameInitData.startingAndOptionalPawns
+                    .Take(Find.GameInitData.startingPawnCount)
+                    .ToList();
+
+                if (PerspectiveShiftMod.settings.allowNonHuman)
+                {
+                    foreach (var part in Find.Scenario.AllParts.OfType<ScenPart_StartingAnimal>())
+                    {
+                        if (!ScenPart_StartingAnimal_PlayerStartingThings_Patch.cachedAnimals.TryGetValue(part, out var cache))
+                        {
+                            ScenPart_StartingAnimal_PlayerStartingThings_Patch.bypassPart = part;
+                            cache = part.PlayerStartingThings().ToList();
+                            ScenPart_StartingAnimal_PlayerStartingThings_Patch.cachedAnimals[part] = cache;
+                            ScenPart_StartingAnimal_PlayerStartingThings_Patch.bypassPart = null;
+                        }
+                        foreach (var t in cache) if (t is Pawn p) list.Add(p);
+                    }
+                }
+                _allPawnsCache = list;
+                return _allPawnsCache;
+            }
+        }
 
         public override void PreOpen()
         {
             base.PreOpen();
+            _allPawnsCache = null;
+            ScenPart_StartingAnimal_PlayerStartingThings_Patch.ClearCache();
             selectedPawn = StartingPawns.FirstOrDefault();
         }
 
@@ -101,11 +127,11 @@ namespace PerspectiveShift
                 Text.Font = GameFont.Small;
                 Text.Anchor = TextAnchor.MiddleCenter;
                 var nameRect = new Rect(cardRect.x, portraitRect.yMax + 5f, cardWidth, 25f);
-                Widgets.Label(nameRect, pawn.Name.ToStringShort);
+                Widgets.Label(nameRect, pawn.Name?.ToStringShort ?? pawn.LabelShort);
 
                 Text.Font = GameFont.Tiny;
                 var titleRect = new Rect(cardRect.x, nameRect.yMax + 2f, cardWidth, 20f);
-                Widgets.Label(titleRect, pawn.story?.TitleCap ?? "");
+                Widgets.Label(titleRect, pawn.story?.TitleCap ?? pawn.KindLabel.CapitalizeFirst());
 
                 Text.Anchor = TextAnchor.UpperLeft;
             }

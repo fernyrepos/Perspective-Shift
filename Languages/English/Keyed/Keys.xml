@@ -79,11 +79,18 @@
     <PS_ContinueSwapMode>Continue in swap mode</PS_ContinueSwapMode>
     <PS_ContinueDirectorMode>Continue in director mode</PS_ContinueDirectorMode>
     <PS_EndRun>End run</PS_EndRun>
+    <PS_RomanceAdvanceTitle>{0} is making a romantic advance on you.</PS_RomanceAdvanceTitle>
+    <PS_MarriageProposalTitle>{0} is asking for your hand in marriage.</PS_MarriageProposalTitle>
     <PS_Reciprocate>Reciprocate</PS_Reciprocate>
+    <PS_Reciprocate_Desc>Respond back and become lovers.</PS_Reciprocate_Desc>
     <PS_Rebuff>Rebuff</PS_Rebuff>
+    <PS_Rebuff_Desc>Turn down the romantic advance.</PS_Rebuff_Desc>
     <PS_GoWithYourGut>Go with your gut</PS_GoWithYourGut>
+    <PS_GoWithYourGut_Desc>Leave it up to the numbers, what this character would do if not under your control.</PS_GoWithYourGut_Desc>
     <PS_Yes>Yes</PS_Yes>
+    <PS_Yes_Desc>Accept the proposal.</PS_Yes_Desc>
     <PS_No>No</PS_No>
+    <PS_No_Desc>Turn down the proposal.</PS_No_Desc>
     <PS_Permadeath>Permadeath</PS_Permadeath>
     <PS_PermadeathDesc>With this toggle enabled, for the duration of this run you will not be able to swap to any other pawns or back to director mode to continue your run after you die. You are your only hope.\n\nRecommended only for players willing to lose everything, there is no going back after using this toggle.</PS_PermadeathDesc>
     <PS_AllowSwitchingToDirectorMode>Allow switching to director mode</PS_AllowSwitchingToDirectorMode>

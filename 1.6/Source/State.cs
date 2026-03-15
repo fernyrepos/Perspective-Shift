@@ -9,11 +9,30 @@ namespace PerspectiveShift
     [HotSwappable]
     public static class State
     {
+        public enum ForcedInteractionOutcome { None, ForceAccept, ForceReject }
+
+        public static bool TryApplyForcedInteraction(ref float __result)
+        {
+            if (forcedInteraction == ForcedInteractionOutcome.ForceAccept)
+            {
+                __result = 2f;
+                return false;
+            }
+            if (forcedInteraction == ForcedInteractionOutcome.ForceReject)
+            {
+                __result = -1f;
+                return false;
+            }
+            return true;
+        }
+
         public static Avatar Avatar;
         public static PlaystyleMode CurrentMode = PlaystyleMode.Director;
         public static bool DrawingTopRightGizmos = false;
         private static CameraMapConfig _savedConfig;
         public static Vector3? CameraLockPosition;
+        public static bool skipDialog = false;
+        public static ForcedInteractionOutcome forcedInteraction = ForcedInteractionOutcome.None;
 
         public static bool IsActive => Avatar != null && Avatar.pawn != null && !Avatar.pawn.Dead
             && !WorldComponent_GravshipController.CutsceneInProgress;

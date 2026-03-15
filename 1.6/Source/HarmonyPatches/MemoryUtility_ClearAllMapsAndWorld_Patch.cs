@@ -10,6 +10,7 @@ namespace PerspectiveShift
         {
             State.ClearAvatar();
             ModCompatibility.ClearCaches();
+            ScenPart_StartingAnimal_PlayerStartingThings_Patch.ClearCache();
         }
     }
 }
