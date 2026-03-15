@@ -81,14 +81,26 @@ namespace PerspectiveShift
                 }
             }
 
-            if (__instance == State.Current?.pawn)
+            if (__instance != State.Current?.pawn && __instance.Faction == Faction.OfPlayer)
             {
+                State.seekAtWillPawns ??= new HashSet<int>();
+                bool isRanged = __instance.equipment?.Primary?.def?.IsRangedWeapon ?? false;
                 yield return new Command_Toggle
                 {
                     defaultLabel = "PS_SeekAtWill".Translate(),
-                    icon = ContentFinder<Texture2D>.Get("UI/Commands/Attack"),
-                    isActive = () => State.Avatar.seekAtWill,
-                    toggleAction = () => State.Avatar.seekAtWill = !State.Avatar.seekAtWill
+                    icon = ContentFinder<Texture2D>.Get(isRanged ? "Gizmos/SeekAtWill_Ranged" : "Gizmos/SeekAtWill_Melee"),
+                    isActive = () => State.seekAtWillPawns.Contains(__instance.thingIDNumber),
+                    toggleAction = () =>
+                    {
+                        if (State.seekAtWillPawns.Contains(__instance.thingIDNumber))
+                        {
+                            State.seekAtWillPawns.Remove(__instance.thingIDNumber);
+                        }
+                        else
+                        {
+                            State.seekAtWillPawns.Add(__instance.thingIDNumber);
+                        }
+                    }
                 };
             }
 

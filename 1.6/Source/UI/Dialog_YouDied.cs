@@ -23,6 +23,10 @@ namespace PerspectiveShift
             deathMessage = HealthUtility.GetDiedLetterText(pawn, dinfo, hediff);
         }
 
+        public override void OnCancelKeyPressed()
+        {
+        }
+
         public override void DoWindowContents(Rect inRect)
         {
             const float btnW = 185f;
@@ -32,22 +36,26 @@ namespace PerspectiveShift
             inRect.x += 50;
             inRect.width -= 100;
 
-            var portraitRect = new Rect(inRect.x, inRect.y + 20, portraitSize, portraitSize);
+            float pOffset = PerspectiveShiftMod.settings.permadeath
+                ? Mathf.Max(0f, (inRect.height - 194f) / 2f - 20f)
+                : 0f;
+
+            var portraitRect = new Rect(inRect.x, inRect.y + 20 + pOffset, portraitSize, portraitSize);
             var portrait = PortraitsCache.Get(pawn, new Vector2(portraitSize, portraitSize), Rot4.South, cameraZoom: 1.5f, healthStateOverride: PawnHealthState.Mobile);
             GUI.DrawTexture(portraitRect, portrait);
-            Text.Anchor = TextAnchor.MiddleCenter;      
+            Text.Anchor = TextAnchor.MiddleCenter;
             var titleStyle = new GUIStyle(Text.CurFontStyle);
             titleStyle.fontSize = 26;
-            var titleRect = new Rect(inRect.x, inRect.y + 20, inRect.width, 60f);
+            var titleRect = new Rect(inRect.x, inRect.y + 20 + pOffset, inRect.width, 60f);
             GUI.Label(titleRect, "PS_YouDied".Translate(), titleStyle);
             Text.Font = GameFont.Medium;
             GUI.color = DeathCauseColor;
-            Widgets.Label(new Rect(inRect.x, inRect.y + 65f, inRect.width, 32f), deathMessage);
+            Widgets.Label(new Rect(inRect.x, inRect.y + 65f + pOffset, inRect.width, 32f), deathMessage);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
 
             Text.Anchor = TextAnchor.UpperLeft;
-            float y = inRect.y + 140f;
+            float y = inRect.y + 140f + pOffset;
 
             if (!PerspectiveShiftMod.settings.permadeath)
             {
@@ -73,10 +81,13 @@ namespace PerspectiveShift
 
                 y += 6f;
             }
-
+            else
+            {
+                y -= 30;
+            }
             var endRect = new Rect(inRect.x + inRect.width * 5f / 16f, y + 30, inRect.width * 3f / 8f, 44f);
             if (Widgets.CustomButtonText(ref endRect, "PS_EndRun".Translate(), EndRunBgColor, Color.white, EndRunBgColor))
-                GenScene.GoToMainMenu();
+                Find.WindowStack.Add(new Dialog_NameSaveAndExit());
 
             Text.Anchor = TextAnchor.UpperLeft;
         }

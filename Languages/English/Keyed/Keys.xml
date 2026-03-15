@@ -68,7 +68,7 @@
     <PS_OnlyPlayerCanStore>Only player can store</PS_OnlyPlayerCanStore>
     <PS_OnlyPlayerCanTake>Only player can take</PS_OnlyPlayerCanTake>
     <PS_OnlyPlayerCanUse>Only player can use</PS_OnlyPlayerCanUse>
-    <PS_PerspectiveSettings>Perspective settings</PS_PerspectiveSettings>
+    <PS_PerspectiveSettings>Perspective Shift settings</PS_PerspectiveSettings>
     <PS_Modify>Modify</PS_Modify>
     <PS_Storage>Storage</PS_Storage>
     <PS_StorageDoesNotAccept>Storage does not accept this item.</PS_StorageDoesNotAccept>
@@ -102,4 +102,7 @@
     <PS_ContinueDynamicMode_Desc>Continue your game in total freedom, where you can swap between any of your characters or director mode at will.</PS_ContinueDynamicMode_Desc>
     <PS_ContinueSwapMode_Desc>Continue your game from the perspective of your characters, freely swapping between them.</PS_ContinueSwapMode_Desc>
     <PS_ContinueDirectorMode_Desc>Continue your game from an omniscient point of view, directing and managing your characters.</PS_ContinueDirectorMode_Desc>
+    <PS_AbilityCancelled>{0} cancelled due to movement.</PS_AbilityCancelled>
+    <PS_StorageFull>{0} cannot be deposited as the storage is full.</PS_StorageFull>
+    <PS_SaveAndEndRun>Save and end run</PS_SaveAndEndRun>
 </LanguageData>

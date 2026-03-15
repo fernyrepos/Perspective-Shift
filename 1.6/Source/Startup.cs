@@ -94,14 +94,16 @@ namespace PerspectiveShift
             };
 
             subNodes.Insert(index, newNode);
-        }
-    }
 
-    public class ThinkNode_ConditionalAvatarDrafted : ThinkNode_Conditional
-    {
-        public override bool Satisfied(Pawn pawn)
-        {
-            return pawn.IsAvatar() && pawn.Drafted;
+            var seekAtWillNode = new ThinkNode_ConditionalSeekAtWill
+            {
+                subNodes = new List<ThinkNode>
+                {
+                    new JobGiver_SeekAtWill()
+                }
+            };
+
+            subNodes.Insert(index, seekAtWillNode);
         }
     }
 }

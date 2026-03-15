@@ -1,6 +1,8 @@
 using RimWorld;
+using System.Collections.Generic;
 using UnityEngine;
 using Verse;
+using Verse.AI;
 using Verse.AI.Group;
 
 namespace PerspectiveShift
@@ -9,8 +11,8 @@ namespace PerspectiveShift
     [HotSwappable]
     public static class State
     {
+        public static HashSet<int> seekAtWillPawns = new HashSet<int>();
         public enum ForcedInteractionOutcome { None, ForceAccept, ForceReject }
-
         public static bool TryApplyForcedInteraction(ref float __result)
         {
             if (forcedInteraction == ForcedInteractionOutcome.ForceAccept)
@@ -33,7 +35,7 @@ namespace PerspectiveShift
         public static Vector3? CameraLockPosition;
         public static bool skipDialog = false;
         public static ForcedInteractionOutcome forcedInteraction = ForcedInteractionOutcome.None;
-
+        public static bool pendingDeathMenu = false;
         public static bool IsActive => Avatar != null && Avatar.pawn != null && !Avatar.pawn.Dead
             && !WorldComponent_GravshipController.CutsceneInProgress;
         public static Avatar Current => Avatar;
@@ -52,8 +54,7 @@ namespace PerspectiveShift
 
         public static void SetAvatar(Pawn pawn, bool showMessage = false)
         {
-            if (pawn == null) return;
-
+            pendingDeathMenu = false;
             if (Avatar?.pawn != null && Avatar.pawn != pawn)
             {
                 CleanupPawnState(Avatar.pawn);
@@ -62,7 +63,12 @@ namespace PerspectiveShift
             Message($"PerspectiveState.SetAvatar - Setting avatar to {pawn.Name}, Mode: {CurrentMode}");
             Avatar = new Avatar(pawn);
             CameraLockPosition = null;
-
+            pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
+            pawn.pather.StopDead();
+            var wait = JobMaker.MakeJob(JobDefOf.Wait);
+            wait.expiryInterval = 60;
+            wait.checkOverrideOnExpire = true;
+            pawn.jobs.TryTakeOrderedJob(wait);
             var lord = pawn.GetLord();
             if (lord != null)
             {
@@ -119,6 +125,7 @@ namespace PerspectiveShift
             {
                 if (pawn.Dead)
                 {
+                    pendingDeathMenu = true;
                     Find.WindowStack.Add(new Dialog_YouDied(pawn, dinfo, hediff));
                 }
                 return;

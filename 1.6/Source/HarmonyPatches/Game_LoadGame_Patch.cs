@@ -9,6 +9,14 @@ namespace PerspectiveShift
         public static void Postfix()
         {
             State.CameraLockPosition = null;
+            if (State.pendingDeathMenu && State.Avatar?.pawn is { Dead: true } deadPawn)
+            {
+                LongEventHandler.ExecuteWhenFinished(() =>
+                {
+                    Find.WindowStack.Add(new Dialog_YouDied(deadPawn, null, null));
+                    Find.TickManager.Pause();
+                });
+            }
         }
     }
 }

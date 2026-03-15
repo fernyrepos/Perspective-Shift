@@ -22,6 +22,16 @@ namespace PerspectiveShift
             get
             {
                 if (_allPawnsCache != null) return _allPawnsCache;
+
+                if (Current.ProgramState == ProgramState.Playing)
+                {
+                    _allPawnsCache = Find.Maps
+                        .SelectMany(m => m.mapPawns.FreeColonistsSpawned)
+                        .Where(p => !p.Dead)
+                        .ToList();
+                    return _allPawnsCache;
+                }
+
                 var list = Find.GameInitData.startingAndOptionalPawns
                     .Take(Find.GameInitData.startingPawnCount)
                     .ToList();
@@ -56,11 +66,12 @@ namespace PerspectiveShift
         public override void PostOpen()
         {
             base.PostOpen();
-            if (State.CurrentMode == PlaystyleMode.Director || StartingPawns.Count <= 1)
+            if (State.CurrentMode == PlaystyleMode.Director ||
+                (StartingPawns.Count <= 1 && Current.ProgramState != ProgramState.Playing))
             {
                 if (State.CurrentMode != PlaystyleMode.Director && StartingPawns.Count == 1)
                 {
-                    State.Avatar = new Avatar(StartingPawns[0]);
+                    State.SetAvatar(StartingPawns[0]);
                 }
                 DoNext();
                 return;
@@ -156,7 +167,7 @@ namespace PerspectiveShift
         public override void DoNext()
         {
             if (State.CurrentMode != PlaystyleMode.Director && selectedPawn != null)
-                State.Avatar = new Avatar(selectedPawn);
+                State.SetAvatar(selectedPawn);
             base.DoNext();
         }
 

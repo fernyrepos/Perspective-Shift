@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HarmonyLib;
 using Verse.Profile;
 
@@ -9,6 +10,8 @@ namespace PerspectiveShift
         public static void Prefix()
         {
             State.ClearAvatar();
+            State.seekAtWillPawns = new HashSet<int>();
+            State.pendingDeathMenu = false;
             ModCompatibility.ClearCaches();
             ScenPart_StartingAnimal_PlayerStartingThings_Patch.ClearCache();
         }

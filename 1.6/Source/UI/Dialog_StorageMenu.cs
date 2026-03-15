@@ -27,7 +27,7 @@ namespace PerspectiveShift
         public override void PostOpen()
         {
             base.PostOpen();
-            DefsOf.PS_StorageOpen.PlayOneShotOnCamera();
+            DefsOf.PS_StorageOpen.PlayOneShot(State.Avatar.pawn);
         }
 
         public override void PreClose()
@@ -79,8 +79,8 @@ namespace PerspectiveShift
                 if (Event.current.type == EventType.MouseUp && cursorItem != null)
                 {
                     State.Avatar.pawn.carryTracker.TryStartCarry(cursorItem, cursorItem.stackCount, reserve: true);
+                    cursorItem.def.soundDrop.PlayOneShot(State.Avatar.pawn);
                     cursorItem = null;
-                    SoundDefOf.Tick_Low.PlayOneShotOnCamera();
                     Close();
                     Event.current.Use();
                 }
@@ -159,14 +159,9 @@ namespace PerspectiveShift
         {
             GenPlace.TryPlaceThing(item, targetCell, storage.Map, ThingPlaceMode.Direct);
 
-            Thing toRegister = !item.Destroyed ? item
-                : targetCell.GetThingList(storage.Map)
-                    .FirstOrDefault(t => t.def == item.def && t.def.category == ThingCategory.Item);
-
-            if (toRegister != null)
+            if (!item.Destroyed)
             {
-                slotComp.SetItemSlot(toRegister.thingIDNumber, slotIdx);
-                slotComp.ReorderCellThingGrid(storage, targetCell, cellIdx);
+                slotComp.SetItemSlot(item.thingIDNumber, slotIdx);
                 storage.Map.mapDrawer.MapMeshDirty(targetCell, MapMeshFlagDefOf.Things);
             }
         }
@@ -179,7 +174,7 @@ namespace PerspectiveShift
                 {
                     cursorItem = clickedItem.SplitOff(clickedItem.stackCount);
                     slotComp.AddGap(slotIdx);
-                    SoundDefOf.Tick_High.PlayOneShotOnCamera();
+                    clickedItem.def.soundPickup.PlayOneShot(State.Avatar.pawn);
                 }
                 else if (cursorItem != null && clickedItem == null)
                 {
@@ -189,7 +184,7 @@ namespace PerspectiveShift
                         cursorItem = null;
                         slotComp.RemoveGap(slotIdx);
                         PlaceAndRegister(toPlace, targetCell, cellIdx, slotIdx);
-                        SoundDefOf.Tick_Low.PlayOneShotOnCamera();
+                        toPlace.def.soundDrop.PlayOneShot(State.Avatar.pawn);
                     }
                     else
                     {
@@ -206,7 +201,7 @@ namespace PerspectiveShift
                             var transfer = Mathf.Min(room, cursorItem.stackCount);
                             clickedItem.TryAbsorbStack(cursorItem.SplitOff(transfer), true);
                             if (cursorItem.stackCount == 0) cursorItem = null;
-                            SoundDefOf.Tick_Low.PlayOneShotOnCamera();
+                            clickedItem.def.soundDrop.PlayOneShot(State.Avatar.pawn);
                         }
                     }
                     else
@@ -217,7 +212,7 @@ namespace PerspectiveShift
                             cursorItem = clickedItem.SplitOff(clickedItem.stackCount);
                             slotComp.RemoveGap(slotIdx);
                             PlaceAndRegister(temp, targetCell, cellIdx, slotIdx);
-                            SoundDefOf.Tick_High.PlayOneShotOnCamera();
+                            cursorItem.def.soundPickup.PlayOneShot(State.Avatar.pawn);
                         }
                         else
                         {
@@ -232,7 +227,7 @@ namespace PerspectiveShift
                 {
                     var toTake = Mathf.CeilToInt(clickedItem.stackCount / 2f);
                     cursorItem = clickedItem.SplitOff(toTake);
-                    SoundDefOf.Tick_High.PlayOneShotOnCamera();
+                    cursorItem.def.soundPickup.PlayOneShot(State.Avatar.pawn);
                 }
                 else if (cursorItem != null)
                 {
@@ -244,7 +239,7 @@ namespace PerspectiveShift
                             var single = cursorItem.SplitOff(1);
                             PlaceAndRegister(single, targetCell, cellIdx, slotIdx);
                             if (cursorItem.stackCount == 0) cursorItem = null;
-                            SoundDefOf.Tick_Low.PlayOneShotOnCamera();
+                            single.def.soundDrop.PlayOneShot(State.Avatar.pawn);
                         }
                         else
                         {
@@ -256,7 +251,7 @@ namespace PerspectiveShift
                         var single = cursorItem.SplitOff(1);
                         clickedItem.TryAbsorbStack(single, true);
                         if (cursorItem.stackCount == 0) cursorItem = null;
-                        SoundDefOf.Tick_Low.PlayOneShotOnCamera();
+                        clickedItem.def.soundDrop.PlayOneShot(State.Avatar.pawn);
                     }
                 }
             }

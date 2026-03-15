@@ -41,7 +41,6 @@ namespace PerspectiveShift
         private bool wasMovingLastFrame;
         private Rect gizmoBounds;
         private List<object> prevSelected;
-        public bool seekAtWill;
         private static Texture2D _reticleTex;
         public static Texture2D ReticleTex => _reticleTex ??= ContentFinder<Texture2D>.Get("UI/Reticle");
         private static Texture2D _reticleCooldownTex;
@@ -57,11 +56,10 @@ namespace PerspectiveShift
 
         public void ExposeData()
         {
-            Scribe_References.Look(ref pawn, "pawn");
+            Scribe_References.Look(ref pawn, "pawn", saveDestroyedThings: true);
             Scribe_References.Look(ref interactingDoor, "interactingDoor");
             Scribe_References.Look(ref savedLord, "savedLord");
             Scribe_References.Look(ref pendingMinifiedPickup, "pendingMinifiedPickup");
-            Scribe_Values.Look(ref seekAtWill, "seekAtWill", false);
         }
 
         public void UpdatePhysics()
@@ -482,6 +480,7 @@ namespace PerspectiveShift
                 {
                     if (!(canRunAndGun && isShooting && pawn.Drafted))
                     {
+                        HandleAbilityCancellation(pawn.jobs.curJob);
                         pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
                     }
                 }
@@ -571,6 +570,23 @@ namespace PerspectiveShift
                         UpdateRotation(moveInput.normalized);
                     }
                 }
+            }
+        }
+
+        private void HandleAbilityCancellation(Job curJob)
+        {
+            string abilityName = null;
+            if (curJob?.verbToUse is IAbilityVerb av && av.Ability != null)
+            {
+                abilityName = av.Ability.def.LabelCap;
+            }
+            else
+            {
+                abilityName = ModCompatibility.GetVEFAbilityName(pawn);
+            }
+            if (!string.IsNullOrEmpty(abilityName))
+            {
+                Messages.Message("PS_AbilityCancelled".Translate(abilityName), MessageTypeDefOf.RejectInput, false);
             }
         }
 
@@ -1700,16 +1716,29 @@ namespace PerspectiveShift
                 }
                 else
                 {
-                    if (TryDepositInDestination(haulDest, itemToDrop, cell, placeMode))
+                    IntVec3 depositCell = cell;
+                    if (haulDest is Building_Storage bStorage)
+                    {
+                        foreach (var c in bStorage.AllSlotCellsList())
+                        {
+                            if (StoreUtility.IsGoodStoreCell(c, pawn.Map, itemToDrop, pawn, pawn.Faction))
+                            {
+                                depositCell = c;
+                                break;
+                            }
+                        }
+                    }
+                    if (TryDepositInDestination(haulDest, itemToDrop, depositCell, placeMode))
                     {
                         return true;
                     }
-                    else
-                    {
-                        Messages.Message("PS_StorageImpossible".Translate(itemToDrop.LabelCap), MessageTypeDefOf.RejectInput, false);
-                        DropAdjacent(itemToDrop, cell);
-                        return true;
-                    }
+                    bool filterAllows = haulDest.GetStoreSettings()?.AllowedToAccept(itemToDrop) == true;
+                    Messages.Message(filterAllows
+                        ? "PS_StorageFull".Translate(itemToDrop.LabelCap)
+                        : "PS_StorageImpossible".Translate(itemToDrop.LabelCap),
+                        MessageTypeDefOf.RejectInput, false);
+                    DropAdjacent(itemToDrop, cell);
+                    return true;
                 }
             }
 

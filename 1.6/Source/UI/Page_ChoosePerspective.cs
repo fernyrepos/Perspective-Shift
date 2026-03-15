@@ -107,8 +107,10 @@ namespace PerspectiveShift
 
         private void DrawRoleSelection(Rect rect)
         {
+            rect.y += 10f;
+            rect.height -= 40f;
             float cardWidth = 400f;
-            float cardHeight = 620f;
+            float cardHeight = rect.height;
             float gap = 75f;
 
             float totalWidth = cardWidth * 2 + gap;
@@ -293,6 +295,8 @@ namespace PerspectiveShift
                 {
                     State.CurrentMode = selectedPlaystyle;
                     State.ClearAvatar();
+                    if (next == null && selectedPlaystyle == PlaystyleMode.Swap)
+                        Find.WindowStack.Add(new Page_ChooseStartingCharacter());
                     base.DoNext();
                 }
             }
@@ -300,6 +304,8 @@ namespace PerspectiveShift
             {
                 State.CurrentMode = PlaystyleMode.Authentic;
                 State.ClearAvatar();
+                if (next == null)
+                    Find.WindowStack.Add(new Page_ChooseStartingCharacter());
                 base.DoNext();
             }
         }

@@ -27,10 +27,6 @@ namespace PerspectiveShift
         {
             if (pawn.IsAvatar() && !pawn.InMentalState)
             {
-                if (State.Avatar.seekAtWill && (__originalMethod.DeclaringType == typeof(JobGiver_AIFightEnemy) || __originalMethod.DeclaringType == typeof(JobGiver_ConfigurableHostilityResponse)))
-                {
-                    return true;
-                }
                 if (!pawn.Drafted && (pawn.GetLord() != null || pawn.mindState?.duty != null))
                 {
                     return true;

@@ -12,7 +12,7 @@ namespace PerspectiveShift
             if (!__result) return;
             var sel = __instance.SelObject as ThingWithComps;
             var comp = sel?.GetComp<CompPlayerOnly>();
-            if (comp != null && comp.mode != PlayerOnlyMode.None)
+            if (comp != null && (comp.mode == PlayerOnlyMode.Store || comp.mode == PlayerOnlyMode.Use))
             {
                 __result = false;
             }

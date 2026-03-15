@@ -51,7 +51,10 @@ namespace PerspectiveShift
             {
                 yield return new Command_Action
                 {
-                    defaultLabel = "PS_PlayerOnlyRestrictions".Translate(),
+                    defaultLabel = (mode == PlayerOnlyMode.None ? "PS_NoRestriction" :
+                                    mode == PlayerOnlyMode.Store ? "PS_OnlyPlayerCanStore" :
+                                    mode == PlayerOnlyMode.Take ? "PS_OnlyPlayerCanTake" :
+                                    "PS_OnlyPlayerCanUse").Translate(),
                     icon = ContentFinder<Texture2D>.Get(mode == PlayerOnlyMode.None ? "Gizmos/NoPlayerStorageRestriction" : mode == PlayerOnlyMode.Store ? "Gizmos/OnlyPlayerCanStore" : mode == PlayerOnlyMode.Take ? "Gizmos/OnlyPlayerCanTake" : "Gizmos/OnlyPlayerCanUse"),
                     action = () =>
                     {
@@ -59,7 +62,7 @@ namespace PerspectiveShift
                         {
                             new FloatMenuOption("PS_NoRestriction".Translate(), () => mode = PlayerOnlyMode.None),
                             new FloatMenuOption("PS_OnlyPlayerCanStore".Translate(), () => { mode = PlayerOnlyMode.Store; WideFilter(); }),
-                            new FloatMenuOption("PS_OnlyPlayerCanTake".Translate(), () => { mode = PlayerOnlyMode.Take; WideFilter(); }),
+                            new FloatMenuOption("PS_OnlyPlayerCanTake".Translate(), () => mode = PlayerOnlyMode.Take),
                             new FloatMenuOption("PS_OnlyPlayerCanUse".Translate(), () => { mode = PlayerOnlyMode.Use; WideFilter(); })
                         };
                         Find.WindowStack.Add(new FloatMenu(list));

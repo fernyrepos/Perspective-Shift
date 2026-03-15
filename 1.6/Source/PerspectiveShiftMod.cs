@@ -46,10 +46,10 @@ namespace PerspectiveShift
                 settings.sprintSpeedMultiplier = listing.Slider(settings.sprintSpeedMultiplier, 1.1f, 3f);
 
                 listing.Label("PS_SprintFoodDrainMultiplier".Translate(settings.sprintFoodDrain.ToString("F1")));
-                settings.sprintFoodDrain = listing.Slider(settings.sprintFoodDrain, 1f, 5f);
+                settings.sprintFoodDrain = listing.Slider(settings.sprintFoodDrain, 1f, 10f);
 
                 listing.Label("PS_SprintSleepDrainMultiplier".Translate(settings.sprintSleepDrain.ToString("F1")));
-                settings.sprintSleepDrain = listing.Slider(settings.sprintSleepDrain, 1f, 5f);
+                settings.sprintSleepDrain = listing.Slider(settings.sprintSleepDrain, 1f, 10f);
             }
             listing.CheckboxLabeled("PS_EnableSneaking".Translate(), ref settings.enableSneaking);
             if (settings.enableSneaking)

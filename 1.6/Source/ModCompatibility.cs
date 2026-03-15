@@ -18,6 +18,7 @@ namespace PerspectiveShift
         public static readonly bool VehicleFrameworkAvailable;
         public static readonly bool SimpleCameraSettingAvailable;
         public static readonly bool VanillaVehiclesExpandedAvailable;
+        public static readonly bool VanillaExpandedFrameworkAvailable;
 
         private static Type vehiclePawnType;
         private static FieldInfo vehiclePatherField;
@@ -44,6 +45,11 @@ namespace PerspectiveShift
         private static FieldInfo vveCurrentSpeedField;
         private static PropertyInfo vveStatMoveSpeedProp;
         private static FieldInfo vveHandbrakeAppliedField;
+
+        private static Type compAbilitiesType;
+        private static FieldInfo currentlyCastingField;
+        private static FieldInfo abilityDefField;
+        private static PropertyInfo abilityLabelCapProperty;
 
         private static Type compRunAndGunType;
         private static PropertyInfo isEnabledProperty;
@@ -73,6 +79,10 @@ namespace PerspectiveShift
             VanillaVehiclesExpandedAvailable = ModsConfig.IsActive("OskarPotocki.VanillaVehiclesExpanded");
             if (VanillaVehiclesExpandedAvailable && VehicleFrameworkAvailable && !InitVVECompat())
                 VanillaVehiclesExpandedAvailable = false;
+
+            VanillaExpandedFrameworkAvailable = ModsConfig.IsActive("OskarPotocki.VanillaFactionsExpanded.Core");
+            if (VanillaExpandedFrameworkAvailable && !InitVEFCompat())
+                VanillaExpandedFrameworkAvailable = false;
         }
 
         public static void ClearCaches()
@@ -387,6 +397,84 @@ namespace PerspectiveShift
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(ModCompatibility), nameof(VVESlowdownPrefix))));
 
             return true;
+        }
+
+        private static bool InitVEFCompat()
+        {
+            compAbilitiesType = AccessTools.TypeByName("VEF.Abilities.CompAbilities");
+            if (compAbilitiesType == null)
+            {
+                Log.Error("[PS] VEF: CompAbilities type not found");
+                return false;
+            }
+
+            currentlyCastingField = AccessTools.Field(compAbilitiesType, "currentlyCasting");
+            if (currentlyCastingField == null)
+            {
+                Log.Error("[PS] VEF: currentlyCasting field not found");
+                return false;
+            }
+
+            var abilityType = AccessTools.TypeByName("VEF.Abilities.Ability");
+            if (abilityType == null)
+            {
+                Log.Error("[PS] VEF: Ability type not found");
+                return false;
+            }
+
+            abilityDefField = AccessTools.Field(abilityType, "def");
+            if (abilityDefField == null)
+            {
+                Log.Error("[PS] VEF: def field not found");
+                return false;
+            }
+
+            var abilityDefType = AccessTools.TypeByName("VEF.Abilities.AbilityDef");
+            if (abilityDefType == null)
+            {
+                Log.Error("[PS] VEF: AbilityDef type not found");
+                return false;
+            }
+
+            abilityLabelCapProperty = AccessTools.Property(abilityDefType, "LabelCap");
+            if (abilityLabelCapProperty == null)
+            {
+                Log.Error("[PS] VEF: LabelCap property not found");
+                return false;
+            }
+
+            return true;
+        }
+
+        public static string GetVEFAbilityName(Pawn pawn)
+        {
+            if (!VanillaExpandedFrameworkAvailable)
+            {
+                return null;
+            }
+            try
+            {
+                var comp = pawn.AllComps.FirstOrDefault(c => compAbilitiesType.IsAssignableFrom(c.GetType()));
+                if (comp != null)
+                {
+                    var ability = currentlyCastingField.GetValue(comp);
+                    if (ability != null)
+                    {
+                        var def = abilityDefField.GetValue(ability);
+                        if (def != null)
+                        {
+                            var label = abilityLabelCapProperty.GetValue(def);
+                            var labelStr = label?.ToString();
+                            return labelStr;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[PS] Error getting VEF ability name: {ex}");
+            }
+            return null;
         }
 
         public static bool IsRunAndGunActiveFor(Pawn pawn, out string reason)
