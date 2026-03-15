@@ -6,10 +6,11 @@ using System.Collections.Generic;
 
 namespace PerspectiveShift
 {
+    [HotSwappable]
     public class PerspectiveShiftMod : Mod
     {
         public static PerspectiveShiftSettings settings;
-
+        private Vector2 scrollPosition;
         public PerspectiveShiftMod(ModContentPack pack) : base(pack)
         {
             settings = GetSettings<PerspectiveShiftSettings>();
@@ -19,7 +20,10 @@ namespace PerspectiveShift
         public override void DoSettingsWindowContents(Rect rect)
         {
             var listing = new Listing_Standard();
-            listing.Begin(rect);
+            var outRect = new Rect(rect.x, rect.y, rect.width, rect.height);
+            var viewRect = new Rect(0f, 0f, rect.width - 30f, CalculateHeight());
+            Widgets.BeginScrollView(outRect, ref scrollPosition, viewRect);
+            listing.Begin(viewRect);
 
             listing.Label("PS_ZoomSpeed".Translate(settings.zoomSpeed.ToString("F2")));
             settings.zoomSpeed = listing.Slider(settings.zoomSpeed, 0.1f, 1.0f);
@@ -40,6 +44,12 @@ namespace PerspectiveShift
             {
                 listing.Label("PS_SprintSpeedMultiplier".Translate(settings.sprintSpeedMultiplier.ToString("F1")));
                 settings.sprintSpeedMultiplier = listing.Slider(settings.sprintSpeedMultiplier, 1.1f, 3f);
+
+                listing.Label("PS_SprintFoodDrainMultiplier".Translate(settings.sprintFoodDrain.ToString("F1")));
+                settings.sprintFoodDrain = listing.Slider(settings.sprintFoodDrain, 1f, 5f);
+
+                listing.Label("PS_SprintSleepDrainMultiplier".Translate(settings.sprintSleepDrain.ToString("F1")));
+                settings.sprintSleepDrain = listing.Slider(settings.sprintSleepDrain, 1f, 5f);
             }
             listing.CheckboxLabeled("PS_EnableSneaking".Translate(), ref settings.enableSneaking);
             if (settings.enableSneaking)
@@ -69,7 +79,27 @@ namespace PerspectiveShift
             listing.CheckboxLabeled("PS_RequirePawnInFaction".Translate(), ref settings.requirePawnInFaction, "PS_RequirePawnInFactionDesc".Translate());
 
             listing.End();
+            Widgets.EndScrollView();
             base.DoSettingsWindowContents(rect);
+        }
+
+        private float CalculateHeight()
+        {
+            var labels = 6;
+            var sliders = 6;
+            var checkboxes = 6;
+            var buttons = 1;
+            if (settings.enableSprinting)
+            {
+                labels += 3;
+                sliders += 3;
+            }
+            if (settings.enableSneaking)
+            {
+                labels += 1;
+                sliders += 1;
+            }
+            return (labels * 24f) + (sliders * 24f) + (checkboxes * 24f) + (buttons * 32f);
         }
 
         public override string SettingsCategory()

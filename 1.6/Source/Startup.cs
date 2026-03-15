@@ -11,6 +11,24 @@ namespace PerspectiveShift
         static Startup()
         {
             PatchThinkTreeDefs();
+            InjectComps();
+        }
+
+        private static void InjectComps()
+        {
+            foreach (var def in DefDatabase<ThingDef>.AllDefsListForReading)
+            {
+                if (def.IsWorkTable || typeof(Building_Storage).IsAssignableFrom(def.thingClass))
+                {
+                    if (def.comps == null) def.comps = new List<CompProperties>();
+                    def.comps.Add(new CompProperties_PlayerOnly());
+                }
+                if (typeof(Building_Storage).IsAssignableFrom(def.thingClass))
+                {
+                    if (def.comps == null) def.comps = new List<CompProperties>();
+                    def.comps.Add(new CompProperties_StorageSlotOrder());
+                }
+            }
         }
 
         public static void PatchThinkTreeDefs()
@@ -18,7 +36,7 @@ namespace PerspectiveShift
             var thinkTreeDefs = DefDatabase<ThinkTreeDef>.AllDefsListForReading;
             foreach (var thinkTreeDef in thinkTreeDefs)
             {
-                if (thinkTreeDef.defName == "Downed") continue;
+                if (thinkTreeDef == DefsOf.Downed) continue;
                 var rootNode = thinkTreeDef.thinkRoot;
                 if (rootNode == null || rootNode.subNodes == null) continue;
 
@@ -37,7 +55,7 @@ namespace PerspectiveShift
                     else
                     {
                         int subtreeNodeIndex = rootNode.subNodes.FindIndex(node => node.GetType() == typeof(ThinkNode_Subtree) &&
-                            (node as ThinkNode_Subtree)?.treeDef.defName == "LordDuty");
+                            (node as ThinkNode_Subtree)?.treeDef == DefsOf.LordDuty);
 
                         if (subtreeNodeIndex >= 0)
                         {

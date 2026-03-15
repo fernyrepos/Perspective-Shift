@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
 using Verse;
 using Verse.AI;
-using RimWorld;
+using System.Collections;
 
 namespace PerspectiveShift
 {
@@ -484,7 +483,7 @@ namespace PerspectiveShift
 
             try
             {
-                var handlers = handlersField.GetValue(vehicle) as System.Collections.IList;
+                var handlers = handlersField.GetValue(vehicle) as IList;
                 if (handlers != null)
                 {
                     foreach (var handler in handlers)
@@ -550,7 +549,7 @@ namespace PerspectiveShift
                 ignitionDraftedProp.SetValue(ignition, true, null);
             }
 
-            bool isMoving = (bool)movingProperty.GetValue(vPather, null);
+            var isMoving = (bool)movingProperty.GetValue(vPather, null);
             float currentDistToDest = 0f;
             Vector3 currentDestVec = Vector3.zero;
 
@@ -611,7 +610,7 @@ namespace PerspectiveShift
             if (comp == null)
                 return;
 
-            var turrets = turretsProp.GetValue(comp, null) as System.Collections.IEnumerable;
+            var turrets = turretsProp.GetValue(comp, null) as IEnumerable;
             if (turrets == null)
                 return;
 
@@ -638,7 +637,7 @@ namespace PerspectiveShift
             if (comp == null)
                 return;
 
-            var turrets = turretsProp.GetValue(comp, null) as System.Collections.IEnumerable;
+            var turrets = turretsProp.GetValue(comp, null) as IEnumerable;
             if (turrets == null)
                 return;
 
@@ -654,7 +653,7 @@ namespace PerspectiveShift
         private static List<string> GetGunnerTurretIds(Pawn vehicle, Pawn gunner)
         {
             var ids = new List<string>();
-            var handlers = handlersField.GetValue(vehicle) as System.Collections.IList;
+            var handlers = handlersField.GetValue(vehicle) as IList;
             if (handlers == null)
                 return ids;
 

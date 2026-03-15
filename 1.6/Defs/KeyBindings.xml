@@ -54,4 +54,18 @@
         <category>PS_Controls</category>
         <defaultKeyCodeA>E</defaultKeyCodeA>
     </KeyBindingDef>
+
+    <KeyBindingDef>
+        <defName>PS_HealthTab</defName>
+        <label>Open Health Tab</label>
+        <category>PS_Controls</category>
+        <defaultKeyCodeA>H</defaultKeyCodeA>
+    </KeyBindingDef>
+
+    <KeyBindingDef>
+        <defName>PS_NeedsTab</defName>
+        <label>Open Needs Tab</label>
+        <category>PS_Controls</category>
+        <defaultKeyCodeA>Q</defaultKeyCodeA>
+    </KeyBindingDef>
 </Defs>

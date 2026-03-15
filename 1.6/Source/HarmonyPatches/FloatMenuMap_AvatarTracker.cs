@@ -52,7 +52,7 @@ namespace PerspectiveShift
 	[HarmonyPatch]
 	public static class FloatMenuContext_Constructor_Patch
 	{
-		public static MethodBase TargetMethod() => 
+		public static MethodBase TargetMethod() =>
 			AccessTools.Constructor(typeof(FloatMenuContext), new[] { typeof(List<Pawn>), typeof(UnityEngine.Vector3), typeof(Map) });
 
 		public static void Prefix(ref List<Pawn> selectedPawns)
@@ -64,7 +64,7 @@ namespace PerspectiveShift
 	[HarmonyPatch]
 	public static class FloatMenuMap_Constructor_Patch
 	{
-		public static MethodBase TargetMethod() => 
+		public static MethodBase TargetMethod() =>
 			AccessTools.Constructor(typeof(FloatMenuMap), new[] { typeof(List<FloatMenuOption>), typeof(string), typeof(UnityEngine.Vector3) });
 
 		public static void Postfix(FloatMenuMap __instance)

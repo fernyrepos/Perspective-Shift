@@ -26,6 +26,7 @@ namespace PerspectiveShift
         public Vector3 LeanTarget = Vector3.zero;
         public Vector3 LeanSmoothed = Vector3.zero;
         private float moveInputDuration = 0f;
+        private bool wasSprinting = false;
         private Vector3 lastVehicleMoveInput = Vector3.zero;
         private int vehicleStopGraceTicks = 0;
         private int vehiclePathFailCooldown = 0;
@@ -40,6 +41,7 @@ namespace PerspectiveShift
         private bool wasMovingLastFrame;
         private Rect gizmoBounds;
         private List<object> prevSelected;
+        public bool seekAtWill;
         private static Texture2D _reticleTex;
         public static Texture2D ReticleTex => _reticleTex ??= ContentFinder<Texture2D>.Get("UI/Reticle");
         private static Texture2D _reticleCooldownTex;
@@ -59,6 +61,7 @@ namespace PerspectiveShift
             Scribe_References.Look(ref interactingDoor, "interactingDoor");
             Scribe_References.Look(ref savedLord, "savedLord");
             Scribe_References.Look(ref pendingMinifiedPickup, "pendingMinifiedPickup");
+            Scribe_Values.Look(ref seekAtWill, "seekAtWill", false);
         }
 
         public void UpdatePhysics()
@@ -334,6 +337,12 @@ namespace PerspectiveShift
 
             isSprinting = PerspectiveShiftMod.settings.enableSprinting && DefsOf.PS_Sprint.IsDown;
             isWalking = PerspectiveShiftMod.settings.enableSneaking && DefsOf.PS_Walk.IsDown;
+
+            if (isSprinting && !wasSprinting)
+            {
+                DefsOf.PS_SprintSound.PlayOneShotOnCamera();
+            }
+            wasSprinting = isSprinting;
         }
 
         public void RenderPawn()
@@ -698,35 +707,9 @@ namespace PerspectiveShift
             bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(Event.current.mousePosition);
             bool mouseOverUI = IsMouseOverUI() || IsMouseOverColonistBar();
 
-            if (DefsOf.PS_OpenGearTab.KeyDownEvent && Find.DesignatorManager.SelectedDesignator == null)
-            {
-                if (Find.Selector.SingleSelectedThing != pawn)
-                {
-                    Find.Selector.ClearSelection();
-                    Find.Selector.Select(pawn);
-                }
-                if (Find.MainTabsRoot.OpenTab != MainButtonDefOf.Inspect)
-                {
-                    Find.MainTabsRoot.SetCurrentTab(MainButtonDefOf.Inspect);
-                }
-
-                var inspectPane = (MainTabWindow_Inspect)MainButtonDefOf.Inspect.TabWindow;
-                if (inspectPane != null)
-                {
-                    var gearTab = inspectPane.CurTabs.FirstOrDefault(t => t is ITab_Pawn_Gear);
-                    if (gearTab != null)
-                    {
-                        if (inspectPane.OpenTabType == gearTab.GetType())
-                        {
-                            inspectPane.CloseOpenTab();
-                            Find.Selector.Deselect(pawn);
-                        }
-                        else
-                            inspectPane.OpenTabType = gearTab.GetType();
-                    }
-                }
-                Event.current.Use();
-            }
+            TryToggleInspectTab(DefsOf.PS_OpenGearTab, typeof(ITab_Pawn_Gear));
+            TryToggleInspectTab(DefsOf.PS_HealthTab, typeof(ITab_Pawn_Health));
+            TryToggleInspectTab(DefsOf.PS_NeedsTab, typeof(ITab_Pawn_Needs));
 
             if (pawn.Drafted && !pawn.InMentalState)
             {
@@ -760,6 +743,39 @@ namespace PerspectiveShift
             {
                 Cursor.visible = true;
             }
+        }
+
+        private void TryToggleInspectTab(KeyBindingDef keyDef, Type tabType)
+        {
+            if (!keyDef.KeyDownEvent) return;
+            if (Find.DesignatorManager.SelectedDesignator != null) return;
+
+            if (Find.Selector.SingleSelectedThing != pawn)
+            {
+                Find.Selector.ClearSelection();
+                Find.Selector.Select(pawn);
+            }
+            if (Find.MainTabsRoot.OpenTab != MainButtonDefOf.Inspect)
+            {
+                Find.MainTabsRoot.SetCurrentTab(MainButtonDefOf.Inspect);
+            }
+
+            var inspectPane = (MainTabWindow_Inspect)MainButtonDefOf.Inspect.TabWindow;
+            if (inspectPane != null)
+            {
+                var tab = inspectPane.CurTabs.FirstOrDefault(t => t.GetType() == tabType);
+                if (tab != null)
+                {
+                    if (inspectPane.OpenTabType == tabType)
+                    {
+                        inspectPane.CloseOpenTab();
+                        Find.Selector.Deselect(pawn);
+                    }
+                    else
+                        inspectPane.OpenTabType = tabType;
+                }
+            }
+            Event.current.Use();
         }
 
         private void DebugLog()
@@ -983,7 +999,7 @@ namespace PerspectiveShift
             var gizmoSource = ModCompatibility.IsPawnInVehicle(pawn, out Pawn vehicle, out bool isDriver, out _)
                 ? vehicle
                 : (Thing)pawn;
-            bool wasSelected = Find.Selector.IsSelected(gizmoSource);
+            var wasSelected = Find.Selector.IsSelected(gizmoSource);
             if (!wasSelected)
             {
                 prevSelected = new List<object>(Find.Selector.SelectedObjects);
@@ -1206,6 +1222,16 @@ namespace PerspectiveShift
                 return false;
             }
 
+            if (CarriedThing == null)
+            {
+                var storageBuilding = clickCell.GetThingList(pawn.Map)?.OfType<Building_Storage>().FirstOrDefault();
+                if (storageBuilding != null)
+                {
+                    Find.WindowStack.Add(new Dialog_StorageMenu(storageBuilding));
+                    return true;
+                }
+            }
+
             if (CarriedThing != null)
             {
                 return HandleDropOrInteract(clickCell, itemInRange);
@@ -1357,12 +1383,27 @@ namespace PerspectiveShift
                                     if (job.def == JobDefOf.HaulToContainer && pawn.carryTracker?.CarriedThing == null) continue;
                                     if (job.def == JobDefOf.Refuel && pawn.carryTracker?.CarriedThing == null) continue;
                                     if (job.def == JobDefOf.RefuelAtomic && pawn.carryTracker?.CarriedThing == null) continue;
-
                                     if (TryStartForcedJob(job)) return true;
                                 }
                             }
+                            else if (pawn.WorkTypeIsDisabled(scanner.def.workType))
+                            {
+                                Messages.Message("PS_IncapableOfWorkType".Translate(scanner.def.workType.labelShort), MessageTypeDefOf.RejectInput, false);
+                                SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                                return true;
+                            }
                         }
                     }
+                }
+            }
+
+            if (target is Building_ResearchBench)
+            {
+                if (Find.ResearchManager.GetProject() == null)
+                {
+                    Messages.Message("PS_NoResearchProject".Translate(), MessageTypeDefOf.RejectInput, false);
+                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                    return true;
                 }
             }
 
@@ -1500,6 +1541,27 @@ namespace PerspectiveShift
             var cellThings = cell.GetThingList(pawn.Map);
             if (cellThings != null)
             {
+                if (CarriedThing?.def.IsMedicine == true)
+                {
+                    var patient = cell.GetFirstPawn(pawn.Map);
+                    if (patient != null && HealthAIUtility.ShouldBeTendedNowByPlayer(patient))
+                    {
+                        var job = JobMaker.MakeJob(JobDefOf.TendPatient, patient, CarriedThing);
+                        if (TryStartForcedJob(job)) return true;
+                    }
+                }
+
+                var mortar = cellThings.FirstOrDefault(t => t.TryGetComp<CompChangeableProjectile>() != null);
+                if (mortar != null && CarriedThing?.def.IsShell == true)
+                {
+                    var shell = CarriedThing;
+                    var comp = mortar.TryGetComp<CompChangeableProjectile>();
+                    comp.LoadShell(shell.def, shell.stackCount);
+                    pawn.carryTracker.innerContainer.Remove(shell);
+                    shell.Destroy();
+                    return true;
+                }
+
                 var installBp = cellThings.OfType<Blueprint_Install>().FirstOrDefault();
                 if (installBp != null && installBp.MiniToInstallOrBuildingToReinstall == CarriedThing)
                 {
@@ -1552,6 +1614,23 @@ namespace PerspectiveShift
                 {
                     return true;
                 }
+            }
+
+            var bed = building as Building_Bed;
+            if (bed != null && CarriedThing is Pawn carriedPawn && carriedPawn.Downed)
+            {
+                if (bed.ForPrisoners)
+                {
+                    if (!carriedPawn.IsPrisonerOfColony)
+                        carriedPawn.guest.CapturedBy(Faction.OfPlayer, pawn);
+                }
+                pawn.carryTracker.TryDropCarriedThing(cell, ThingPlaceMode.Direct, out _);
+                carriedPawn.jobs.Notify_TuckedIntoBed(bed);
+                if (!bed.ForPrisoners && carriedPawn.Faction != Faction.OfPlayer && !carriedPawn.IsPrisoner)
+                {
+                    carriedPawn.guest.SetGuestStatus(Faction.OfPlayer);
+                }
+                return true;
             }
 
             bool wouldWipe = false;
@@ -1750,7 +1829,7 @@ namespace PerspectiveShift
             float height = 40f;
             float totalHeight = needs.Count * height;
 
-            float startX = Mathf.Min(gizmoBounds.xMax - width - 10f, UI.screenWidth - width - 10f);
+            var startX = Mathf.Min(gizmoBounds.xMax - width - 10f, UI.screenWidth - width - 10f);
             float startY = gizmoBounds.yMax + 35f;
 
             if (PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomRight)
@@ -1841,7 +1920,7 @@ namespace PerspectiveShift
                 pawn.pather.lastMovedTick = Find.TickManager.TicksGame;
                 var baseSpeed = pawn.GetStatValue(StatDefOf.MoveSpeed);
                 float speedMult = isSprinting ? PerspectiveShiftMod.settings.sprintSpeedMultiplier
-                                : isWalking  ? PerspectiveShiftMod.settings.sneakSpeedMultiplier
+                                : isWalking ? PerspectiveShiftMod.settings.sneakSpeedMultiplier
                                 : 1f;
                 pawn.pather.nextCellCostTotal = Mathf.Max(60f / Mathf.Max(baseSpeed, 0.1f) / speedMult, 1f);
             }

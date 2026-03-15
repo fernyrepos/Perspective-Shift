@@ -1,3 +1,4 @@
+using System;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -12,7 +13,8 @@ namespace PerspectiveShift
         private enum PageStep
         {
             Role,
-            Playstyle
+            Playstyle,
+            AuthenticOptions
         }
 
         private PageStep step = PageStep.Role;
@@ -41,7 +43,9 @@ namespace PerspectiveShift
 
         public override string PageTitle => step == PageStep.Role
             ? "PS_SelectRole".Translate()
-            : "PS_SelectPlaystyle".Translate();
+            : step == PageStep.Playstyle
+                ? "PS_SelectPlaystyle".Translate()
+                : "PS_ModeAuthentic".Translate();
 
         public override void DoWindowContents(Rect rect)
         {
@@ -56,14 +60,16 @@ namespace PerspectiveShift
 
             if (step == PageStep.Role)
                 DrawRoleSelection(mainRect);
-            else
+            else if (step == PageStep.Playstyle)
                 DrawPlaystyleSelection(mainRect);
+            else
+                DrawAuthenticOptions(mainRect);
 
             string nextLabel = (step == PageStep.Role && !roleIsCharacter) ? "Start".Translate() : "Next".Translate();
             DoBottomButtons(rect, nextLabel, null, null, true, true);
         }
 
-        private void DrawRoleOption(Rect rect, string label, string desc, Texture2D icon, bool selected, System.Action onSelect)
+        private void DrawRoleOption(Rect rect, string label, string desc, Texture2D icon, bool selected, Action onSelect)
         {
             Widgets.DrawMenuSection(rect);
 
@@ -196,9 +202,60 @@ namespace PerspectiveShift
                 "PS_ModeDynamicDesc".Translate(), DynamicIcon);
         }
 
+        private void DrawAuthenticOption(Rect rect, string title, string desc, ref bool value)
+        {
+            if (Widgets.ButtonInvisible(rect))
+            {
+                value = !value;
+                SoundDefOf.Click.PlayOneShotOnCamera();
+            }
+
+            var inner = rect.ContractedBy(20f);
+
+            float checkSize = 24f;
+            var checkRect = new Rect(inner.xMax - checkSize - 100f, inner.y, checkSize, checkSize);
+            Widgets.Checkbox(checkRect.x, checkRect.y, ref value);
+
+            Text.Font = GameFont.Medium;
+            var titleRect = new Rect(inner.x, inner.y, inner.width - checkSize - 110f, 30f);
+            Widgets.Label(titleRect, title);
+
+            Text.Font = GameFont.Small;
+            var descRect = new Rect(inner.x, titleRect.yMax + 8f, inner.width - checkSize - 110f, inner.height - titleRect.height - 8f);
+            Widgets.Label(descRect, desc);
+            Text.Anchor = TextAnchor.UpperLeft;
+        }
+
+        private void DrawAuthenticOptions(Rect rect)
+        {
+            float panelHeight = 190f;
+            float gap = 20f;
+            float margin = 20f;
+            float width = rect.width - margin * 2f;
+            float startX = rect.x + margin;
+            float startY = rect.y + (rect.height - (panelHeight * 2f + gap)) / 2f - 20f;
+
+            var r1 = new Rect(startX, startY, width, panelHeight);
+            DrawAuthenticOption(r1,
+                "PS_Permadeath".Translate(),
+                "PS_PermadeathDesc".Translate(),
+                ref PerspectiveShiftMod.settings.permadeath);
+
+            var r2 = new Rect(startX, startY + panelHeight + gap, width, panelHeight);
+            DrawAuthenticOption(r2,
+                "PS_AllowSwitchingToDirectorMode".Translate(),
+                "PS_AllowSwitchingToDirectorModeDesc".Translate(),
+                ref PerspectiveShiftMod.settings.allowDirectorInAuthentic);
+        }
+
         public override void DoBack()
         {
-            if (step == PageStep.Playstyle)
+            if (step == PageStep.AuthenticOptions)
+            {
+                step = PageStep.Playstyle;
+                SoundDefOf.Click.PlayOneShotOnCamera();
+            }
+            else if (step == PageStep.Playstyle)
             {
                 step = PageStep.Role;
                 SoundDefOf.Click.PlayOneShotOnCamera();
@@ -225,9 +282,23 @@ namespace PerspectiveShift
                     SoundDefOf.Click.PlayOneShotOnCamera();
                 }
             }
+            else if (step == PageStep.Playstyle)
+            {
+                if (selectedPlaystyle == PlaystyleMode.Authentic)
+                {
+                    step = PageStep.AuthenticOptions;
+                    SoundDefOf.Click.PlayOneShotOnCamera();
+                }
+                else
+                {
+                    State.CurrentMode = selectedPlaystyle;
+                    State.ClearAvatar();
+                    base.DoNext();
+                }
+            }
             else
             {
-                State.CurrentMode = selectedPlaystyle;
+                State.CurrentMode = PlaystyleMode.Authentic;
                 State.ClearAvatar();
                 base.DoNext();
             }

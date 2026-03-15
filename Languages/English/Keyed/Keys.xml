@@ -57,4 +57,42 @@
     <PS_StorageImpossible>{0} cannot be stored here.</PS_StorageImpossible>
     <PS_CannotCarryMoreWeight>You cannot carry any more weight. Consider dropping some items.</PS_CannotCarryMoreWeight>
     <PS_BlueprintFull>This blueprint has all materials necessary to build.</PS_BlueprintFull>
+
+    <PS_ChatWith>Chat with {0}</PS_ChatWith>
+    <PS_Insult>Insult {0}</PS_Insult>
+    <PS_IncapableOfWorkType>You are incapable of doing {0}.</PS_IncapableOfWorkType>
+    <PS_NoResearchProject>No research project selected.</PS_NoResearchProject>
+    <PS_PlayerOnly>Player only</PS_PlayerOnly>
+    <PS_PlayerOnlyRestrictions>Player only restrictions</PS_PlayerOnlyRestrictions>
+    <PS_NoRestriction>No restriction</PS_NoRestriction>
+    <PS_OnlyPlayerCanStore>Only player can store</PS_OnlyPlayerCanStore>
+    <PS_OnlyPlayerCanTake>Only player can take</PS_OnlyPlayerCanTake>
+    <PS_OnlyPlayerCanUse>Only player can use</PS_OnlyPlayerCanUse>
+    <PS_PerspectiveSettings>Perspective settings</PS_PerspectiveSettings>
+    <PS_Modify>Modify</PS_Modify>
+    <PS_Storage>Storage</PS_Storage>
+    <PS_StorageDoesNotAccept>Storage does not accept this item.</PS_StorageDoesNotAccept>
+    <PS_DropItemHereToTake>Drop item here to take</PS_DropItemHereToTake>
+    <PS_YouDied>You died.</PS_YouDied>
+    <PS_InhabitNewCharacter>Inhabit a new character</PS_InhabitNewCharacter>
+    <PS_ContinueDynamicMode>Continue in dynamic mode</PS_ContinueDynamicMode>
+    <PS_ContinueSwapMode>Continue in swap mode</PS_ContinueSwapMode>
+    <PS_ContinueDirectorMode>Continue in director mode</PS_ContinueDirectorMode>
+    <PS_EndRun>End run</PS_EndRun>
+    <PS_Reciprocate>Reciprocate</PS_Reciprocate>
+    <PS_Rebuff>Rebuff</PS_Rebuff>
+    <PS_GoWithYourGut>Go with your gut</PS_GoWithYourGut>
+    <PS_Yes>Yes</PS_Yes>
+    <PS_No>No</PS_No>
+    <PS_Permadeath>Permadeath</PS_Permadeath>
+    <PS_PermadeathDesc>With this toggle enabled, for the duration of this run you will not be able to swap to any other pawns or back to director mode to continue your run after you die. You are your only hope.\n\nRecommended only for players willing to lose everything, there is no going back after using this toggle.</PS_PermadeathDesc>
+    <PS_AllowSwitchingToDirectorMode>Allow switching to director mode</PS_AllowSwitchingToDirectorMode>
+    <PS_AllowSwitchingToDirectorModeDesc>With this toggle enabled, for the duration of this run you may switch to director mode whenever you'd like. However, you are still forced to embody only one colonist and to protect their life.\n\nRecommended for players who want to embody a specific character, but would like to optionally keep the original gameplay fully intact.</PS_AllowSwitchingToDirectorModeDesc>
+    <PS_SprintFoodDrainMultiplier>Sprint food drain multiplier: {0}</PS_SprintFoodDrainMultiplier>
+    <PS_SprintSleepDrainMultiplier>Sprint sleep drain multiplier: {0}</PS_SprintSleepDrainMultiplier>
+    <PS_SeekAtWill>Seek at will</PS_SeekAtWill>
+    <PS_InhabitNewCharacter_Desc>Play as somebody else in your game. This will send you back into director mode, where you can click a new character and choose to permanently embody them.</PS_InhabitNewCharacter_Desc>
+    <PS_ContinueDynamicMode_Desc>Continue your game in total freedom, where you can swap between any of your characters or director mode at will.</PS_ContinueDynamicMode_Desc>
+    <PS_ContinueSwapMode_Desc>Continue your game from the perspective of your characters, freely swapping between them.</PS_ContinueSwapMode_Desc>
+    <PS_ContinueDirectorMode_Desc>Continue your game from an omniscient point of view, directing and managing your characters.</PS_ContinueDirectorMode_Desc>
 </LanguageData>

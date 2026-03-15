@@ -57,16 +57,39 @@ namespace PerspectiveShift
                 {
                     if (__instance == State.Current?.pawn)
                     {
-                        yield return new Command_Action
+                        if (PerspectiveShiftMod.settings.allowDirectorInAuthentic)
                         {
-                            defaultLabel = "PS_AuthenticLocked".Translate(),
-                            icon = ContentFinder<Texture2D>.Get("Gizmos/TakeControl"),
-                            disabled = true,
-                            disabledReason = "PS_AuthenticLockedReason".Translate()
-                        };
+                            yield return new Command_Action
+                            {
+                                defaultLabel = "PS_ReturnToDirector".Translate(),
+                                icon = ContentFinder<Texture2D>.Get("Gizmos/DirectorMode"),
+                                action = () => State.ClearAvatar()
+                            };
+                        }
+                        else
+                        {
+                            yield return new Command_Action
+                            {
+                                defaultLabel = "PS_AuthenticLocked".Translate(),
+                                icon = ContentFinder<Texture2D>.Get("Gizmos/TakeControl"),
+                                disabled = true,
+                                disabledReason = "PS_AuthenticLockedReason".Translate()
+                            };
+                        }
                     }
                     yield break;
                 }
+            }
+
+            if (__instance == State.Current?.pawn)
+            {
+                yield return new Command_Toggle
+                {
+                    defaultLabel = "PS_SeekAtWill".Translate(),
+                    icon = ContentFinder<Texture2D>.Get("UI/Commands/Attack"),
+                    isActive = () => State.Avatar.seekAtWill,
+                    toggleAction = () => State.Avatar.seekAtWill = !State.Avatar.seekAtWill
+                };
             }
 
             if (__instance != State.Current?.pawn || State.Current == null)

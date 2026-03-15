@@ -90,14 +90,18 @@ namespace PerspectiveShift
             Avatar.savedLord = null;
         }
 
-        public static void RevokeControl(Pawn pawn)
+        public static void RevokeControl(Pawn pawn, DamageInfo? dinfo = null, Hediff hediff = null)
         {
             if (Avatar?.pawn != pawn)
             {
                 return;
             }
-            if (CurrentMode == PlaystyleMode.Authentic && !pawn.Dead)
+            if (CurrentMode == PlaystyleMode.Authentic)
             {
+                if (pawn.Dead)
+                {
+                    Find.WindowStack.Add(new Dialog_YouDied(pawn, dinfo, hediff));
+                }
                 return;
             }
             Message($"EmergencyRevokeControl - revoking from {pawn.Name}");
