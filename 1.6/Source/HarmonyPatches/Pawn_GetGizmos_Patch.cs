@@ -46,6 +46,29 @@ namespace PerspectiveShift
                 yield return g;
             }
 
+            if (__instance != State.Current?.pawn && __instance.Faction == Faction.OfPlayer)
+            {
+                State.seekAtWillPawns ??= new HashSet<int>();
+                bool isRanged = __instance.equipment?.Primary?.def?.IsRangedWeapon ?? false;
+                yield return new Command_Toggle
+                {
+                    defaultLabel = "PS_SeekAtWill".Translate(),
+                    icon = ContentFinder<Texture2D>.Get(isRanged ? "Gizmos/SeekAtWill_Ranged" : "Gizmos/SeekAtWill_Melee"),
+                    isActive = () => State.seekAtWillPawns.Contains(__instance.thingIDNumber),
+                    toggleAction = () =>
+                    {
+                        if (State.seekAtWillPawns.Contains(__instance.thingIDNumber))
+                        {
+                            State.seekAtWillPawns.Remove(__instance.thingIDNumber);
+                        }
+                        else
+                        {
+                            State.seekAtWillPawns.Add(__instance.thingIDNumber);
+                        }
+                    }
+                };
+            }
+
             if (!__instance.IsColonist && !PerspectiveShiftMod.settings.allowNonHuman) yield break;
             if (!PerspectiveShiftMod.settings.totalFreedom && PerspectiveShiftMod.settings.requirePawnInFaction && __instance.Faction != Faction.OfPlayer) yield break;
 
@@ -79,29 +102,6 @@ namespace PerspectiveShift
                     }
                     yield break;
                 }
-            }
-
-            if (__instance != State.Current?.pawn && __instance.Faction == Faction.OfPlayer)
-            {
-                State.seekAtWillPawns ??= new HashSet<int>();
-                bool isRanged = __instance.equipment?.Primary?.def?.IsRangedWeapon ?? false;
-                yield return new Command_Toggle
-                {
-                    defaultLabel = "PS_SeekAtWill".Translate(),
-                    icon = ContentFinder<Texture2D>.Get(isRanged ? "Gizmos/SeekAtWill_Ranged" : "Gizmos/SeekAtWill_Melee"),
-                    isActive = () => State.seekAtWillPawns.Contains(__instance.thingIDNumber),
-                    toggleAction = () =>
-                    {
-                        if (State.seekAtWillPawns.Contains(__instance.thingIDNumber))
-                        {
-                            State.seekAtWillPawns.Remove(__instance.thingIDNumber);
-                        }
-                        else
-                        {
-                            State.seekAtWillPawns.Add(__instance.thingIDNumber);
-                        }
-                    }
-                };
             }
 
             if (__instance != State.Current?.pawn || State.Current == null)
