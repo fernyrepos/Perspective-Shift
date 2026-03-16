@@ -68,7 +68,7 @@
     <PS_OnlyPlayerCanStore>Only player can store</PS_OnlyPlayerCanStore>
     <PS_OnlyPlayerCanTake>Only player can take</PS_OnlyPlayerCanTake>
     <PS_OnlyPlayerCanUse>Only player can use</PS_OnlyPlayerCanUse>
-    <PS_PerspectiveSettings>Perspective Shift settings</PS_PerspectiveSettings>
+    <PS_PerspectiveSettings>Perspective settings</PS_PerspectiveSettings>
     <PS_Modify>Modify</PS_Modify>
     <PS_Storage>Storage</PS_Storage>
     <PS_StorageDoesNotAccept>Storage does not accept this item.</PS_StorageDoesNotAccept>
