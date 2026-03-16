@@ -1,6 +1,8 @@
+using System;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.AI;
 using Verse.Sound;
 
 namespace PerspectiveShift
@@ -12,6 +14,10 @@ namespace PerspectiveShift
         private CompStorageSlotOrder slotComp;
         private Thing cursorItem;
         private Vector2 scrollPosition;
+        private static readonly Texture2D Keep = ContentFinder<Texture2D>.Get("Storage/Keep");
+        private static readonly Texture2D Hold = ContentFinder<Texture2D>.Get("Storage/Hold");
+        private static readonly Texture2D Equip = ContentFinder<Texture2D>.Get("Storage/Equip");
+
         public override Vector2 InitialSize => new Vector2(600f, 600f);
         public Dialog_StorageMenu(Building_Storage storage)
         {
@@ -67,24 +73,50 @@ namespace PerspectiveShift
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
 
-            var bottomRect = new Rect(inRect.x, inRect.yMax - bottomHeight, inRect.width, bottomHeight);
-            Widgets.DrawMenuSection(bottomRect);
-            Text.Anchor = TextAnchor.MiddleCenter;
-            Widgets.Label(bottomRect, "PS_DropItemHereToTake".Translate());
-            Text.Anchor = TextAnchor.UpperLeft;
+            const float buttonSpacing = 30f;
+            float btnW = (inRect.width - buttonSpacing * 2f) / 3f;
+            float btnY = inRect.yMax - bottomHeight;
 
-            if (Mouse.IsOver(bottomRect))
+            var keepRect = new Rect(inRect.x, btnY, btnW, bottomHeight);
+            var holdRect = new Rect(inRect.x + btnW + buttonSpacing, btnY, btnW, bottomHeight);
+            var equipRect = new Rect(inRect.x + (btnW + buttonSpacing) * 2f, btnY, btnW, bottomHeight);
+
+            bool hasItem  = cursorItem != null && !cursorItem.Destroyed;
+            bool isWeapon = hasItem && cursorItem.def.IsWeapon;
+            bool isApparel = hasItem && cursorItem is Apparel;
+            bool canEquip = isWeapon || isApparel;
+            string equipLabel = isApparel ? "PS_Wear".Translate() : "PS_Equip".Translate();
+
+            DrawActionButton(keepRect, Keep, "PS_Keep".Translate(), hasItem, () =>
             {
-                Widgets.DrawHighlight(bottomRect);
-                if (Event.current.type == EventType.MouseUp && cursorItem != null)
-                {
-                    State.Avatar.pawn.carryTracker.TryStartCarry(cursorItem, cursorItem.stackCount, reserve: true);
-                    cursorItem.def.soundDrop.PlayOneShot(State.Avatar.pawn);
-                    cursorItem = null;
-                    Close();
-                    Event.current.Use();
-                }
-            }
+                var item = cursorItem;
+                cursorItem = null;
+                State.Avatar.pawn.inventory.innerContainer.TryAdd(item, true);
+                item.def.soundDrop.PlayOneShot(State.Avatar.pawn);
+                Close();
+            });
+
+            DrawActionButton(holdRect, Hold, "PS_Hold".Translate(), hasItem, () =>
+            {
+                var item = cursorItem;
+                cursorItem = null;
+                State.Avatar.pawn.carryTracker.TryStartCarry(item, item.stackCount, reserve: true);
+                item.def.soundDrop.PlayOneShot(State.Avatar.pawn);
+                Close();
+            });
+
+            DrawActionButton(equipRect, Equip, equipLabel, canEquip, () =>
+            {
+                var item = cursorItem;
+                cursorItem = null;
+                if (!item.Spawned)
+                    GenSpawn.Spawn(item, State.Avatar.pawn.Position, State.Avatar.pawn.Map, WipeMode.Vanish);
+                Job job = item is Apparel
+                    ? JobMaker.MakeJob(JobDefOf.Wear,  item)
+                    : JobMaker.MakeJob(JobDefOf.Equip, item);
+                State.Avatar.pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
+                Close();
+            });
 
             var gridOutRect = new Rect(inRect.x, headerRect.yMax + headerMargin, inRect.width, inRect.height - headerRect.height - bottomMargin - bottomHeight - gridBottomMargin);
 
@@ -131,8 +163,7 @@ namespace PerspectiveShift
                     if (Event.current.type == EventType.MouseDown)
                     {
                         IntVec3 targetCell = allCells[i / maxPerCell];
-                        int cellIdx = i / maxPerCell;
-                        HandleClick(item, Event.current.button, targetCell, cellIdx, i);
+                        HandleClick(item, Event.current.button, targetCell, i);
                         Event.current.Use();
                     }
                 }
@@ -155,7 +186,47 @@ namespace PerspectiveShift
             }
         }
 
-        private void PlaceAndRegister(Thing item, IntVec3 targetCell, int cellIdx, int slotIdx)
+        private void DrawActionButton(Rect rect, Texture2D icon, string label, bool enabled, Action onClick)
+        {
+            Widgets.DrawMenuSection(rect);
+
+            Color prev = GUI.color;
+            if (!enabled)
+                GUI.color = new Color(1f, 1f, 1f, 0.35f);
+            else if (Mouse.IsOver(rect))
+            {
+                Widgets.DrawHighlight(rect);
+                if (Event.current.type == EventType.MouseUp && Event.current.button == 0)
+                {
+                    onClick();
+                    Event.current.Use();
+                }
+            }
+
+            DrawButtonContent(rect, icon, label);
+            GUI.color = prev;
+        }
+
+        private static void DrawButtonContent(Rect rect, Texture2D icon, string label)
+        {
+            const float iconSize = 36f;
+            const float spacing = 8f;
+
+            Vector2 textSize = Text.CalcSize(label);
+            float blockW = iconSize + spacing + textSize.x;
+            float startX = rect.x + (rect.width - blockW) / 2f;
+            float centerY = rect.y + rect.height / 2f;
+
+            var iconRect = new Rect(startX, centerY - iconSize / 2f, iconSize, iconSize);
+            GUI.DrawTexture(iconRect, icon);
+
+            Text.Anchor = TextAnchor.MiddleLeft;
+            var textRect = new Rect(iconRect.xMax + spacing, rect.y, textSize.x + 2f, rect.height);
+            Widgets.Label(textRect, label);
+            Text.Anchor = TextAnchor.UpperLeft;
+        }
+
+        private void PlaceAndRegister(Thing item, IntVec3 targetCell, int slotIdx)
         {
             GenSpawn.Spawn(item, targetCell, storage.Map, WipeMode.Vanish);
 
@@ -166,7 +237,7 @@ namespace PerspectiveShift
             }
         }
 
-        private void HandleClick(Thing clickedItem, int button, IntVec3 targetCell, int cellIdx, int slotIdx)
+        private void HandleClick(Thing clickedItem, int button, IntVec3 targetCell, int slotIdx)
         {
             if (button == 0)
             {
@@ -183,7 +254,7 @@ namespace PerspectiveShift
                         var toPlace = cursorItem;
                         cursorItem = null;
                         slotComp.RemoveGap(slotIdx);
-                        PlaceAndRegister(toPlace, targetCell, cellIdx, slotIdx);
+                        PlaceAndRegister(toPlace, targetCell, slotIdx);
                         toPlace.def.soundDrop.PlayOneShot(State.Avatar.pawn);
                     }
                     else
@@ -211,7 +282,7 @@ namespace PerspectiveShift
                             var temp = cursorItem;
                             cursorItem = clickedItem.SplitOff(clickedItem.stackCount);
                             slotComp.RemoveGap(slotIdx);
-                            PlaceAndRegister(temp, targetCell, cellIdx, slotIdx);
+                            PlaceAndRegister(temp, targetCell, slotIdx);
                             cursorItem.def.soundPickup.PlayOneShot(State.Avatar.pawn);
                         }
                         else
@@ -239,7 +310,7 @@ namespace PerspectiveShift
                         {
                             slotComp.RemoveGap(slotIdx);
                             var single = cursorItem.SplitOff(1);
-                            PlaceAndRegister(single, targetCell, cellIdx, slotIdx);
+                            PlaceAndRegister(single, targetCell, slotIdx);
                             if (single == cursorItem || cursorItem.stackCount == 0) cursorItem = null;
                             single.def.soundDrop.PlayOneShot(State.Avatar.pawn);
                         }

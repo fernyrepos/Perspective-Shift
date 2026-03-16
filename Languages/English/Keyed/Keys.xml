@@ -73,6 +73,10 @@
     <PS_Storage>Storage</PS_Storage>
     <PS_StorageDoesNotAccept>Storage does not accept this item.</PS_StorageDoesNotAccept>
     <PS_DropItemHereToTake>Drop item here to take</PS_DropItemHereToTake>
+    <PS_Keep>Keep</PS_Keep>
+    <PS_Hold>Hold</PS_Hold>
+    <PS_Wear>Wear</PS_Wear>
+    <PS_Equip>Equip</PS_Equip>
     <PS_YouDied>You died.</PS_YouDied>
     <PS_InhabitNewCharacter>Inhabit a new character</PS_InhabitNewCharacter>
     <PS_ContinueDynamicMode>Continue in dynamic mode</PS_ContinueDynamicMode>
