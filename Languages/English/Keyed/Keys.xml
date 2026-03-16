@@ -98,6 +98,8 @@
     <PS_SprintFoodDrainMultiplier>Sprint food drain multiplier: {0}</PS_SprintFoodDrainMultiplier>
     <PS_SprintSleepDrainMultiplier>Sprint sleep drain multiplier: {0}</PS_SprintSleepDrainMultiplier>
     <PS_SeekAtWill>Seek at will</PS_SeekAtWill>
+    <PS_SeekAtWillDesc>Automatically seek and attack enemies within range. Not available while drafted.</PS_SeekAtWillDesc>
+    <PS_SeekAtWillDraftedReason>Seek at will is not available while drafted. Draft mode is for manual control only.</PS_SeekAtWillDraftedReason>
     <PS_InhabitNewCharacter_Desc>Play as somebody else in your game. This will send you back into director mode, where you can click a new character and choose to permanently embody them.</PS_InhabitNewCharacter_Desc>
     <PS_ContinueDynamicMode_Desc>Continue your game in total freedom, where you can swap between any of your characters or director mode at will.</PS_ContinueDynamicMode_Desc>
     <PS_ContinueSwapMode_Desc>Continue your game from the perspective of your characters, freely swapping between them.</PS_ContinueSwapMode_Desc>
