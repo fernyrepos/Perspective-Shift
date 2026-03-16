@@ -12,6 +12,11 @@ namespace PerspectiveShift
     public static class State
     {
         public static HashSet<int> seekAtWillPawns = new HashSet<int>();
+        public static bool ShouldSeekEnemy(this Pawn pawn)
+        {
+            seekAtWillPawns ??= new HashSet<int>();
+            return !pawn.IsAvatar() && pawn.InMentalState is false && pawn.Faction == Faction.OfPlayer && seekAtWillPawns.Contains(pawn.thingIDNumber);
+        }
         public enum ForcedInteractionOutcome { None, ForceAccept, ForceReject }
         public static bool TryApplyForcedInteraction(ref float __result)
         {
@@ -65,19 +70,21 @@ namespace PerspectiveShift
             Message($"PerspectiveState.SetAvatar - Setting avatar to {pawn.Name}, Mode: {CurrentMode}");
             Avatar = new Avatar(pawn);
             CameraLockPosition = null;
-            pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
-            pawn.pather.StopDead();
-            var wait = JobMaker.MakeJob(JobDefOf.Wait);
-            wait.expiryInterval = 60;
-            wait.checkOverrideOnExpire = true;
-            pawn.jobs.TryTakeOrderedJob(wait);
-            var lord = pawn.GetLord();
-            if (lord != null)
+            if (pawn.jobs != null && pawn.Spawned)
             {
-                Avatar.savedLord = lord;
-                lord.Notify_PawnLost(pawn, PawnLostCondition.Undefined);
+                pawn.jobs.EndCurrentJob(JobCondition.InterruptForced);
+                pawn.pather.StopDead();
+                var wait = JobMaker.MakeJob(JobDefOf.Wait);
+                wait.expiryInterval = 60;
+                wait.checkOverrideOnExpire = true;
+                pawn.jobs.TryTakeOrderedJob(wait);
+                var lord = pawn.GetLord();
+                if (lord != null)
+                {
+                    Avatar.savedLord = lord;
+                    lord.Notify_PawnLost(pawn, PawnLostCondition.Undefined);
+                }
             }
-
             if (showMessage)
                 Messages.Message("PS_ControlTaken".Translate(pawn.LabelShort), pawn, MessageTypeDefOf.NeutralEvent);
         }

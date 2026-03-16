@@ -24,7 +24,7 @@ namespace PerspectiveShift
 
         public override Thing FindAttackTarget(Pawn pawn)
         {
-            TargetScanFlags targetScanFlags = TargetScanFlags.NeedReachableIfCantHitFromMyPos | TargetScanFlags.NeedActiveThreat;
+            TargetScanFlags targetScanFlags = TargetScanFlags.NeedReachableIfCantHitFromMyPos | TargetScanFlags.NeedThreat;
             if (needLOSToAcquireNonPawnTargets)
             {
                 targetScanFlags |= TargetScanFlags.NeedLOSToNonPawns;

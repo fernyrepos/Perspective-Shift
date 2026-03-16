@@ -227,6 +227,8 @@ namespace PerspectiveShift
                 {
                     var toTake = Mathf.CeilToInt(clickedItem.stackCount / 2f);
                     cursorItem = clickedItem.SplitOff(toTake);
+                    if (clickedItem.Destroyed || clickedItem.stackCount == 0)
+                        slotComp.AddGap(slotIdx);
                     cursorItem.def.soundPickup.PlayOneShot(State.Avatar.pawn);
                 }
                 else if (cursorItem != null)
@@ -238,7 +240,7 @@ namespace PerspectiveShift
                             slotComp.RemoveGap(slotIdx);
                             var single = cursorItem.SplitOff(1);
                             PlaceAndRegister(single, targetCell, cellIdx, slotIdx);
-                            if (cursorItem.stackCount == 0) cursorItem = null;
+                            if (single == cursorItem || cursorItem.stackCount == 0) cursorItem = null;
                             single.def.soundDrop.PlayOneShot(State.Avatar.pawn);
                         }
                         else
@@ -250,7 +252,7 @@ namespace PerspectiveShift
                     {
                         var single = cursorItem.SplitOff(1);
                         clickedItem.TryAbsorbStack(single, true);
-                        if (cursorItem.stackCount == 0) cursorItem = null;
+                        if (single == cursorItem || cursorItem.stackCount == 0) cursorItem = null;
                         clickedItem.def.soundDrop.PlayOneShot(State.Avatar.pawn);
                     }
                 }

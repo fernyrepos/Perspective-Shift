@@ -23,7 +23,7 @@ namespace PerspectiveShift
             yield return AccessTools.Method(typeof(JobGiver_ExitMap), "TryGiveJob");
         }
 
-        public static bool Prefix(Pawn pawn, ref Job __result, MethodBase __originalMethod)
+        public static bool Prefix(Pawn pawn, ref Job __result)
         {
             if (pawn.IsAvatar() && !pawn.InMentalState)
             {
