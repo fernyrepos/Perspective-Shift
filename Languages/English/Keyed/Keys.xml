@@ -108,4 +108,5 @@
     <PS_BedForPrisonersOnly>This bed is for prisoners only.</PS_BedForPrisonersOnly>
     <PS_BedForSlavesOnly>This bed is for slaves only.</PS_BedForSlavesOnly>
     <PS_BedForColonistsOnly>This bed is for colonists only.</PS_BedForColonistsOnly>
+    <PS_EatingFood>Eating {0}</PS_EatingFood>
 </LanguageData>

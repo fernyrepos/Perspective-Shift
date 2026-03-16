@@ -735,7 +735,7 @@ namespace PerspectiveShift
             if (DefsOf.PS_EatFood.KeyDownEvent)
             {
                 bool onlyAvatarSelected = Find.Selector.NumSelected == 0 || (Find.Selector.NumSelected == 1 && Find.Selector.IsSelected(pawn));
-                
+
                 if (onlyAvatarSelected && !pawn.Downed && !pawn.InMentalState && pawn.needs?.food != null)
                 {
                     FoodPreferability foodPreferability = FoodPreferability.Undefined;
@@ -772,6 +772,7 @@ namespace PerspectiveShift
                         job.count = FoodUtility.WillIngestStackCountOf(pawn, foodDef, FoodUtility.NutritionForEater(pawn, foodSource));
                         job.playerForced = true;
                         pawn.jobs.TryTakeOrderedJob(job);
+                        Messages.Message("PS_EatingFood".Translate(foodSource.LabelCap), pawn, MessageTypeDefOf.TaskCompletion, false);
                         Event.current.Use();
                     }
                 }
