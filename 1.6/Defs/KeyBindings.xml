@@ -68,4 +68,11 @@
         <category>PS_Controls</category>
         <defaultKeyCodeA>Q</defaultKeyCodeA>
     </KeyBindingDef>
+
+    <KeyBindingDef>
+        <defName>PS_EatFood</defName>
+        <label>Eat Food</label>
+        <category>PS_Controls</category>
+        <defaultKeyCodeA>F</defaultKeyCodeA>
+    </KeyBindingDef>
 </Defs>

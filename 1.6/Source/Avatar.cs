@@ -732,6 +732,49 @@ namespace PerspectiveShift
             TryToggleInspectTab(DefsOf.PS_HealthTab, typeof(ITab_Pawn_Health));
             TryToggleInspectTab(DefsOf.PS_NeedsTab, typeof(ITab_Pawn_Needs));
 
+            if (DefsOf.PS_EatFood.KeyDownEvent)
+            {
+                if (!pawn.Downed && !pawn.InMentalState && pawn.needs?.food != null)
+                {
+                    FoodPreferability foodPreferability = FoodPreferability.Undefined;
+                    bool allowCorpse = false;
+
+                    if (pawn.AnimalOrWildMan())
+                    {
+                        allowCorpse = true;
+                    }
+                    else
+                    {
+                        Hediff firstHediffOfDef = pawn.health.hediffSet.GetFirstHediffOfDef(HediffDefOf.Malnutrition);
+                        if (firstHediffOfDef != null && firstHediffOfDef.Severity > 0.4f)
+                        {
+                            allowCorpse = true;
+                        }
+                    }
+
+                    if (pawn.IsMutant && pawn.mutant.Def.allowEatingCorpses)
+                    {
+                        foodPreferability = FoodPreferability.DesperateOnly;
+                        allowCorpse = true;
+                    }
+
+                    bool desperate = pawn.needs.food.CurCategory == HungerCategory.Starving;
+
+                    Thing foodSource = null;
+                    ThingDef foodDef = null;
+                    FoodUtility.TryFindBestFoodSourceFor(pawn, pawn, desperate, out foodSource, out foodDef, canRefillDispenser: true, canUseInventory: true, canUsePackAnimalInventory: true, allowForbidden: false, allowCorpse, allowSociallyImproper: false, pawn.IsWildMan(), forceScanWholeMap: true, ignoreReservations: false, calculateWantedStackCount: false, allowVenerated: false, minPrefOverride: foodPreferability);
+
+                    if (foodSource != null && Toils_Ingest.TryFindChairOrSpot(pawn, foodSource, out var _))
+                    {
+                        Job job = JobMaker.MakeJob(JobDefOf.Ingest, foodSource);
+                        job.count = FoodUtility.WillIngestStackCountOf(pawn, foodDef, FoodUtility.NutritionForEater(pawn, foodSource));
+                        job.playerForced = true;
+                        pawn.jobs.TryTakeOrderedJob(job);
+                    }
+                }
+                Event.current.Use();
+            }
+
             if (pawn.Drafted && !pawn.InMentalState)
             {
                 if (!Find.TickManager.Paused && Find.Selector.IsSelected(pawn) && !Find.Targeter.IsTargeting)
