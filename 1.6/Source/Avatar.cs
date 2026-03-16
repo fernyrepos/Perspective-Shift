@@ -1693,10 +1693,23 @@ namespace PerspectiveShift
             var bed = building as Building_Bed;
             if (bed != null && CarriedThing is Pawn carriedPawn && carriedPawn.Downed)
             {
-                if (bed.ForPrisoners)
+                if (bed.ForPrisoners && !carriedPawn.IsPrisonerOfColony)
                 {
-                    if (!carriedPawn.IsPrisonerOfColony)
-                        carriedPawn.guest.CapturedBy(Faction.OfPlayer, pawn);
+                    Messages.Message("PS_BedForPrisonersOnly".Translate(), MessageTypeDefOf.RejectInput, false);
+                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                    return true;
+                }
+                if (bed.ForSlaves && !carriedPawn.IsSlaveOfColony)
+                {
+                    Messages.Message("PS_BedForSlavesOnly".Translate(), MessageTypeDefOf.RejectInput, false);
+                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                    return true;
+                }
+                if (bed.ForColonists && (carriedPawn.IsPrisonerOfColony || carriedPawn.IsSlaveOfColony))
+                {
+                    Messages.Message("PS_BedForColonistsOnly".Translate(), MessageTypeDefOf.RejectInput, false);
+                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                    return true;
                 }
                 pawn.carryTracker.TryDropCarriedThing(cell, ThingPlaceMode.Direct, out _);
                 carriedPawn.jobs.Notify_TuckedIntoBed(bed);

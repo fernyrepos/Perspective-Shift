@@ -35,7 +35,7 @@ namespace PerspectiveShift
 
         public override IEnumerable<Gizmo> CompGetGizmosExtra()
         {
-            if (State.CurrentMode == PlaystyleMode.Director) yield break;
+            if (State.CurrentMode == PlaystyleMode.Director && PerspectiveShiftMod.settings.totalFreedom is false) yield break;
 
             if (isWorkbench)
             {
