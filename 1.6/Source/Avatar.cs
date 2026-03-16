@@ -1626,15 +1626,19 @@ namespace PerspectiveShift
                     }
                 }
 
-                var mortar = cellThings.FirstOrDefault(t => t.TryGetComp<CompChangeableProjectile>() != null);
-                if (mortar != null && CarriedThing?.def.IsShell == true)
+                var mortar = cellThings.OfType<Building_TurretGun>().FirstOrDefault(t => t.gun != null && t.gun.TryGetComp<CompChangeableProjectile>() != null);
+                if (mortar != null && CarriedThing != null)
                 {
-                    var shell = CarriedThing;
-                    var comp = mortar.TryGetComp<CompChangeableProjectile>();
-                    comp.LoadShell(shell.def, shell.stackCount);
-                    pawn.carryTracker.innerContainer.Remove(shell);
-                    shell.Destroy();
-                    return true;
+                    var comp = mortar.gun.TryGetComp<CompChangeableProjectile>();
+                    if (!comp.Loaded && comp.allowedShellsSettings.AllowedToAccept(CarriedThing))
+                    {
+                        var shell = CarriedThing;
+                        comp.LoadShell(shell.def, 1);
+                        shell.SplitOff(1).Destroy();
+                        SoundDefOf.Artillery_ShellLoaded.PlayOneShot(new TargetInfo(mortar.Position, pawn.Map));
+                        Messages.Message("PS_ShellLoaded".Translate(shell.def.label), MessageTypeDefOf.TaskCompletion);
+                        return true;
+                    }
                 }
 
                 var installBp = cellThings.OfType<Blueprint_Install>().FirstOrDefault();
