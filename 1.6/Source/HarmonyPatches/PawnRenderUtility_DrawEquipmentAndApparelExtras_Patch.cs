@@ -10,6 +10,7 @@ namespace PerspectiveShift
 		public static bool Prefix(Pawn pawn, Vector3 drawPos, Rot4 facing, PawnRenderFlags flags)
 		{
 			if (!pawn.IsAvatar()) return true;
+
 			if (!pawn.Drafted) return true;
 			if (pawn.InMentalState) return true;
 			if (State.ControlsFrozen) return true;

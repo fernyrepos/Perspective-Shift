@@ -6,6 +6,7 @@ using Verse;
 
 namespace PerspectiveShift
 {
+    [HotSwappable]
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.GetGizmos))]
     public static class Pawn_GetGizmos_Patch
     {
@@ -50,9 +51,10 @@ namespace PerspectiveShift
             {
                 State.seekAtWillPawns ??= new HashSet<int>();
                 bool isRanged = __instance.equipment?.Primary?.def?.IsRangedWeapon ?? false;
-                yield return new Command_Toggle
+                var seekAtWill = new Command_Toggle
                 {
                     defaultLabel = "PS_SeekAtWill".Translate(),
+                    defaultDesc = "PS_SeekAtWillDesc".Translate(),
                     icon = ContentFinder<Texture2D>.Get(isRanged ? "Gizmos/SeekAtWill_Ranged" : "Gizmos/SeekAtWill_Melee"),
                     isActive = () => State.seekAtWillPawns.Contains(__instance.thingIDNumber),
                     toggleAction = () =>
@@ -65,8 +67,14 @@ namespace PerspectiveShift
                         {
                             State.seekAtWillPawns.Add(__instance.thingIDNumber);
                         }
-                    }
+                    },
                 };
+
+                if (__instance.Drafted)
+                {
+                    seekAtWill.Disable("PS_SeekAtWillDraftedReason".Translate());
+                }
+                yield return seekAtWill;
             }
 
             if (!__instance.IsColonist && !PerspectiveShiftMod.settings.allowNonHuman) yield break;
