@@ -1,10 +1,13 @@
 using RimWorld;
+using System.Collections.Generic;
 using Verse;
 
 namespace PerspectiveShift
 {
     public abstract class FloatMenuOptionProvider_AvatarInteraction : FloatMenuOptionProvider
     {
+        public static Dictionary<int, int> lastInteractionByTarget = new Dictionary<int, int>();
+
         public override bool Drafted => false;
         public override bool Undrafted => true;
         public override bool Multiselect => false;
@@ -18,8 +21,13 @@ namespace PerspectiveShift
         {
             if (target == avatar)
                 return false;
-            if (Find.TickManager.TicksGame < avatar.interactions.lastInteractionTime + (GenDate.TicksPerDay / 2))
-                return false;
+            
+            if (lastInteractionByTarget.TryGetValue(target.thingIDNumber, out int lastTick))
+            {
+                if (Find.TickManager.TicksGame < lastTick + (GenDate.TicksPerDay / 2))
+                    return false;
+            }
+
             if (!avatar.interactions.CanInteractNowWith(target, interactionDef))
                 return false;
 
@@ -30,6 +38,14 @@ namespace PerspectiveShift
                 return false;
 
             return true;
+        }
+
+        protected void PerformInteraction(Pawn avatar, Pawn target, InteractionDef def)
+        {
+            if (avatar.interactions.TryInteractWith(target, def))
+            {
+                lastInteractionByTarget[target.thingIDNumber] = Find.TickManager.TicksGame;
+            }
         }
     }
 }

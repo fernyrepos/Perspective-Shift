@@ -14,7 +14,7 @@ namespace PerspectiveShift
             return new FloatMenuOption("PS_ChatWith".Translate(clickedPawn.LabelShort), () =>
             {
                 var def = Rand.Chance(0.75f) ? InteractionDefOf.Chitchat : InteractionDefOf.DeepTalk;
-                avatar.interactions.TryInteractWith(clickedPawn, def);
+                PerformInteraction(avatar, clickedPawn, def);
             });
         }
     }

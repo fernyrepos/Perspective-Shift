@@ -50,6 +50,7 @@ namespace PerspectiveShift
         private static FieldInfo currentlyCastingField;
         private static FieldInfo abilityDefField;
         private static PropertyInfo abilityLabelCapProperty;
+        private static Type jobDriverCastAbilityOnceType;
 
         private static Type compRunAndGunType;
         private static PropertyInfo isEnabledProperty;
@@ -443,12 +444,23 @@ namespace PerspectiveShift
                 return false;
             }
 
+            jobDriverCastAbilityOnceType = AccessTools.TypeByName("VEF.Abilities.JobDriver_CastAbilityOnce");
+            if (jobDriverCastAbilityOnceType == null)
+            {
+                Log.Error("[PS] VEF: JobDriver_CastAbilityOnce type not found");
+                return false;
+            }
+
             return true;
         }
 
         public static string GetVEFAbilityName(Pawn pawn)
         {
             if (!VanillaExpandedFrameworkAvailable)
+            {
+                return null;
+            }
+            if (pawn.jobs.curDriver != null && !jobDriverCastAbilityOnceType.IsAssignableFrom(pawn.jobs.curDriver.GetType()))
             {
                 return null;
             }

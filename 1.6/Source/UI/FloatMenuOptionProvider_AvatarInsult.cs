@@ -13,7 +13,7 @@ namespace PerspectiveShift
 
             return new FloatMenuOption("PS_Insult".Translate(clickedPawn.LabelShort), () =>
             {
-                avatar.interactions.TryInteractWith(clickedPawn, InteractionDefOf.Insult);
+                PerformInteraction(avatar, clickedPawn, InteractionDefOf.Insult);
             });
         }
     }

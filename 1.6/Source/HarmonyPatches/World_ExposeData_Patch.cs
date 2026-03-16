@@ -16,9 +16,11 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref State.permadeath, "PS_Permadeath", false);
             Scribe_Values.Look(ref State.allowDirectorInAuthentic, "PS_AllowDirectorInAuthentic", false);
             Scribe_Collections.Look(ref State.seekAtWillPawns, "PS_SeekAtWillPawns", LookMode.Value);
+            Scribe_Collections.Look(ref FloatMenuOptionProvider_AvatarInteraction.lastInteractionByTarget, "PS_LastInteractionByTarget", LookMode.Value, LookMode.Value);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 State.seekAtWillPawns ??= new HashSet<int>();
+                FloatMenuOptionProvider_AvatarInteraction.lastInteractionByTarget ??= new Dictionary<int, int>();
             }
         }
     }

@@ -1619,7 +1619,7 @@ namespace PerspectiveShift
                 if (CarriedThing?.def.IsMedicine == true)
                 {
                     var patient = cell.GetFirstPawn(pawn.Map);
-                    if (patient != null && HealthAIUtility.ShouldBeTendedNowByPlayer(patient))
+                    if (patient != null && patient.health.HasHediffsNeedingTend())
                     {
                         var job = JobMaker.MakeJob(JobDefOf.TendPatient, patient, CarriedThing);
                         if (TryStartForcedJob(job)) return true;
@@ -1700,9 +1700,22 @@ namespace PerspectiveShift
             {
                 if (bed.ForPrisoners && !carriedPawn.IsPrisonerOfColony)
                 {
-                    Messages.Message("PS_BedForPrisonersOnly".Translate(), MessageTypeDefOf.RejectInput, false);
-                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                    return true;
+                    if (carriedPawn.RaceProps.Humanlike && carriedPawn.guest != null)
+                    {
+                        if (carriedPawn.guest.Released)
+                        {
+                            carriedPawn.guest.Released = false;
+                            carriedPawn.guest.SetExclusiveInteraction(PrisonerInteractionModeDefOf.MaintainOnly);
+                            GenGuest.RemoveHealthyPrisonerReleasedThoughts(carriedPawn);
+                        }
+                        carriedPawn.guest.CapturedBy(Faction.OfPlayer, pawn);
+                    }
+                    else
+                    {
+                        Messages.Message("PS_BedForPrisonersOnly".Translate(), MessageTypeDefOf.RejectInput, false);
+                        SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                        return true;
+                    }
                 }
                 if (bed.ForSlaves && !carriedPawn.IsSlaveOfColony)
                 {
@@ -1710,18 +1723,22 @@ namespace PerspectiveShift
                     SoundDefOf.ClickReject.PlayOneShotOnCamera();
                     return true;
                 }
-                if (bed.ForColonists && (carriedPawn.IsPrisonerOfColony || carriedPawn.IsSlaveOfColony))
+                if (bed.ForColonists && !carriedPawn.IsColonist)
                 {
-                    Messages.Message("PS_BedForColonistsOnly".Translate(), MessageTypeDefOf.RejectInput, false);
-                    SoundDefOf.ClickReject.PlayOneShotOnCamera();
-                    return true;
+                    if (carriedPawn.RaceProps.Humanlike && carriedPawn.guest != null && carriedPawn.Faction != Faction.OfPlayer && carriedPawn.HostFaction != Faction.OfPlayer && !carriedPawn.IsWildMan() && carriedPawn.DevelopmentalStage != DevelopmentalStage.Baby && !carriedPawn.HostileTo(Faction.OfPlayer))
+                    {
+                        carriedPawn.guest.SetGuestStatus(Faction.OfPlayer);
+                        QuestUtility.SendQuestTargetSignals(carriedPawn.questTags, "Rescued", carriedPawn.Named("SUBJECT"));
+                    }
+                    else
+                    {
+                        Messages.Message("PS_BedForColonistsOnly".Translate(), MessageTypeDefOf.RejectInput, false);
+                        SoundDefOf.ClickReject.PlayOneShotOnCamera();
+                        return true;
+                    }
                 }
                 pawn.carryTracker.TryDropCarriedThing(cell, ThingPlaceMode.Direct, out _);
                 carriedPawn.jobs.Notify_TuckedIntoBed(bed);
-                if (!bed.ForPrisoners && carriedPawn.Faction != Faction.OfPlayer && !carriedPawn.IsPrisoner)
-                {
-                    carriedPawn.guest.SetGuestStatus(Faction.OfPlayer);
-                }
                 return true;
             }
 
