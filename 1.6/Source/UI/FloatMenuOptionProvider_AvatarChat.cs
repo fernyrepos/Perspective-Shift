@@ -19,7 +19,8 @@ namespace PerspectiveShift
             var avatar = State.Avatar.pawn;
             if (clickedPawn == avatar) return null;
 
-            if (!avatar.interactions.CanInteractNowWith(clickedPawn, InteractionDefOf.Chitchat))
+            if (!avatar.interactions.CanInteractNowWith(clickedPawn, InteractionDefOf.Chitchat) ||
+                Find.TickManager.TicksGame < avatar.interactions.lastInteractionTime + Pawn_InteractionsTracker.DirectTalkInteractInterval)
                 return null;
 
             return new FloatMenuOption("PS_ChatWith".Translate(clickedPawn.LabelShort), () =>

@@ -432,6 +432,11 @@ namespace PerspectiveShift
                     physicsPosition = null;
                 }
 
+                if (physicsPosition.HasValue && physicsPosition.Value.ToIntVec3() != pawn.Position)
+                {
+                    physicsPosition = null;
+                }
+
                 if (pawn.Drafted && !pawn.InMentalState && !State.ControlsFrozen && !(pawn.stances.curStance is Stance_Busy))
                 {
                     RotateTowardsMouse();

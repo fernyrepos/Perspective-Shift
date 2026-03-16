@@ -157,7 +157,7 @@ namespace PerspectiveShift
 
         private void PlaceAndRegister(Thing item, IntVec3 targetCell, int cellIdx, int slotIdx)
         {
-            GenPlace.TryPlaceThing(item, targetCell, storage.Map, ThingPlaceMode.Direct);
+            GenSpawn.Spawn(item, targetCell, storage.Map, WipeMode.Vanish);
 
             if (!item.Destroyed)
             {
