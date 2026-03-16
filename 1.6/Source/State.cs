@@ -176,7 +176,7 @@ namespace PerspectiveShift
             {
                 Cursor.visible = true;
                 var container = TryGetSpawnedContainer(Avatar.pawn);
-                if (container != null)
+                if (container != null && container.Map == Find.CurrentMap)
                 {
                     if (!(Find.CameraDriver.config is CameraMapConfig_Avatar))
                     {

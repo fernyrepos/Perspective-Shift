@@ -86,6 +86,8 @@ namespace PerspectiveShift
                 y -= 30;
             }
             var endRect = new Rect(inRect.x + inRect.width * 5f / 16f, y + 30, inRect.width * 3f / 8f, 44f);
+            var borderRect = endRect.ExpandedBy(2f);
+            Widgets.DrawBoxSolid(borderRect, new Color(1f, 0.6f, 0.6f, 0.5f));
             if (Widgets.CustomButtonText(ref endRect, "PS_EndRun".Translate(), EndRunBgColor, Color.white, EndRunBgColor))
                 Find.WindowStack.Add(new Dialog_NameSaveAndExit());
 
