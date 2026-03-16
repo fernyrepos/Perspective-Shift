@@ -57,7 +57,7 @@ namespace PerspectiveShift
                 {
                     if (__instance == State.Current?.pawn)
                     {
-                        if (PerspectiveShiftMod.settings.allowDirectorInAuthentic)
+                        if (State.allowDirectorInAuthentic)
                         {
                             yield return new Command_Action
                             {

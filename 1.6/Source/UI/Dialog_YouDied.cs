@@ -36,7 +36,7 @@ namespace PerspectiveShift
             inRect.x += 50;
             inRect.width -= 100;
 
-            float pOffset = PerspectiveShiftMod.settings.permadeath
+            float pOffset = State.permadeath
                 ? Mathf.Max(0f, (inRect.height - 194f) / 2f - 20f)
                 : 0f;
 
@@ -57,7 +57,7 @@ namespace PerspectiveShift
             Text.Anchor = TextAnchor.UpperLeft;
             float y = inRect.y + 140f + pOffset;
 
-            if (!PerspectiveShiftMod.settings.permadeath)
+            if (!State.permadeath)
             {
                 DrawRow(inRect, ref y, btnW, rowH, descOffset,
                     "PS_InhabitNewCharacter".Translate(),

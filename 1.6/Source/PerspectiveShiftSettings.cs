@@ -30,8 +30,6 @@ namespace PerspectiveShift
         public bool totalFreedom = false;
         public bool allowNonHuman = false;
         public bool requirePawnInFaction = true;
-        public bool permadeath = false;
-        public bool allowDirectorInAuthentic = false;
         public float sprintFoodDrain = 1.5f;
         public float sprintSleepDrain = 2f;
         public List<string> pinnedNeeds = new List<string>() { "Mood", "Food", "Rest" };
@@ -55,8 +53,6 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref totalFreedom, "totalFreedom", false);
             Scribe_Values.Look(ref allowNonHuman, "allowNonHuman", false);
             Scribe_Values.Look(ref requirePawnInFaction, "requirePawnInFaction", true);
-            Scribe_Values.Look(ref permadeath, "permadeath", false);
-            Scribe_Values.Look(ref allowDirectorInAuthentic, "allowDirectorInAuthentic", false);
             Scribe_Values.Look(ref sprintFoodDrain, "sprintFoodDrain", 1.5f);
             Scribe_Values.Look(ref sprintSleepDrain, "sprintSleepDrain", 2f);
             Scribe_Collections.Look(ref pinnedNeeds, "pinnedNeeds", LookMode.Value);

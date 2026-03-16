@@ -12,6 +12,8 @@ namespace PerspectiveShift
             State.ClearAvatar();
             State.seekAtWillPawns = new HashSet<int>();
             State.pendingDeathMenu = false;
+            State.permadeath = false;
+            State.allowDirectorInAuthentic = false;
             ModCompatibility.ClearCaches();
             ScenPart_StartingAnimal_PlayerStartingThings_Patch.ClearCache();
         }

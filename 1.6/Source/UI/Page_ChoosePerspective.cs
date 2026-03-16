@@ -241,13 +241,13 @@ namespace PerspectiveShift
             DrawAuthenticOption(r1,
                 "PS_Permadeath".Translate(),
                 "PS_PermadeathDesc".Translate(),
-                ref PerspectiveShiftMod.settings.permadeath);
+                ref State.permadeath);
 
             var r2 = new Rect(startX, startY + panelHeight + gap, width, panelHeight);
             DrawAuthenticOption(r2,
                 "PS_AllowSwitchingToDirectorMode".Translate(),
                 "PS_AllowSwitchingToDirectorModeDesc".Translate(),
-                ref PerspectiveShiftMod.settings.allowDirectorInAuthentic);
+                ref State.allowDirectorInAuthentic);
         }
 
         public override void DoBack()

@@ -13,6 +13,8 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref State.CurrentMode, "PS_Mode", PlaystyleMode.Director);
             Scribe_Deep.Look(ref State.Avatar, "PS_Avatar");
             Scribe_Values.Look(ref State.pendingDeathMenu, "PS_PendingDeathMenu", false);
+            Scribe_Values.Look(ref State.permadeath, "PS_Permadeath", false);
+            Scribe_Values.Look(ref State.allowDirectorInAuthentic, "PS_AllowDirectorInAuthentic", false);
             Scribe_Collections.Look(ref State.seekAtWillPawns, "PS_SeekAtWillPawns", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
