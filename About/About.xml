@@ -26,5 +26,6 @@
 	</modDependencies>
     <incompatibleWith>
         <li>addvans.wasdedpawn</li>
+        <li>brrainz.cameraplus</li>
     </incompatibleWith>
 </ModMetaData>
