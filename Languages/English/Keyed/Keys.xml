@@ -11,10 +11,10 @@
     <PS_ControlTaken>You are now {0}.</PS_ControlTaken>
 
     <PS_SelectRole>Select your role</PS_SelectRole>
-    <PS_RoleDirector>Director</PS_RoleDirector>
-    <PS_RoleDirectorDesc>Play from an omniscient point of view, only managing the characters. The classic experience.</PS_RoleDirectorDesc>
-    <PS_RoleCharacter>Characters</PS_RoleCharacter>
-    <PS_RoleCharacterDesc>Play from the point of view of your characters. Leader management playstyle.</PS_RoleCharacterDesc>
+    <PS_RoleDirector>Play as a director</PS_RoleDirector>
+    <PS_RoleDirectorDesc>Experience the gamee from an omniscient point of view, only managing the characters. The classic experience.</PS_RoleDirectorDesc>
+    <PS_RoleCharacter>Play as characters</PS_RoleCharacter>
+    <PS_RoleCharacterDesc>Experience the game from the point of view of one or many of your characters. Customizable.</PS_RoleCharacterDesc>
 
     <PS_SelectPlaystyle>Select your character playstyle</PS_SelectPlaystyle>
     <PS_ModeAuthentic>Authentic style</PS_ModeAuthentic>
@@ -67,8 +67,8 @@
     <PS_PlayerOnly>Player only</PS_PlayerOnly>
     <PS_PlayerOnlyRestrictions>Player only restrictions</PS_PlayerOnlyRestrictions>
     <PS_NoRestriction>No restriction</PS_NoRestriction>
-    <PS_OnlyPlayerCanStore>Only player can store</PS_OnlyPlayerCanStore>
-    <PS_OnlyPlayerCanTake>Only player can take</PS_OnlyPlayerCanTake>
+    <PS_OnlyPlayerCanStore>Colonists cannot store</PS_OnlyPlayerCanStore>
+    <PS_OnlyPlayerCanTake>Colonists cannot take</PS_OnlyPlayerCanTake>
     <PS_OnlyPlayerCanUse>Only player can use</PS_OnlyPlayerCanUse>
     <PS_PerspectiveSettings>Perspective settings</PS_PerspectiveSettings>
     <PS_Modify>Modify</PS_Modify>
