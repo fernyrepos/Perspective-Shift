@@ -722,8 +722,12 @@ namespace PerspectiveShift
             }
             if (!pawn.InMentalState)
             {
-                DrawPlayerGizmos();
-                DrawNeeds();
+                bool hideForTab = PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomLeft && Find.MainTabsRoot?.OpenTab != null;
+                if (!hideForTab)
+                {
+                    DrawPlayerGizmos();
+                    DrawNeeds();
+                }
             }
             bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(Event.current.mousePosition);
             bool mouseOverUI = IsMouseOverUI() || IsMouseOverColonistBar();
@@ -1092,6 +1096,8 @@ namespace PerspectiveShift
             float startX = 0f;
             float startY = 0f;
 
+            float mainButtonHeight = 45f;
+
             switch (PerspectiveShiftMod.settings.gizmoCorner)
             {
                 case GizmoCorner.TopRight:
@@ -1100,11 +1106,11 @@ namespace PerspectiveShift
                     break;
                 case GizmoCorner.BottomRight:
                     startX = (UI.screenWidth - 10f) / 0.85f - actualSize;
-                    startY = (UI.screenHeight - 10f) / 0.85f - actualSize;
+                    startY = (UI.screenHeight - 10f - mainButtonHeight) / 0.85f - actualSize;
                     break;
                 case GizmoCorner.BottomLeft:
                     startX = 10f / 0.85f;
-                    startY = (UI.screenHeight - 10f) / 0.85f - actualSize;
+                    startY = (UI.screenHeight - 10f - mainButtonHeight) / 0.85f - actualSize;
                     break;
                 case GizmoCorner.TopLeft:
                     startX = 10f / 0.85f;
