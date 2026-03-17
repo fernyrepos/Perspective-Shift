@@ -67,7 +67,6 @@ namespace PerspectiveShift
                 CleanupPawnState(Avatar.pawn);
             }
 
-            Message($"PerspectiveState.SetAvatar - Setting avatar to {pawn.Name}, Mode: {CurrentMode}");
             Avatar = new Avatar(pawn);
             CameraLockPosition = null;
             if (pawn.jobs != null && pawn.Spawned)
@@ -91,8 +90,6 @@ namespace PerspectiveShift
 
         public static void ClearAvatar()
         {
-            Message($"PerspectiveState.ClearAvatar - Clearing avatar");
-
             if (Avatar?.pawn != null)
             {
                 CleanupPawnState(Avatar.pawn);
@@ -139,7 +136,6 @@ namespace PerspectiveShift
                 }
                 return;
             }
-            Message($"EmergencyRevokeControl - revoking from {pawn.Name}");
             ClearAvatar();
             Messages.Message("PS_LostControl".Translate(), MessageTypeDefOf.NegativeEvent);
         }

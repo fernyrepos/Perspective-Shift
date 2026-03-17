@@ -870,7 +870,7 @@ namespace PerspectiveShift
                     $"paused={Find.TickManager.Paused}" +
                     desyncMsg);
             }
-            bool shouldLogJobs = true;
+            bool shouldLogJobs = false;
             if (shouldLogJobs)
             {
                 pawn.jobs.debugLog = true;
