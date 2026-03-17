@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -8,6 +9,7 @@ using Verse.Sound;
 namespace PerspectiveShift
 {
     [HotSwappable]
+    [StaticConstructorOnStartup]
     public class Dialog_StorageMenu : Window
     {
         private Building_Storage storage;
@@ -17,6 +19,7 @@ namespace PerspectiveShift
         private static readonly Texture2D Keep = ContentFinder<Texture2D>.Get("Storage/Keep");
         private static readonly Texture2D Hold = ContentFinder<Texture2D>.Get("Storage/Hold");
         private static readonly Texture2D Equip = ContentFinder<Texture2D>.Get("Storage/Equip");
+        private static readonly Texture2D Wear = ContentFinder<Texture2D>.Get("Storage/Wear");
 
         public override Vector2 InitialSize => new Vector2(600f, 600f);
         public Dialog_StorageMenu(Building_Storage storage)
@@ -87,25 +90,47 @@ namespace PerspectiveShift
             bool canEquip = isWeapon || isApparel;
             string equipLabel = isApparel ? "PS_Wear".Translate() : "PS_Equip".Translate();
 
-            DrawActionButton(keepRect, Keep, "PS_Keep".Translate(), hasItem, () =>
+            DrawActionButton(keepRect, Keep, "PS_Keep".Translate(), hasItem, (button) =>
             {
-                var item = cursorItem;
-                cursorItem = null;
-                State.Avatar.pawn.inventory.innerContainer.TryAdd(item, true);
-                item.def.soundDrop.PlayOneShot(State.Avatar.pawn);
-                Close();
+                int countToTake = (button == 1) ? 1 : cursorItem.stackCount;
+                var item = cursorItem.SplitOff(countToTake);
+                if (item == cursorItem) cursorItem = null;
+
+                bool added = State.Avatar.pawn.inventory.innerContainer.TryAdd(item, true);
+                if (added)
+                {
+                    item.def.soundDrop.PlayOneShot(State.Avatar.pawn);
+                }
+                else if (!item.Destroyed && item.stackCount > 0)
+                {
+                    if (cursorItem == null) cursorItem = item;
+                    else cursorItem.TryAbsorbStack(item, true);
+                }
+                if (cursorItem != null && cursorItem.stackCount <= 0) cursorItem = null;
             });
 
-            DrawActionButton(holdRect, Hold, "PS_Hold".Translate(), hasItem, () =>
+            DrawActionButton(holdRect, Hold, "PS_Hold".Translate(), hasItem, (button) =>
             {
-                var item = cursorItem;
-                cursorItem = null;
-                State.Avatar.pawn.carryTracker.TryStartCarry(item, item.stackCount, reserve: true);
-                item.def.soundDrop.PlayOneShot(State.Avatar.pawn);
-                Close();
+                int countToTake = (button == 1) ? 1 : cursorItem.stackCount;
+                var item = cursorItem.SplitOff(countToTake);
+                if (item == cursorItem) cursorItem = null;
+
+                int originalCount = item.stackCount;
+                int added = State.Avatar.pawn.carryTracker.TryStartCarry(item, originalCount, reserve: false);
+                if (added > 0)
+                {
+                    item.def.soundDrop.PlayOneShot(State.Avatar.pawn);
+                }
+
+                if (added < originalCount && !item.Destroyed && item.stackCount > 0)
+                {
+                    if (cursorItem == null) cursorItem = item;
+                    else cursorItem.TryAbsorbStack(item, true);
+                }
+                if (cursorItem != null && cursorItem.stackCount <= 0) cursorItem = null;
             });
 
-            DrawActionButton(equipRect, Equip, equipLabel, canEquip, () =>
+            DrawActionButton(equipRect, isApparel ? Wear : Equip, equipLabel, canEquip, (button) =>
             {
                 var item = cursorItem;
                 cursorItem = null;
@@ -186,7 +211,7 @@ namespace PerspectiveShift
             }
         }
 
-        private void DrawActionButton(Rect rect, Texture2D icon, string label, bool enabled, Action onClick)
+        private void DrawActionButton(Rect rect, Texture2D icon, string label, bool enabled, Action<int> onClick)
         {
             Widgets.DrawMenuSection(rect);
 
@@ -196,9 +221,9 @@ namespace PerspectiveShift
             else if (Mouse.IsOver(rect))
             {
                 Widgets.DrawHighlight(rect);
-                if (Event.current.type == EventType.MouseUp && Event.current.button == 0)
+                if (Event.current.type == EventType.MouseUp && (Event.current.button == 0 || Event.current.button == 1))
                 {
-                    onClick();
+                    onClick(Event.current.button);
                     Event.current.Use();
                 }
             }
@@ -226,6 +251,23 @@ namespace PerspectiveShift
             Text.Anchor = TextAnchor.UpperLeft;
         }
 
+        private void ClearItemReservations(Thing item)
+        {
+            if (item == null) return;
+            var map = State.Avatar.pawn.Map;
+            if (map == null) return;
+
+            var reservers = new HashSet<Pawn>();
+            map.reservationManager.ReserversOf(item, reservers);
+            foreach (var r in reservers)
+            {
+                if (r != State.Avatar.pawn && r.jobs != null)
+                    r.jobs.EndCurrentJob(JobCondition.InterruptForced);
+            }
+            map.reservationManager.ReleaseAllForTarget(item);
+            map.physicalInteractionReservationManager.ReleaseAllForTarget(item);
+        }
+
         private void PlaceAndRegister(Thing item, IntVec3 targetCell, int slotIdx)
         {
             GenSpawn.Spawn(item, targetCell, storage.Map, WipeMode.Vanish);
@@ -244,6 +286,7 @@ namespace PerspectiveShift
                 if (cursorItem == null && clickedItem != null)
                 {
                     cursorItem = clickedItem.SplitOff(clickedItem.stackCount);
+                    ClearItemReservations(cursorItem);
                     slotComp.AddGap(slotIdx);
                     clickedItem.def.soundPickup.PlayOneShot(State.Avatar.pawn);
                 }
@@ -298,6 +341,7 @@ namespace PerspectiveShift
                 {
                     var toTake = Mathf.CeilToInt(clickedItem.stackCount / 2f);
                     cursorItem = clickedItem.SplitOff(toTake);
+                    ClearItemReservations(cursorItem);
                     if (clickedItem.Destroyed || clickedItem.stackCount == 0)
                         slotComp.AddGap(slotIdx);
                     cursorItem.def.soundPickup.PlayOneShot(State.Avatar.pawn);

@@ -27,7 +27,6 @@ namespace PerspectiveShift
             }
             if ((pawn.IsColonist || pawn.IsColonySubhuman) && pawn.playerSettings.hostilityResponse != HostilityResponseMode.Attack && !lordJob_Ritual_Duel_Check)
             {
-                Log.Warning($"[JobGiver_SeekAtWill] TryGiveJob - FAIL: Pawn is {(pawn.IsColonist ? "colonist" : "colony subhuman")} and hostilityResponse is {prev} (expected Attack), not in ritual duel");
                 pawn.playerSettings.hostilityResponse = prev;
                 return null;
             }
@@ -37,14 +36,12 @@ namespace PerspectiveShift
 
             if (enemyTarget == null)
             {
-                Log.Warning($"[JobGiver_SeekAtWill] TryGiveJob - FAIL: enemyTarget is null after UpdateEnemyTarget");
                 pawn.playerSettings.hostilityResponse = prev;
                 return null;
             }
 
             if (enemyTarget is Pawn pawn2 && pawn2.IsPsychologicallyInvisible())
             {
-                Log.Warning($"[JobGiver_SeekAtWill] TryGiveJob - FAIL: enemyTarget {enemyTarget.LabelShort} is psychologically invisible");
                 pawn.playerSettings.hostilityResponse = prev;
                 return null;
             }
@@ -71,12 +68,12 @@ namespace PerspectiveShift
                 if (dest == pawn.Position)
                 {
                     pawn.pather?.StopDead();
-                    var waitJob = JobMaker.MakeJob(JobDefOf.Wait_Combat, ExpiryInterval_Ability.RandomInRange, checkOverrideOnExpiry: true);
+                    var waitJob = JobMaker.MakeJob(JobDefOf.Wait_Combat, 30, checkOverrideOnExpiry: true);
                     pawn.playerSettings.hostilityResponse = prev;
                     return waitJob;
                 }
                 var gotoJob = JobMaker.MakeJob(JobDefOf.Goto, dest);
-                gotoJob.expiryInterval = ExpiryInterval_Ability.RandomInRange;
+                gotoJob.expiryInterval = 30;
                 gotoJob.checkOverrideOnExpire = true;
                 pawn.playerSettings.hostilityResponse = prev;
                 return gotoJob;
@@ -85,7 +82,6 @@ namespace PerspectiveShift
             Verb verb = pawn.TryGetAttackVerb(enemyTarget, flag, allowTurrets);
             if (verb == null)
             {
-                Log.Warning($"[JobGiver_SeekAtWill] TryGiveJob - FAIL: pawn.TryGetAttackVerb returned null for enemyTarget {enemyTarget.LabelShort}");
                 pawn.playerSettings.hostilityResponse = prev;
                 return null;
             }
@@ -105,7 +101,7 @@ namespace PerspectiveShift
             if ((num && flag2 && flag3) || (flag4 && flag3))
             {
                 pawn.pather?.StopDead();
-                var waitJob2 = JobMaker.MakeJob(JobDefOf.Wait_Combat, ExpiryInterval_ShooterSucceeded.RandomInRange, checkOverrideOnExpiry: true);
+                var waitJob2 = JobMaker.MakeJob(JobDefOf.Wait_Combat, 30, checkOverrideOnExpiry: true);
                 pawn.playerSettings.hostilityResponse = prev;
                 return waitJob2;
             }
@@ -120,13 +116,13 @@ namespace PerspectiveShift
             if (dest2 == pawn.Position)
             {
                 pawn.pather?.StopDead();
-                var waitJob3 = JobMaker.MakeJob(JobDefOf.Wait_Combat, ExpiryInterval_ShooterSucceeded.RandomInRange, checkOverrideOnExpiry: true);
+                var waitJob3 = JobMaker.MakeJob(JobDefOf.Wait_Combat, 30, checkOverrideOnExpiry: true);
                 pawn.playerSettings.hostilityResponse = prev;
                 return waitJob3;
             }
 
             var gotoJob2 = JobMaker.MakeJob(JobDefOf.Goto, dest2);
-            gotoJob2.expiryInterval = ExpiryInterval_ShooterSucceeded.RandomInRange;
+            gotoJob2.expiryInterval = 30;
             gotoJob2.checkOverrideOnExpire = true;
             pawn.playerSettings.hostilityResponse = prev;
             return gotoJob2;
@@ -150,6 +146,15 @@ namespace PerspectiveShift
             return (Thing)AttackTargetFinder.BestAttackTarget(pawn, targetScanFlags, (Thing x) => ExtraTargetValidator(pawn, x), 0f, targetAcquireRadius, GetFlagPosition(pawn), GetFlagRadius(pawn), canBashDoors: false, canTakeTargetsCloserThanEffectiveMinRange: true, canBashFences: false, OnlyUseRangedSearch);
         }
 
+        public override Job MeleeAttackJob(Pawn pawn, Thing enemyTarget)
+        {
+            Job job = JobMaker.MakeJob(JobDefOf.AttackMelee, enemyTarget);
+            job.expiryInterval = 30;
+            job.checkOverrideOnExpire = true;
+            job.expireRequiresEnemiesNearby = true;
+            return job;
+        }
+
         public override bool TryFindShootingPosition(Pawn pawn, out IntVec3 dest, Verb verbToUse = null)
         {
             Thing enemyTarget = pawn.mindState.enemyTarget;
@@ -157,7 +162,6 @@ namespace PerspectiveShift
             Verb verb = verbToUse ?? pawn.TryGetAttackVerb(enemyTarget, allowManualCastWeapons, allowTurrets);
             if (verb == null)
             {
-                Log.Warning($"[JobGiver_SeekAtWill] TryFindShootingPosition - FAIL: verb is null");
                 dest = IntVec3.Invalid;
                 return false;
             }
