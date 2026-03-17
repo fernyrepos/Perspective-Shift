@@ -32,6 +32,7 @@ namespace PerspectiveShift
         public bool requirePawnInFaction = true;
         public float sprintFoodDrain = 1.5f;
         public float sprintSleepDrain = 2f;
+        public bool disableCustomGizmos = false;
         public List<string> pinnedNeeds = new List<string>() { "Mood", "Food", "Rest" };
 
         public override void ExposeData()
@@ -55,6 +56,7 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref requirePawnInFaction, "requirePawnInFaction", true);
             Scribe_Values.Look(ref sprintFoodDrain, "sprintFoodDrain", 1.5f);
             Scribe_Values.Look(ref sprintSleepDrain, "sprintSleepDrain", 2f);
+            Scribe_Values.Look(ref disableCustomGizmos, "disableCustomGizmos", false);
             Scribe_Collections.Look(ref pinnedNeeds, "pinnedNeeds", LookMode.Value);
 
             if (pinnedNeeds == null)

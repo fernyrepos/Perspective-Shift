@@ -44,6 +44,8 @@
     <PS_AllowNonHumanDesc>Allows possessing animals, mechanoids, and other non-colonist pawns.</PS_AllowNonHumanDesc>
     <PS_RequirePawnInFaction>Require target to be in faction</PS_RequirePawnInFaction>
     <PS_RequirePawnInFactionDesc>Ensures you can only take control of pawns that are part of your faction. Disable carefully, this is unsupported and only meant for fooling around.</PS_RequirePawnInFactionDesc>
+    <PS_DisableCustomGizmos>Disable custom gizmo UI</PS_DisableCustomGizmos>
+    <PS_DisableCustomGizmosDesc>Disables the custom Perspective Shift gizmo overlay. You will need to manually click/select your character to see their gizmos, just like in vanilla RimWorld.</PS_DisableCustomGizmosDesc>
 
     <PS_ChooseYourCharacter>Choose your character</PS_ChooseYourCharacter>
     <PS_ChooseYourStartingCharacter>Choose your starting character</PS_ChooseYourStartingCharacter>
