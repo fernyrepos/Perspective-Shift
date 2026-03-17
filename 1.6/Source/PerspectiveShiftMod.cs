@@ -75,6 +75,7 @@ namespace PerspectiveShift
             }
 
             listing.CheckboxLabeled("PS_TotalFreedom".Translate(), ref settings.totalFreedom, "PS_TotalFreedomDesc".Translate());
+            listing.CheckboxLabeled("PS_DisableCustomGizmos".Translate(), ref settings.disableCustomGizmos, "PS_DisableCustomGizmosDesc".Translate());
             listing.CheckboxLabeled("PS_AllowNonHuman".Translate(), ref settings.allowNonHuman, "PS_AllowNonHumanDesc".Translate());
             listing.CheckboxLabeled("PS_RequirePawnInFaction".Translate(), ref settings.requirePawnInFaction, "PS_RequirePawnInFactionDesc".Translate());
 

@@ -12,7 +12,7 @@ namespace PerspectiveShift
     {
         public static IEnumerable<Gizmo> Postfix(IEnumerable<Gizmo> values, Pawn __instance)
         {
-            if (State.IsActive && __instance == State.Avatar?.pawn && !State.DrawingTopRightGizmos)
+            if (State.IsActive && __instance == State.Avatar?.pawn && !State.DrawingTopRightGizmos && !PerspectiveShiftMod.settings.disableCustomGizmos)
             {
                 yield break;
             }
