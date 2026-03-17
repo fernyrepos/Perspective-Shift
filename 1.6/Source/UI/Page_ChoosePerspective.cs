@@ -86,11 +86,8 @@ namespace PerspectiveShift
 
             var contentRect = rect.ContractedBy(20f);
 
-            if (icon != null)
-            {
-                var iconRect = new Rect(rect.x, rect.y, rect.width, rect.width);
-                GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleAndCrop);
-            }
+            var iconRect = new Rect(rect.x, rect.y, rect.width, rect.width).ExpandedBy(21);
+            GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
 
             Text.Font = GameFont.Medium;
             Text.Anchor = TextAnchor.MiddleCenter;
@@ -157,10 +154,8 @@ namespace PerspectiveShift
             float iconHeight = contentRect.height;
             float iconWidth = iconHeight * 1.75f;
             var iconRect = new Rect(contentRect.xMax - iconWidth, contentRect.y, iconWidth, iconHeight);
-            if (icon != null)
-            {
-                GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
-            }
+
+            GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
 
             float textWidth = contentRect.width - iconWidth - 30f;
             var textRect = new Rect(contentRect.x, contentRect.y, textWidth, contentRect.height);
