@@ -15,7 +15,7 @@ namespace PerspectiveShift
         public static bool ShouldSeekEnemy(this Pawn pawn)
         {
             seekAtWillPawns ??= new HashSet<int>();
-            return !pawn.IsAvatar() && pawn.InMentalState is false && pawn.Faction == Faction.OfPlayer && seekAtWillPawns.Contains(pawn.thingIDNumber);
+            return !pawn.IsAvatar() && pawn.InMentalState is false && pawn.Drafted is false && pawn.Faction == Faction.OfPlayer && seekAtWillPawns.Contains(pawn.thingIDNumber);
         }
         public enum ForcedInteractionOutcome { None, ForceAccept, ForceReject }
         public static bool TryApplyForcedInteraction(ref float __result)
