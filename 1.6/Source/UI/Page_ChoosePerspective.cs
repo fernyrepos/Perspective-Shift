@@ -89,7 +89,7 @@ namespace PerspectiveShift
             if (icon != null)
             {
                 var iconRect = new Rect(rect.x, rect.y, rect.width, rect.width);
-                GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
+                GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleAndCrop);
             }
 
             Text.Font = GameFont.Medium;
