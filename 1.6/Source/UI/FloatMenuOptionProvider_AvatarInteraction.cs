@@ -1,48 +1,39 @@
-using RimWorld;
 using System.Collections.Generic;
+using RimWorld;
 using Verse;
 
 namespace PerspectiveShift
 {
-    public abstract class FloatMenuOptionProvider_AvatarInteraction : FloatMenuOptionProvider
+    public abstract class FloatMenuOptionProvider_AvatarInteraction : FloatMenuOptionProvider_AvatarBase
     {
         public static Dictionary<int, int> lastInteractionByTarget = new Dictionary<int, int>();
 
-        public override bool Drafted => false;
-        public override bool Undrafted => true;
-        public override bool Multiselect => false;
-
-        public override bool AppliesInt(FloatMenuContext context)
+        protected bool CanInteractWithTarget(Pawn target, InteractionDef interactionDef)
         {
-            return State.IsActive && context.FirstSelectedPawn.IsAvatar();
-        }
-
-        protected bool CanInteractWithTarget(Pawn avatar, Pawn target, InteractionDef interactionDef)
-        {
-            if (target == avatar)
+            if (target == State.Avatar.pawn)
                 return false;
-            
+
             if (lastInteractionByTarget.TryGetValue(target.thingIDNumber, out int lastTick))
             {
                 if (Find.TickManager.TicksGame < lastTick + (GenDate.TicksPerDay / 2))
                     return false;
             }
 
-            if (!avatar.interactions.CanInteractNowWith(target, interactionDef))
+            if (!State.Avatar.pawn.interactions.CanInteractNowWith(target, interactionDef))
                 return false;
 
             if (!SocialInteractionUtility.CanReceiveRandomInteraction(target))
                 return false;
 
-            if (avatar.HostileTo(target))
+            if (State.Avatar.pawn.HostileTo(target))
                 return false;
 
             return true;
         }
 
-        protected void PerformInteraction(Pawn avatar, Pawn target, InteractionDef def)
+        protected void PerformInteraction(Pawn target, InteractionDef def)
         {
-            if (avatar.interactions.TryInteractWith(target, def))
+            if (State.Avatar.pawn.interactions.TryInteractWith(target, def))
             {
                 lastInteractionByTarget[target.thingIDNumber] = Find.TickManager.TicksGame;
             }

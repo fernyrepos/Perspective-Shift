@@ -7,13 +7,12 @@ namespace PerspectiveShift
     {
         public override FloatMenuOption GetSingleOptionFor(Pawn clickedPawn, FloatMenuContext context)
         {
-            var avatar = State.Avatar.pawn;
-            if (!CanInteractWithTarget(avatar, clickedPawn, InteractionDefOf.Insult))
+            if (!CanInteractWithTarget(clickedPawn, InteractionDefOf.Insult))
                 return null;
 
             return new FloatMenuOption("PS_Insult".Translate(clickedPawn.LabelShort), () =>
             {
-                PerformInteraction(avatar, clickedPawn, InteractionDefOf.Insult);
+                PerformInteraction(clickedPawn, InteractionDefOf.Insult);
             });
         }
     }
