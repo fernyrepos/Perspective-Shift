@@ -30,6 +30,7 @@ namespace PerspectiveShift
         public float moveSpeedMultiplier = 1.0f;
         public float workSpeedMultiplier = 1.0f;
         public float shootAccuracyMultiplier = 1.0f;
+        public float playerMoveSpeedCap = 0.8f;
         public GizmoCorner gizmoCorner = GizmoCorner.TopRight;
         public bool totalFreedom = false;
         public bool allowNonHuman = false;
@@ -58,6 +59,7 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref moveSpeedMultiplier, "moveSpeedMultiplier", 1.0f);
             Scribe_Values.Look(ref workSpeedMultiplier, "workSpeedMultiplier", 1.0f);
             Scribe_Values.Look(ref shootAccuracyMultiplier, "shootAccuracyMultiplier", 1.0f);
+            Scribe_Values.Look(ref playerMoveSpeedCap, "playerMoveSpeedCap", 0.8f);
             Scribe_Values.Look(ref gizmoCorner, "gizmoCorner", GizmoCorner.TopRight);
             Scribe_Values.Look(ref totalFreedom, "totalFreedom", false);
             Scribe_Values.Look(ref allowNonHuman, "allowNonHuman", false);

@@ -69,6 +69,9 @@ namespace PerspectiveShift
 
             listing.Label("PS_ShootAccuracyMultiplier".Translate(settings.shootAccuracyMultiplier.ToString("P0")));
             settings.shootAccuracyMultiplier = listing.Slider(settings.shootAccuracyMultiplier, 0.1f, 100f);
+            
+            listing.Label("PS_PlayerMoveSpeedCap".Translate(settings.playerMoveSpeedCap.ToString("F2")));
+            settings.playerMoveSpeedCap = listing.Slider(settings.playerMoveSpeedCap, 0.1f, 5.0f);
 
             if (listing.ButtonTextLabeled("PS_GizmoCorner".Translate(), settings.gizmoCorner.ToString()))
             {
@@ -93,7 +96,7 @@ namespace PerspectiveShift
         private float CalculateHeight()
         {
             var labels = 7;
-            var sliders = 7;
+            var sliders = 8;
             var checkboxes = 9;
             var buttons = 1;
             if (settings.enableSprinting)

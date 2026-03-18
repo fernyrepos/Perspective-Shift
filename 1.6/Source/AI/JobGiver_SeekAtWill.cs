@@ -19,15 +19,21 @@ namespace PerspectiveShift
         {
             var prev = pawn.playerSettings.hostilityResponse;
             pawn.playerSettings.hostilityResponse = HostilityResponseMode.Attack;
-
-            bool lordJob_Ritual_Duel_Check = true;
-            if (pawn.GetLord()?.LordJob is LordJob_Ritual_Duel lordJob_Ritual_Duel)
+            try
             {
-                lordJob_Ritual_Duel_Check = lordJob_Ritual_Duel.duelists.Contains(pawn);
+                return TryGiveJobInt(pawn);
             }
-            if ((pawn.IsColonist || pawn.IsColonySubhuman) && pawn.playerSettings.hostilityResponse != HostilityResponseMode.Attack && !lordJob_Ritual_Duel_Check)
+            finally
             {
                 pawn.playerSettings.hostilityResponse = prev;
+            }
+        }
+
+        private Job TryGiveJobInt(Pawn pawn)
+        {
+            bool isDuelist = pawn.GetLord()?.LordJob is LordJob_Ritual_Duel duel && duel.duelists.Contains(pawn);
+            if ((pawn.IsColonist || pawn.IsColonySubhuman) && pawn.playerSettings.hostilityResponse != HostilityResponseMode.Attack && !isDuelist)
+            {
                 return null;
             }
 
@@ -36,13 +42,11 @@ namespace PerspectiveShift
 
             if (enemyTarget == null)
             {
-                pawn.playerSettings.hostilityResponse = prev;
                 return null;
             }
 
             if (enemyTarget is Pawn pawn2 && pawn2.IsPsychologicallyInvisible())
             {
-                pawn.playerSettings.hostilityResponse = prev;
                 return null;
             }
 
@@ -52,7 +56,6 @@ namespace PerspectiveShift
                 Job abilityJob = GetAbilityJob(pawn, enemyTarget);
                 if (abilityJob != null)
                 {
-                    pawn.playerSettings.hostilityResponse = prev;
                     return abilityJob;
                 }
             }
@@ -62,34 +65,29 @@ namespace PerspectiveShift
                 if (!TryFindShootingPosition(pawn, out var dest))
                 {
                     Log.Warning($"[JobGiver_SeekAtWill] TryGiveJob - FAIL: TryFindShootingPosition returned false (OnlyUseAbilityVerbs mode)");
-                    pawn.playerSettings.hostilityResponse = prev;
                     return null;
                 }
                 if (dest == pawn.Position)
                 {
                     pawn.pather?.StopDead();
                     var waitJob = JobMaker.MakeJob(JobDefOf.Wait_Combat, 30, checkOverrideOnExpiry: true);
-                    pawn.playerSettings.hostilityResponse = prev;
                     return waitJob;
                 }
                 var gotoJob = JobMaker.MakeJob(JobDefOf.Goto, dest);
                 gotoJob.expiryInterval = 30;
                 gotoJob.checkOverrideOnExpire = true;
-                pawn.playerSettings.hostilityResponse = prev;
                 return gotoJob;
             }
 
             Verb verb = pawn.TryGetAttackVerb(enemyTarget, flag, allowTurrets);
             if (verb == null)
             {
-                pawn.playerSettings.hostilityResponse = prev;
                 return null;
             }
 
             if (verb.verbProps.IsMeleeAttack)
             {
                 var meleeJob = MeleeAttackJob(pawn, enemyTarget);
-                pawn.playerSettings.hostilityResponse = prev;
                 return meleeJob;
             }
 
@@ -102,14 +100,12 @@ namespace PerspectiveShift
             {
                 pawn.pather?.StopDead();
                 var waitJob2 = JobMaker.MakeJob(JobDefOf.Wait_Combat, 30, checkOverrideOnExpiry: true);
-                pawn.playerSettings.hostilityResponse = prev;
                 return waitJob2;
             }
 
             if (!TryFindShootingPosition(pawn, out var dest2))
             {
                 Log.Warning($"[JobGiver_SeekAtWill] TryGiveJob - FAIL: TryFindShootingPosition returned false");
-                pawn.playerSettings.hostilityResponse = prev;
                 return null;
             }
 
@@ -117,14 +113,12 @@ namespace PerspectiveShift
             {
                 pawn.pather?.StopDead();
                 var waitJob3 = JobMaker.MakeJob(JobDefOf.Wait_Combat, 30, checkOverrideOnExpiry: true);
-                pawn.playerSettings.hostilityResponse = prev;
                 return waitJob3;
             }
 
             var gotoJob2 = JobMaker.MakeJob(JobDefOf.Goto, dest2);
             gotoJob2.expiryInterval = 30;
             gotoJob2.checkOverrideOnExpire = true;
-            pawn.playerSettings.hostilityResponse = prev;
             return gotoJob2;
         }
 
@@ -171,8 +165,7 @@ namespace PerspectiveShift
             newReq.verb = verb;
             newReq.maxRangeFromTarget = verb.EffectiveRange;
             newReq.wantCoverFromTarget = verb.EffectiveRange > 5f;
-            bool result = CastPositionFinder.TryFindCastPosition(newReq, out dest);
-            return result;
+            return CastPositionFinder.TryFindCastPosition(newReq, out dest);
         }
     }
 }

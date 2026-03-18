@@ -93,263 +93,69 @@ namespace PerspectiveShift
             wasdActiveVehicles.Clear();
         }
 
+        private static bool Require<T>(ref T target, Func<T> lookup, string name, string prefix) where T : class
+        {
+            target = lookup();
+            if (target != null) return true;
+            Log.Error($"[PS] {prefix}: {name} not found");
+            return false;
+        }
+
         private static bool InitRunAndGunCompat()
         {
-            compRunAndGunType = AccessTools.TypeByName("RunAndGun.CompRunAndGun");
-            if (compRunAndGunType == null)
-            {
-                Log.Error("[PS] RunAndGun: CompRunAndGun type not found");
-                return false;
-            }
-
-            isEnabledProperty = AccessTools.Property(compRunAndGunType, "isEnabled");
-            if (isEnabledProperty == null)
-            {
-                Log.Error("[PS] RunAndGun: isEnabled property not found");
-                return false;
-            }
-
-            stanceRunAndGunType = AccessTools.TypeByName("RunAndGun.Stance_RunAndGun");
-            if (stanceRunAndGunType == null)
-            {
-                Log.Error("[PS] RunAndGun: Stance_RunAndGun type not found");
-                return false;
-            }
-
-            stanceRunAndGunCooldownType = AccessTools.TypeByName("RunAndGun.Stance_RunAndGun_Cooldown");
-            if (stanceRunAndGunCooldownType == null)
-            {
-                Log.Error("[PS] RunAndGun: Stance_RunAndGun_Cooldown type not found");
-                return false;
-            }
-
-            effecterField = AccessTools.Field(typeof(Stance_Warmup), "effecter");
-            if (effecterField == null)
-            {
-                Log.Error("[PS] RunAndGun: Stance_Warmup.effecter field not found");
-                return false;
-            }
-
-            sustainerField = AccessTools.Field(typeof(Stance_Warmup), "sustainer");
-            if (sustainerField == null)
-            {
-                Log.Error("[PS] RunAndGun: Stance_Warmup.sustainer field not found");
-                return false;
-            }
-
+            if (!Require(ref compRunAndGunType, () => AccessTools.TypeByName("RunAndGun.CompRunAndGun"), "CompRunAndGun type", "RunAndGun")) return false;
+            if (!Require(ref isEnabledProperty, () => AccessTools.Property(compRunAndGunType, "isEnabled"), "isEnabled property", "RunAndGun")) return false;
+            if (!Require(ref stanceRunAndGunType, () => AccessTools.TypeByName("RunAndGun.Stance_RunAndGun"), "Stance_RunAndGun type", "RunAndGun")) return false;
+            if (!Require(ref stanceRunAndGunCooldownType, () => AccessTools.TypeByName("RunAndGun.Stance_RunAndGun_Cooldown"), "Stance_RunAndGun_Cooldown type", "RunAndGun")) return false;
+            if (!Require(ref effecterField, () => AccessTools.Field(typeof(Stance_Warmup), "effecter"), "Stance_Warmup.effecter field", "RunAndGun")) return false;
+            if (!Require(ref sustainerField, () => AccessTools.Field(typeof(Stance_Warmup), "sustainer"), "Stance_Warmup.sustainer field", "RunAndGun")) return false;
             return true;
         }
 
         private static bool InitVehicleCompat()
         {
-            vehiclePawnType = AccessTools.TypeByName("Vehicles.VehiclePawn");
-            if (vehiclePawnType == null)
-            {
-                Log.Error("[PS] VehicleFramework: VehiclePawn type not found");
-                return false;
-            }
+            Type vehiclePathFollowerType = null;
+            Type vehicleRoleHandlerType = null;
+            Type vehicleRoleType = null;
+            Type utilityType = null;
+            Type compVehicleTurretsType = null;
+            Type vehicleTurretType = null;
+            MethodInfo patherDrawMethod = null;
+            MethodInfo getGizmosMethod = null;
+            MethodInfo allowDeconstructMethod = null;
+            MethodInfo getFloatMenuOptionsMethod = null;
 
-            var vehiclePathFollowerType = AccessTools.TypeByName("Vehicles.VehiclePathFollower");
-            if (vehiclePathFollowerType == null)
-            {
-                Log.Error("[PS] VehicleFramework: VehiclePathFollower type not found");
-                return false;
-            }
-
-            var vehicleRoleHandlerType = AccessTools.TypeByName("Vehicles.VehicleRoleHandler");
-            if (vehicleRoleHandlerType == null)
-            {
-                Log.Error("[PS] VehicleFramework: VehicleRoleHandler type not found");
-                return false;
-            }
-
-            var vehicleRoleType = AccessTools.TypeByName("Vehicles.VehicleRole");
-            if (vehicleRoleType == null)
-            {
-                Log.Error("[PS] VehicleFramework: VehicleRole type not found");
-                return false;
-            }
-
-            vehiclePatherField = AccessTools.Field(vehiclePawnType, "vehiclePather");
-            if (vehiclePatherField == null)
-            {
-                Log.Error("[PS] VehicleFramework: vehiclePather field not found");
-                return false;
-            }
-
-            handlersField = AccessTools.Field(vehiclePawnType, "handlers");
-            if (handlersField == null)
-            {
-                Log.Error("[PS] VehicleFramework: handlers field not found");
-                return false;
-            }
-
-            thingOwnerField = AccessTools.Field(vehicleRoleHandlerType, "thingOwner");
-            if (thingOwnerField == null)
-            {
-                Log.Error("[PS] VehicleFramework: thingOwner field not found");
-                return false;
-            }
-
-            roleField = AccessTools.Field(vehicleRoleHandlerType, "role");
-            if (roleField == null)
-            {
-                Log.Error("[PS] VehicleFramework: role field not found");
-                return false;
-            }
-
-            handlingTypesField = AccessTools.Field(vehicleRoleType, "handlingTypes");
-            if (handlingTypesField == null)
-            {
-                Log.Error("[PS] VehicleFramework: handlingTypes field not found");
-                return false;
-            }
-
-            startPathMethod = AccessTools.Method(vehiclePathFollowerType, "StartPath");
-            if (startPathMethod == null)
-            {
-                Log.Error("[PS] VehicleFramework: StartPath method not found");
-                return false;
-            }
-
-            stopDeadMethod = AccessTools.Method(vehiclePathFollowerType, "StopDead");
-            if (stopDeadMethod == null)
-            {
-                Log.Error("[PS] VehicleFramework: StopDead method not found");
-                return false;
-            }
-
-            movingProperty = AccessTools.Property(vehiclePathFollowerType, "Moving");
-            if (movingProperty == null)
-            {
-                Log.Error("[PS] VehicleFramework: Moving property not found");
-                return false;
-            }
-
-            destinationField = AccessTools.Field(vehiclePathFollowerType, "destination");
-            if (destinationField == null)
-            {
-                Log.Error("[PS] VehicleFramework: destination field not found");
-                return false;
-            }
-
-            patherVehicleField = AccessTools.Field(vehiclePathFollowerType, "vehicle");
-            if (patherVehicleField == null)
-            {
-                Log.Error("[PS] VehicleFramework: VehiclePathFollower.vehicle field not found");
-                return false;
-            }
-
-            vehicleDraftedProp = AccessTools.Property(vehiclePawnType, "Drafted");
-            if (vehicleDraftedProp == null)
-            {
-                Log.Error("[PS] VehicleFramework: Drafted property not found");
-                return false;
-            }
-            vehicleIgnitionField = AccessTools.Field(vehiclePawnType, "ignition");
-            if (vehicleIgnitionField == null)
-            {
-                Log.Error("[PS] VehicleFramework: ignition field not found");
-                return false;
-            }
-            ignitionDraftedProp = AccessTools.Property(vehicleIgnitionField.FieldType, "Drafted");
-            if (ignitionDraftedProp == null)
-            {
-                Log.Error("[PS] VehicleFramework: ignition.Drafted property not found");
-                return false;
-            }
-
-            var utilityType = AccessTools.TypeByName("Vehicles.VehicleReachabilityUtility");
-            if (utilityType == null)
-            {
-                Log.Error("[PS] VehicleFramework: VehicleReachabilityUtility type not found");
-                return false;
-            }
-            canReachMethod = AccessTools.Method(utilityType, "CanReachVehicle",
-                new Type[] { vehiclePawnType, typeof(LocalTargetInfo), typeof(PathEndMode), typeof(Danger), typeof(TraverseMode) });
-            if (canReachMethod == null)
-            {
-                Log.Error("[PS] VehicleFramework: CanReachVehicle method not found");
-                return false;
-            }
-
-            var compVehicleTurretsType = AccessTools.TypeByName("Vehicles.CompVehicleTurrets");
-            if (compVehicleTurretsType == null)
-            {
-                Log.Error("[PS] VehicleFramework: CompVehicleTurrets type not found");
-                return false;
-            }
-            var vehicleTurretType = AccessTools.TypeByName("Vehicles.VehicleTurret");
-            if (vehicleTurretType == null)
-            {
-                Log.Error("[PS] VehicleFramework: VehicleTurret type not found");
-                return false;
-            }
-            compVehicleTurretsProp = AccessTools.Property(vehiclePawnType, "CompVehicleTurrets");
-            if (compVehicleTurretsProp == null)
-            {
-                Log.Error("[PS] VehicleFramework: CompVehicleTurrets property not found");
-                return false;
-            }
-            turretsProp = AccessTools.Property(compVehicleTurretsType, "Turrets");
-            if (turretsProp == null)
-            {
-                Log.Error("[PS] VehicleFramework: Turrets property not found");
-                return false;
-            }
-            setTargetMethod = AccessTools.Method(vehicleTurretType, "SetTarget");
-            if (setTargetMethod == null)
-            {
-                Log.Error("[PS] VehicleFramework: SetTarget method not found");
-                return false;
-            }
-            keyField = AccessTools.Field(vehicleTurretType, "key");
-            if (keyField == null)
-            {
-                Log.Error("[PS] VehicleFramework: key field not found");
-                return false;
-            }
-            turretIdsProperty = AccessTools.Property(vehicleRoleType, "TurretIds");
-            if (turretIdsProperty == null)
-            {
-                Log.Error("[PS] VehicleFramework: TurretIds property not found");
-                return false;
-            }
-
-            addOrTransferMethod = AccessTools.Method(vehiclePawnType, "AddOrTransfer", new Type[] { typeof(Thing), typeof(int) });
-            if (addOrTransferMethod == null)
-            {
-                Log.Error("[PS] VehicleFramework: AddOrTransfer method not found");
-                return false;
-            }
-
-            var patherDrawMethod = AccessTools.Method("Vehicles.VehiclePathFollower:PatherDraw");
-            if (patherDrawMethod == null)
-            {
-                Log.Error("[PS] VehicleFramework: PatherDraw method not found");
-                return false;
-            }
-
-            var getGizmosMethod = AccessTools.Method(vehiclePawnType, "GetGizmos");
-            if (getGizmosMethod == null)
-            {
-                Log.Error("[PS] VehicleFramework: GetGizmos method not found");
-                return false;
-            }
-
-            var allowDeconstructMethod = AccessTools.Method("Vehicles.Patch_Construction:AllowDeconstructVehicle");
-            if (allowDeconstructMethod == null)
-            {
-                Log.Error("[PS] VehicleFramework: AllowDeconstructVehicle method not found");
-                return false;
-            }
-
-            var getFloatMenuOptionsMethod = AccessTools.Method(vehiclePawnType, "GetFloatMenuOptions");
-            if (getFloatMenuOptionsMethod == null)
-            {
-                Log.Error("[PS] VehicleFramework: GetFloatMenuOptions method not found");
-                return false;
-            }
+            if (!Require(ref vehiclePawnType, () => AccessTools.TypeByName("Vehicles.VehiclePawn"), "VehiclePawn", "VehicleFramework")) return false;
+            if (!Require(ref vehiclePathFollowerType, () => AccessTools.TypeByName("Vehicles.VehiclePathFollower"), "VehiclePathFollower", "VehicleFramework")) return false;
+            if (!Require(ref vehicleRoleHandlerType, () => AccessTools.TypeByName("Vehicles.VehicleRoleHandler"), "VehicleRoleHandler", "VehicleFramework")) return false;
+            if (!Require(ref vehicleRoleType, () => AccessTools.TypeByName("Vehicles.VehicleRole"), "VehicleRole", "VehicleFramework")) return false;
+            if (!Require(ref vehiclePatherField, () => AccessTools.Field(vehiclePawnType, "vehiclePather"), "vehiclePather", "VehicleFramework")) return false;
+            if (!Require(ref handlersField, () => AccessTools.Field(vehiclePawnType, "handlers"), "handlers", "VehicleFramework")) return false;
+            if (!Require(ref thingOwnerField, () => AccessTools.Field(vehicleRoleHandlerType, "thingOwner"), "thingOwner", "VehicleFramework")) return false;
+            if (!Require(ref roleField, () => AccessTools.Field(vehicleRoleHandlerType, "role"), "role", "VehicleFramework")) return false;
+            if (!Require(ref handlingTypesField, () => AccessTools.Field(vehicleRoleType, "handlingTypes"), "handlingTypes", "VehicleFramework")) return false;
+            if (!Require(ref startPathMethod, () => AccessTools.Method(vehiclePathFollowerType, "StartPath"), "StartPath", "VehicleFramework")) return false;
+            if (!Require(ref stopDeadMethod, () => AccessTools.Method(vehiclePathFollowerType, "StopDead"), "StopDead", "VehicleFramework")) return false;
+            if (!Require(ref movingProperty, () => AccessTools.Property(vehiclePathFollowerType, "Moving"), "Moving", "VehicleFramework")) return false;
+            if (!Require(ref destinationField, () => AccessTools.Field(vehiclePathFollowerType, "destination"), "destination", "VehicleFramework")) return false;
+            if (!Require(ref patherVehicleField, () => AccessTools.Field(vehiclePathFollowerType, "vehicle"), "VehiclePathFollower.vehicle", "VehicleFramework")) return false;
+            if (!Require(ref vehicleDraftedProp, () => AccessTools.Property(vehiclePawnType, "Drafted"), "Drafted", "VehicleFramework")) return false;
+            if (!Require(ref vehicleIgnitionField, () => AccessTools.Field(vehiclePawnType, "ignition"), "ignition", "VehicleFramework")) return false;
+            if (!Require(ref ignitionDraftedProp, () => AccessTools.Property(vehicleIgnitionField.FieldType, "Drafted"), "ignition.Drafted", "VehicleFramework")) return false;
+            if (!Require(ref utilityType, () => AccessTools.TypeByName("Vehicles.VehicleReachabilityUtility"), "VehicleReachabilityUtility", "VehicleFramework")) return false;
+            if (!Require(ref canReachMethod, () => AccessTools.Method(utilityType, "CanReachVehicle", new Type[] { vehiclePawnType, typeof(LocalTargetInfo), typeof(PathEndMode), typeof(Danger), typeof(TraverseMode) }), "CanReachVehicle", "VehicleFramework")) return false;
+            if (!Require(ref compVehicleTurretsType, () => AccessTools.TypeByName("Vehicles.CompVehicleTurrets"), "CompVehicleTurrets", "VehicleFramework")) return false;
+            if (!Require(ref vehicleTurretType, () => AccessTools.TypeByName("Vehicles.VehicleTurret"), "VehicleTurret", "VehicleFramework")) return false;
+            if (!Require(ref compVehicleTurretsProp, () => AccessTools.Property(vehiclePawnType, "CompVehicleTurrets"), "CompVehicleTurrets", "VehicleFramework")) return false;
+            if (!Require(ref turretsProp, () => AccessTools.Property(compVehicleTurretsType, "Turrets"), "Turrets", "VehicleFramework")) return false;
+            if (!Require(ref setTargetMethod, () => AccessTools.Method(vehicleTurretType, "SetTarget"), "SetTarget", "VehicleFramework")) return false;
+            if (!Require(ref keyField, () => AccessTools.Field(vehicleTurretType, "key"), "key", "VehicleFramework")) return false;
+            if (!Require(ref turretIdsProperty, () => AccessTools.Property(vehicleRoleType, "TurretIds"), "TurretIds", "VehicleFramework")) return false;
+            if (!Require(ref addOrTransferMethod, () => AccessTools.Method(vehiclePawnType, "AddOrTransfer", new Type[] { typeof(Thing), typeof(int) }), "AddOrTransfer", "VehicleFramework")) return false;
+            if (!Require(ref patherDrawMethod, () => AccessTools.Method("Vehicles.VehiclePathFollower:PatherDraw"), "PatherDraw", "VehicleFramework")) return false;
+            if (!Require(ref getGizmosMethod, () => AccessTools.Method(vehiclePawnType, "GetGizmos"), "GetGizmos", "VehicleFramework")) return false;
+            if (!Require(ref allowDeconstructMethod, () => AccessTools.Method("Vehicles.Patch_Construction:AllowDeconstructVehicle"), "AllowDeconstructVehicle", "VehicleFramework")) return false;
+            if (!Require(ref getFloatMenuOptionsMethod, () => AccessTools.Method(vehiclePawnType, "GetFloatMenuOptions"), "GetFloatMenuOptions", "VehicleFramework")) return false;
 
             var vehicleCompatHarmony = new Harmony("PerspectiveShift.VehicleCompat");
             vehicleCompatHarmony.Patch(patherDrawMethod,
@@ -366,40 +172,14 @@ namespace PerspectiveShift
 
         private static bool InitVVECompat()
         {
-            var vveCompType = AccessTools.TypeByName("VanillaVehiclesExpanded.CompVehicleMovementController");
-            if (vveCompType == null)
-            {
-                Log.Error("[PS] VVE: CompVehicleMovementController type not found");
-                return false;
-            }
+            Type vveCompType = null;
+            MethodInfo slowdownMethod = null;
 
-            vveCurrentSpeedField = AccessTools.Field(vveCompType, "currentSpeed");
-            if (vveCurrentSpeedField == null)
-            {
-                Log.Error("[PS] VVE: currentSpeed field not found");
-                return false;
-            }
-
-            vveStatMoveSpeedProp = AccessTools.Property(vveCompType, "StatMoveSpeed");
-            if (vveStatMoveSpeedProp == null)
-            {
-                Log.Error("[PS] VVE: StatMoveSpeed property not found");
-                return false;
-            }
-
-            vveHandbrakeAppliedField = AccessTools.Field(vveCompType, "handbrakeApplied");
-            if (vveHandbrakeAppliedField == null)
-            {
-                Log.Error("[PS] VVE: handbrakeApplied field not found");
-                return false;
-            }
-
-            var slowdownMethod = AccessTools.Method(vveCompType, "Slowdown");
-            if (slowdownMethod == null)
-            {
-                Log.Error("[PS] VVE: Slowdown method not found");
-                return false;
-            }
+            if (!Require(ref vveCompType, () => AccessTools.TypeByName("VanillaVehiclesExpanded.CompVehicleMovementController"), "CompVehicleMovementController", "VVE")) return false;
+            if (!Require(ref vveCurrentSpeedField, () => AccessTools.Field(vveCompType, "currentSpeed"), "currentSpeed", "VVE")) return false;
+            if (!Require(ref vveStatMoveSpeedProp, () => AccessTools.Property(vveCompType, "StatMoveSpeed"), "StatMoveSpeed", "VVE")) return false;
+            if (!Require(ref vveHandbrakeAppliedField, () => AccessTools.Field(vveCompType, "handbrakeApplied"), "handbrakeApplied", "VVE")) return false;
+            if (!Require(ref slowdownMethod, () => AccessTools.Method(vveCompType, "Slowdown"), "Slowdown", "VVE")) return false;
 
             var vveHarmony = new Harmony("PerspectiveShift.VVECompat");
             vveHarmony.Patch(slowdownMethod,
@@ -410,55 +190,16 @@ namespace PerspectiveShift
 
         private static bool InitVEFCompat()
         {
-            compAbilitiesType = AccessTools.TypeByName("VEF.Abilities.CompAbilities");
-            if (compAbilitiesType == null)
-            {
-                Log.Error("[PS] VEF: CompAbilities type not found");
-                return false;
-            }
+            Type abilityType = null;
+            Type abilityDefType = null;
 
-            currentlyCastingField = AccessTools.Field(compAbilitiesType, "currentlyCasting");
-            if (currentlyCastingField == null)
-            {
-                Log.Error("[PS] VEF: currentlyCasting field not found");
-                return false;
-            }
-
-            var abilityType = AccessTools.TypeByName("VEF.Abilities.Ability");
-            if (abilityType == null)
-            {
-                Log.Error("[PS] VEF: Ability type not found");
-                return false;
-            }
-
-            abilityDefField = AccessTools.Field(abilityType, "def");
-            if (abilityDefField == null)
-            {
-                Log.Error("[PS] VEF: def field not found");
-                return false;
-            }
-
-            var abilityDefType = AccessTools.TypeByName("VEF.Abilities.AbilityDef");
-            if (abilityDefType == null)
-            {
-                Log.Error("[PS] VEF: AbilityDef type not found");
-                return false;
-            }
-
-            abilityLabelCapProperty = AccessTools.Property(abilityDefType, "LabelCap");
-            if (abilityLabelCapProperty == null)
-            {
-                Log.Error("[PS] VEF: LabelCap property not found");
-                return false;
-            }
-
-            jobDriverCastAbilityOnceType = AccessTools.TypeByName("VEF.Abilities.JobDriver_CastAbilityOnce");
-            if (jobDriverCastAbilityOnceType == null)
-            {
-                Log.Error("[PS] VEF: JobDriver_CastAbilityOnce type not found");
-                return false;
-            }
-
+            if (!Require(ref compAbilitiesType, () => AccessTools.TypeByName("VEF.Abilities.CompAbilities"), "CompAbilities", "VEF")) return false;
+            if (!Require(ref currentlyCastingField, () => AccessTools.Field(compAbilitiesType, "currentlyCasting"), "currentlyCasting", "VEF")) return false;
+            if (!Require(ref abilityType, () => AccessTools.TypeByName("VEF.Abilities.Ability"), "Ability", "VEF")) return false;
+            if (!Require(ref abilityDefField, () => AccessTools.Field(abilityType, "def"), "def", "VEF")) return false;
+            if (!Require(ref abilityDefType, () => AccessTools.TypeByName("VEF.Abilities.AbilityDef"), "AbilityDef", "VEF")) return false;
+            if (!Require(ref abilityLabelCapProperty, () => AccessTools.Property(abilityDefType, "LabelCap"), "LabelCap", "VEF")) return false;
+            if (!Require(ref jobDriverCastAbilityOnceType, () => AccessTools.TypeByName("VEF.Abilities.JobDriver_CastAbilityOnce"), "JobDriver_CastAbilityOnce", "VEF")) return false;
             return true;
         }
 

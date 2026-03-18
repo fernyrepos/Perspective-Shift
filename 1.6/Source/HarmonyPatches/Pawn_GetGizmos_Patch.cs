@@ -47,7 +47,7 @@ namespace PerspectiveShift
                 yield return g;
             }
 
-            if (__instance != State.Current?.pawn && __instance.Faction == Faction.OfPlayer)
+            if (__instance != State.Avatar?.pawn && __instance.Faction == Faction.OfPlayer)
             {
                 State.seekAtWillPawns ??= new HashSet<int>();
                 bool isRanged = __instance.equipment?.Primary?.def?.IsRangedWeapon ?? false;
@@ -86,7 +86,7 @@ namespace PerspectiveShift
 
                 if (State.CurrentMode == PlaystyleMode.Authentic)
                 {
-                    if (__instance == State.Current?.pawn)
+                    if (__instance == State.Avatar?.pawn)
                     {
                         if (State.allowDirectorInAuthentic)
                         {
@@ -109,7 +109,7 @@ namespace PerspectiveShift
                         }
                     }
                     else if (State.allowDirectorInAuthentic
-                        && State.Current == null
+                        && State.Avatar == null
                         && __instance.thingIDNumber == State.authenticPawnId)
                     {
                         yield return new Command_Action
@@ -123,21 +123,21 @@ namespace PerspectiveShift
                 }
             }
 
-            if (__instance != State.Current?.pawn || State.Current == null)
+            if (__instance != State.Avatar?.pawn || State.Avatar == null)
             {
                 yield return new Command_Action
                 {
-                    defaultLabel = State.CurrentMode == PlaystyleMode.Dynamic && State.Current == null
+                    defaultLabel = State.CurrentMode == PlaystyleMode.Dynamic && State.Avatar == null
                         ? "PS_TakeControl".Translate()
                         : "PS_SwapCharacter".Translate(),
-                    icon = ContentFinder<Texture2D>.Get(State.CurrentMode == PlaystyleMode.Dynamic && State.Current == null ? "Gizmos/TakeControl" : "Gizmos/SwapPOV"),
+                    icon = ContentFinder<Texture2D>.Get(State.CurrentMode == PlaystyleMode.Dynamic && State.Avatar == null ? "Gizmos/TakeControl" : "Gizmos/SwapPOV"),
                     action = () => State.SetAvatar(__instance, showMessage: true),
                     disabled = __instance.InMentalState,
                     disabledReason = "PawnIsInMentalState".Translate(__instance)
                 };
             }
 
-            if (__instance == State.Current?.pawn && (State.CurrentMode == PlaystyleMode.Dynamic || PerspectiveShiftMod.settings.totalFreedom))
+            if (__instance == State.Avatar?.pawn && (State.CurrentMode == PlaystyleMode.Dynamic || PerspectiveShiftMod.settings.totalFreedom))
             {
                 yield return new Command_Action
                 {

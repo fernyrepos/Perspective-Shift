@@ -37,6 +37,7 @@
     <PS_SneakSpeedMultiplier>Sneak speed multiplier: {0}</PS_SneakSpeedMultiplier>
     <PS_MoveSpeedMultiplier>Move speed multiplier: {0}</PS_MoveSpeedMultiplier>
     <PS_ShootAccuracyMultiplier>Shooting accuracy multiplier: {0}</PS_ShootAccuracyMultiplier>
+    <PS_PlayerMoveSpeedCap>Player move speed cap: {0}</PS_PlayerMoveSpeedCap>
     <PS_GizmoCorner>Gizmo UI position</PS_GizmoCorner>
     <PS_TotalFreedom>Total freedom</PS_TotalFreedom>
     <PS_TotalFreedomDesc>Always allow character switching regardless of any settings.</PS_TotalFreedomDesc>

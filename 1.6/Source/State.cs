@@ -44,9 +44,7 @@ namespace PerspectiveShift
         public static bool pendingDeathMenu = false;
         public static bool permadeath = false;
         public static bool allowDirectorInAuthentic = false;
-        public static bool IsActive => Avatar != null && Avatar.pawn != null && !Avatar.pawn.Dead
-            && !WorldComponent_GravshipController.CutsceneInProgress;
-        public static Avatar Current => Avatar;
+        public static bool IsActive => Avatar != null && Avatar.pawn != null && !Avatar.pawn.Dead && !WorldComponent_GravshipController.CutsceneInProgress;
         public static bool ControlsFrozen
         {
             get
