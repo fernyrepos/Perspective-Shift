@@ -1497,13 +1497,13 @@ namespace PerspectiveShift
                         return true;
                 }
             }
-            /*
-            if (target is Building building && MeditationUtility.IsValidMeditationBuildingForPawn(building, pawn))
+
+            if (target is Building building && (building.def == ThingDefOf.MeditationSpot || building is Building_Throne throne1 && throne1.AssignedPawn == pawn))
             {
                 Job job;
-                if (target is Building_Throne throne)
+                if (target is Building_Throne throne2)
                 {
-                    job = JobMaker.MakeJob(JobDefOf.Reign, throne, null, throne);
+                    job = JobMaker.MakeJob(JobDefOf.Reign, throne2, null, throne2);
                 }
                 else
                 {
@@ -1516,7 +1516,7 @@ namespace PerspectiveShift
                 }
                 job.ignoreJoyTimeAssignment = true;
                 if (TryStartForcedJob(job)) return true;
-            }*/
+            }
 
             if (pawn.workSettings != null)
             {
