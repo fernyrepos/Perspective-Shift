@@ -25,12 +25,12 @@ namespace PerspectiveShift
         public Dialog_StorageMenu(Building_Storage storage)
         {
             this.storage = storage;
-            this.slotComp = storage.GetComp<CompStorageSlotOrder>();
-            this.closeOnClickedOutside = true;
-            this.doCloseButton = false;
-            this.doCloseX = true;
-            this.absorbInputAroundWindow = false;
-            this.forcePause = true;
+            slotComp = storage.GetComp<CompStorageSlotOrder>();
+            closeOnClickedOutside = true;
+            doCloseButton = false;
+            doCloseX = true;
+            absorbInputAroundWindow = false;
+            forcePause = true;
         }
 
         public override void PostOpen()

@@ -34,7 +34,7 @@ namespace PerspectiveShift
             this.initiator = initiator;
             this.recipient = recipient;
             this.intDef = intDef;
-            this.profile = Profiles.TryGetValue(intDef, out var p) ? p : default;
+            profile = Profiles.TryGetValue(intDef, out var p) ? p : default;
             forcePause = true;
             absorbInputAroundWindow = true;
             closeOnClickedOutside = false;

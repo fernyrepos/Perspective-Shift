@@ -1342,22 +1342,22 @@ namespace PerspectiveShift
             }
             else
             {
-                var item = clickCell.GetFirstItem(this.pawn.Map);
+                var item = clickCell.GetFirstItem(pawn.Map);
                 if (item != null && item.def.category == ThingCategory.Item && itemInRange)
                 {
-                    if (!this.pawn.Awake())
+                    if (!pawn.Awake())
                     {
-                        RestUtility.WakeUp(this.pawn);
+                        RestUtility.WakeUp(pawn);
                     }
                     ExecutePickup(item);
                     return true;
                 }
 
-                var clickedPawn = clickCell.GetFirstPawn(this.pawn.Map);
-                if (clickedPawn != null && clickedPawn != this.pawn
+                var clickedPawn = clickCell.GetFirstPawn(pawn.Map);
+                if (clickedPawn != null && clickedPawn != pawn
                     && (clickedPawn.Downed || clickedPawn.IsSelfShutdown()) && itemInRange)
                 {
-                    if (!this.pawn.Awake()) RestUtility.WakeUp(this.pawn);
+                    if (!pawn.Awake()) RestUtility.WakeUp(pawn);
                     ExecutePickup(clickedPawn);
                     return true;
                 }
@@ -1497,7 +1497,7 @@ namespace PerspectiveShift
                         return true;
                 }
             }
-
+            /*
             if (target is Building building && MeditationUtility.IsValidMeditationBuildingForPawn(building, pawn))
             {
                 Job job;
@@ -1516,7 +1516,7 @@ namespace PerspectiveShift
                 }
                 job.ignoreJoyTimeAssignment = true;
                 if (TryStartForcedJob(job)) return true;
-            }
+            }*/
 
             if (pawn.workSettings != null)
             {
