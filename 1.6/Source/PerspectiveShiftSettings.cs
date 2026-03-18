@@ -18,6 +18,9 @@ namespace PerspectiveShift
         public float maxZoom = 40f;
         public float grabRange = 1.5f;
         public bool disableAimingDelay = true;
+        public bool holdToFire = true;
+        public bool cameraEasing = true;
+        public bool requireHeldClickForJobs = true;
 
         public bool enableSprinting = true;
         public bool enableSneaking = true;
@@ -25,6 +28,7 @@ namespace PerspectiveShift
         public float sneakSpeedMultiplier = 0.5f;
 
         public float moveSpeedMultiplier = 1.0f;
+        public float workSpeedMultiplier = 1.0f;
         public float shootAccuracyMultiplier = 1.0f;
         public GizmoCorner gizmoCorner = GizmoCorner.TopRight;
         public bool totalFreedom = false;
@@ -42,6 +46,9 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref maxZoom, "maxZoom", 40f);
             Scribe_Values.Look(ref grabRange, "grabRange", 1.5f);
             Scribe_Values.Look(ref disableAimingDelay, "disableAimingDelay", true);
+            Scribe_Values.Look(ref holdToFire, "holdToFire", true);
+            Scribe_Values.Look(ref cameraEasing, "cameraEasing", true);
+            Scribe_Values.Look(ref requireHeldClickForJobs, "requireHeldClickForJobs", true);
 
             Scribe_Values.Look(ref enableSprinting, "enableSprinting", true);
             Scribe_Values.Look(ref enableSneaking, "enableSneaking", true);
@@ -49,6 +56,7 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref sneakSpeedMultiplier, "sneakSpeedMultiplier", 0.5f);
 
             Scribe_Values.Look(ref moveSpeedMultiplier, "moveSpeedMultiplier", 1.0f);
+            Scribe_Values.Look(ref workSpeedMultiplier, "workSpeedMultiplier", 1.0f);
             Scribe_Values.Look(ref shootAccuracyMultiplier, "shootAccuracyMultiplier", 1.0f);
             Scribe_Values.Look(ref gizmoCorner, "gizmoCorner", GizmoCorner.TopRight);
             Scribe_Values.Look(ref totalFreedom, "totalFreedom", false);

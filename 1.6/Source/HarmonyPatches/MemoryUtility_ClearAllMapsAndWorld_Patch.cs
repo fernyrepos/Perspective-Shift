@@ -14,6 +14,7 @@ namespace PerspectiveShift
             State.pendingDeathMenu = false;
             State.permadeath = false;
             State.allowDirectorInAuthentic = false;
+            State.authenticPawnId = -1;
             ModCompatibility.ClearCaches();
             ScenPart_StartingAnimal_PlayerStartingThings_Patch.ClearCache();
         }

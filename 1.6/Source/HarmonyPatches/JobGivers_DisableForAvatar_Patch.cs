@@ -16,8 +16,6 @@ namespace PerspectiveShift
             yield return AccessTools.Method(typeof(JobGiver_AIFightEnemy), "TryGiveJob");
             yield return AccessTools.Method(typeof(JobGiver_ConfigurableHostilityResponse), "TryGiveJob");
             yield return AccessTools.Method(typeof(JobGiver_GetFood), "TryGiveJob");
-            yield return AccessTools.Method(typeof(WorkGiver_ConstructDeliverResourcesToBlueprints), "JobOnThing");
-            yield return AccessTools.Method(typeof(WorkGiver_ConstructDeliverResourcesToFrames), "JobOnThing");
             yield return AccessTools.Method(typeof(JobGiver_Wander), "TryGiveJob");
             yield return AccessTools.Method(typeof(JobGiver_ExitMapBest), "TryGiveJob");
             yield return AccessTools.Method(typeof(JobGiver_ExitMap), "TryGiveJob");
@@ -35,6 +33,25 @@ namespace PerspectiveShift
                 return false;
             }
             return true;
+        }
+    }
+
+    [HarmonyPatch]
+    public static class WorkGivers_ConstructDeliver_DisableForAvatar_Patch
+    {
+        public static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(WorkGiver_ConstructDeliverResourcesToBlueprints), "JobOnThing");
+            yield return AccessTools.Method(typeof(WorkGiver_ConstructDeliverResourcesToFrames), "JobOnThing");
+        }
+
+        public static bool Prefix(Pawn pawn, Thing t, ref Job __result)
+        {
+            if (!pawn.IsAvatar() || pawn.InMentalState) return true;
+            if (!pawn.Drafted && (pawn.GetLord() != null || pawn.mindState?.duty != null)) return true;
+            if (t is IConstructible c && !c.TotalMaterialCost().Any()) return true;
+            __result = null;
+            return false;
         }
     }
 }

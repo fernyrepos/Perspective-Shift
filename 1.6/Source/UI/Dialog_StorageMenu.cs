@@ -128,6 +128,7 @@ namespace PerspectiveShift
                     else cursorItem.TryAbsorbStack(item, true);
                 }
                 if (cursorItem != null && cursorItem.stackCount <= 0) cursorItem = null;
+                Close();
             });
 
             DrawActionButton(equipRect, isApparel ? Wear : Equip, equipLabel, canEquip, (button) =>

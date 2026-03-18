@@ -118,4 +118,19 @@
     <PS_BedForColonistsOnly>This bed is for colonists only.</PS_BedForColonistsOnly>
     <PS_EatingFood>Eating {0}</PS_EatingFood>
     <PS_ShellLoaded>Loaded {0}</PS_ShellLoaded>
+    <PS_HoldToFire>Hold to fire</PS_HoldToFire>
+    <PS_HoldToFireDesc>Holding the left mouse button while drafted will continuously fire your weapon without disabling cooldowns.</PS_HoldToFireDesc>
+    <PS_CameraEasing>Enable camera easing</PS_CameraEasing>
+    <PS_CameraEasingDesc>Smoothly interpolates the camera toward your character. Disable if you experience motion sickness.</PS_CameraEasingDesc>
+    <PS_RequireHeldClickForJobs>Require held click for jobs</PS_RequireHeldClickForJobs>
+    <PS_RequireHeldClickForJobsDesc>You must hold the left mouse button to continue jobs like mining or harvesting. Disable for accessibility.</PS_RequireHeldClickForJobsDesc>
+    <PS_WorkSpeedMultiplier>Work speed multiplier: {0}</PS_WorkSpeedMultiplier>
+    <PS_StatPart_AvatarWorkSpeed>Direct control work speed</PS_StatPart_AvatarWorkSpeed>
+    <PS_FullyRested>{0} is fully rested.</PS_FullyRested>
+    <PS_NeedRanOut>{1} has run out for {0}.</PS_NeedRanOut>
+    <PS_NeedRanOut_Food>{0} is starving.</PS_NeedRanOut_Food>
+    <PS_NeedRanOut_Rest>{0} needs to rest.</PS_NeedRanOut_Rest>
+    <PS_NeedRanOut_Mood>{0} is having a mental break.</PS_NeedRanOut_Mood>
+    <PS_DoJoy>Do joy: {0}</PS_DoJoy>
+    <PS_CannotDropOnBlueprint>Cannot drop here: blueprint does not need this material.</PS_CannotDropOnBlueprint>
 </LanguageData>

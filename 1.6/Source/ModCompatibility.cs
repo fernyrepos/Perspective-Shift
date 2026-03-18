@@ -21,6 +21,7 @@ namespace PerspectiveShift
         public static readonly bool VanillaExpandedFrameworkAvailable;
 
         private static Type vehiclePawnType;
+        private static MethodInfo addOrTransferMethod;
         private static FieldInfo vehiclePatherField;
         private static FieldInfo handlersField;
         private static FieldInfo thingOwnerField;
@@ -312,6 +313,13 @@ namespace PerspectiveShift
             if (turretIdsProperty == null)
             {
                 Log.Error("[PS] VehicleFramework: TurretIds property not found");
+                return false;
+            }
+
+            addOrTransferMethod = AccessTools.Method(vehiclePawnType, "AddOrTransfer", new Type[] { typeof(Thing), typeof(int) });
+            if (addOrTransferMethod == null)
+            {
+                Log.Error("[PS] VehicleFramework: AddOrTransfer method not found");
                 return false;
             }
 
@@ -856,6 +864,30 @@ namespace PerspectiveShift
                     yield return option;
                 }
             }
+        }
+
+        public static bool PutCargoToVehicle(Thing vehicle, Thing thing)
+        {
+            if (!VehicleFrameworkAvailable)
+                return false;
+
+            try
+            {
+                int transferred = (int)addOrTransferMethod.Invoke(vehicle, new object[] { thing, thing.stackCount });
+                return transferred > 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[PS] Error putting cargo to vehicle: {ex}");
+                return false;
+            }
+        }
+
+        public static bool IsVehiclePawn(Thing t)
+        {
+            if (!VehicleFrameworkAvailable || t == null)
+                return false;
+            return vehiclePawnType != null && vehiclePawnType.IsAssignableFrom(t.GetType());
         }
     }
 }

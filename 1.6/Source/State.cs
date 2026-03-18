@@ -33,6 +33,7 @@ namespace PerspectiveShift
             return true;
         }
 
+        public static int authenticPawnId = -1;
         public static Avatar Avatar;
         public static PlaystyleMode CurrentMode = PlaystyleMode.Director;
         public static bool DrawingTopRightGizmos = false;
@@ -62,6 +63,9 @@ namespace PerspectiveShift
         public static void SetAvatar(Pawn pawn, bool showMessage = false)
         {
             pendingDeathMenu = false;
+            if (CurrentMode == PlaystyleMode.Authentic && authenticPawnId == -1)
+                authenticPawnId = pawn.thingIDNumber;
+
             if (Avatar?.pawn != null && Avatar.pawn != pawn)
             {
                 CleanupPawnState(Avatar.pawn);

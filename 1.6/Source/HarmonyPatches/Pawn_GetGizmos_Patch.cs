@@ -108,6 +108,17 @@ namespace PerspectiveShift
                             };
                         }
                     }
+                    else if (State.allowDirectorInAuthentic
+                        && State.Current == null
+                        && __instance.thingIDNumber == State.authenticPawnId)
+                    {
+                        yield return new Command_Action
+                        {
+                            defaultLabel = "PS_TakeControl".Translate(),
+                            icon = ContentFinder<Texture2D>.Get("Gizmos/TakeControl"),
+                            action = () => State.SetAvatar(__instance, showMessage: true)
+                        };
+                    }
                     yield break;
                 }
             }

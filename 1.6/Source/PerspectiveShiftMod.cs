@@ -37,6 +37,9 @@ namespace PerspectiveShift
             listing.Label("PS_GrabRange".Translate(settings.grabRange.ToString("F1")));
             settings.grabRange = listing.Slider(settings.grabRange, 0.5f, 3f);
 
+            listing.CheckboxLabeled("PS_HoldToFire".Translate(), ref settings.holdToFire, "PS_HoldToFireDesc".Translate());
+            listing.CheckboxLabeled("PS_CameraEasing".Translate(), ref settings.cameraEasing, "PS_CameraEasingDesc".Translate());
+            listing.CheckboxLabeled("PS_RequireHeldClickForJobs".Translate(), ref settings.requireHeldClickForJobs, "PS_RequireHeldClickForJobsDesc".Translate());
             listing.CheckboxLabeled("PS_DisableAimingDelay".Translate(), ref settings.disableAimingDelay, "PS_DisableAimingDelayDesc".Translate());
 
             listing.CheckboxLabeled("PS_EnableSprinting".Translate(), ref settings.enableSprinting);
@@ -60,6 +63,9 @@ namespace PerspectiveShift
 
             listing.Label("PS_MoveSpeedMultiplier".Translate(settings.moveSpeedMultiplier.ToString("P0")));
             settings.moveSpeedMultiplier = listing.Slider(settings.moveSpeedMultiplier, 0.1f, 5f);
+
+            listing.Label("PS_WorkSpeedMultiplier".Translate(settings.workSpeedMultiplier.ToString("P0")));
+            settings.workSpeedMultiplier = listing.Slider(settings.workSpeedMultiplier, 0.1f, 5f);
 
             listing.Label("PS_ShootAccuracyMultiplier".Translate(settings.shootAccuracyMultiplier.ToString("P0")));
             settings.shootAccuracyMultiplier = listing.Slider(settings.shootAccuracyMultiplier, 0.1f, 100f);
@@ -86,9 +92,9 @@ namespace PerspectiveShift
 
         private float CalculateHeight()
         {
-            var labels = 6;
-            var sliders = 6;
-            var checkboxes = 6;
+            var labels = 7;
+            var sliders = 7;
+            var checkboxes = 9;
             var buttons = 1;
             if (settings.enableSprinting)
             {
