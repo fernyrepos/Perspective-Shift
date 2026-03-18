@@ -1502,6 +1502,7 @@ namespace PerspectiveShift
                 }
             }
 
+            /*
             if (target is Building building && MeditationUtility.IsValidMeditationBuildingForPawn(building, pawn))
             {
                 Job job;
@@ -1520,7 +1521,7 @@ namespace PerspectiveShift
                 }
                 job.ignoreJoyTimeAssignment = true;
                 if (TryStartForcedJob(job)) return true;
-            }
+            }*/
 
             if (pawn.workSettings != null)
             {
