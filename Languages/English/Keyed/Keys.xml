@@ -131,5 +131,7 @@
     <PS_NeedRanOut_Food>You are starving.</PS_NeedRanOut_Food>
     <PS_NeedRanOut_Rest>You need to rest.</PS_NeedRanOut_Rest>
     <PS_NeedRanOut_Mood>You are having a mental break.</PS_NeedRanOut_Mood>
+    <PS_NeedRanOut_Comfort>You need comfort.</PS_NeedRanOut_Comfort>
+    <PS_NeedRanOut_Joy>You need recreation.</PS_NeedRanOut_Joy>
     <PS_CannotDropOnBlueprint>Cannot drop here: blueprint does not need this material.</PS_CannotDropOnBlueprint>
 </LanguageData>
