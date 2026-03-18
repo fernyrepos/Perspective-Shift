@@ -126,11 +126,11 @@
     <PS_RequireHeldClickForJobsDesc>You must hold the left mouse button to continue jobs like mining or harvesting. Disable for accessibility.</PS_RequireHeldClickForJobsDesc>
     <PS_WorkSpeedMultiplier>Work speed multiplier: {0}</PS_WorkSpeedMultiplier>
     <PS_StatPart_AvatarWorkSpeed>Direct control work speed</PS_StatPart_AvatarWorkSpeed>
-    <PS_FullyRested>{0} is fully rested.</PS_FullyRested>
+    <PS_FullyRested>You are fully rested.</PS_FullyRested>
     <PS_NeedRanOut>{1} has run out for {0}.</PS_NeedRanOut>
-    <PS_NeedRanOut_Food>{0} is starving.</PS_NeedRanOut_Food>
-    <PS_NeedRanOut_Rest>{0} needs to rest.</PS_NeedRanOut_Rest>
-    <PS_NeedRanOut_Mood>{0} is having a mental break.</PS_NeedRanOut_Mood>
-    <PS_DoJoy>Do joy: {0}</PS_DoJoy>
+    <PS_NeedRanOut_Food>You are starving.</PS_NeedRanOut_Food>
+    <PS_NeedRanOut_Rest>You need to rest.</PS_NeedRanOut_Rest>
+    <PS_NeedRanOut_Mood>You are having a mental break.</PS_NeedRanOut_Mood>
+    <PS_DoJoy>Do recreation: {0}</PS_DoJoy>
     <PS_CannotDropOnBlueprint>Cannot drop here: blueprint does not need this material.</PS_CannotDropOnBlueprint>
 </LanguageData>
