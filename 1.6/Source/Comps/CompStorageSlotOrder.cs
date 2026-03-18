@@ -136,7 +136,7 @@ namespace PerspectiveShift
                 if (keys != null && vals != null)
                     for (int i = 0; i < keys.Count && i < vals.Count; i++)
                         thingIDToSlot[keys[i]] = vals[i];
-                gapSlots = gaps != null ? new HashSet<int>(gaps) : new HashSet<int>();
+                gapSlots = gaps != null ? [.. gaps] : new HashSet<int>();
             }
         }
     }

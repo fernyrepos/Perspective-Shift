@@ -22,7 +22,7 @@ namespace PerspectiveShift
                 curr = curr.next;
             }
 
-            if (configPawns != null && !(configPawns.next is Page_ChoosePerspective))
+            if (configPawns != null && configPawns.next is not Page_ChoosePerspective)
             {
                 var perspectivePage = new Page_ChoosePerspective();
                 var characterPage = new Page_ChooseStartingCharacter();

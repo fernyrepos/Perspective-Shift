@@ -185,7 +185,7 @@ namespace PerspectiveShift
                 var container = TryGetSpawnedContainer(Avatar.pawn);
                 if (container != null && container.Map == Find.CurrentMap)
                 {
-                    if (!(Find.CameraDriver.config is CameraMapConfig_Avatar))
+                    if (Find.CameraDriver.config is not CameraMapConfig_Avatar)
                     {
                         _savedConfig = Find.CameraDriver.config;
                         Find.CameraDriver.config = new CameraMapConfig_Avatar();
@@ -207,7 +207,7 @@ namespace PerspectiveShift
                 return;
             }
 
-            if (!(Find.CameraDriver.config is CameraMapConfig_Avatar))
+            if (Find.CameraDriver.config is not CameraMapConfig_Avatar)
             {
                 _savedConfig = Find.CameraDriver.config;
                 Find.CameraDriver.config = new CameraMapConfig_Avatar();
@@ -235,6 +235,21 @@ namespace PerspectiveShift
 
         public static bool IsAvatar(this Pawn pawn) =>
             IsActive && pawn == Avatar.pawn;
+
+        public static bool CanUseIt(this Pawn pawn, Thing thing)
+        {
+            if (!IsActive || Avatar?.pawn == null || pawn.IsAvatar()) return true;
+            var avatar = Avatar.pawn;
+            var job = avatar.CurJob;
+            if (job?.def == JobDefOf.DoBill)
+            {
+                if (job.targetB.Thing == thing || job.targetC.Thing == thing ||
+                    (job.targetQueueB != null && job.targetQueueB.Any(t => t.Thing == thing)) ||
+                    (job.placedThings != null && job.placedThings.Any(pt => pt.thing == thing)))
+                    return false;
+            }
+            return true;
+        }
 
         public static void Message(string message)
         {

@@ -725,8 +725,8 @@ namespace PerspectiveShift
             var controlledIds = GetGunnerTurretIds(vehicle, gunner);
             var clickCell = targetMapPos.ToIntVec3();
             var things = clickCell.GetThingList(vehicle.Map);
-            Thing bestTarget = things?.FirstOrDefault(t => t is Pawn && t != vehicle)
-                ?? things?.FirstOrDefault(t => t.def.category == ThingCategory.Building || t.def.category == ThingCategory.Item);
+            Thing bestTarget = things.FirstOrDefault(t => t is Pawn && t != vehicle)
+                ?? things.FirstOrDefault(t => t.def.category == ThingCategory.Building || t.def.category == ThingCategory.Item);
             LocalTargetInfo target = bestTarget != null
                 ? new LocalTargetInfo(bestTarget)
                 : new LocalTargetInfo(clickCell);

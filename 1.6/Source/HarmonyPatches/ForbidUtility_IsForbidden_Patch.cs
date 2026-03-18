@@ -9,12 +9,19 @@ namespace PerspectiveShift
     {
         public static void Postfix(Thing t, Pawn pawn, ref bool __result)
         {
-            if (__result || pawn.IsAvatar()) return;
-            var slotGroup = t.GetSlotGroup();
-            var comp = (slotGroup?.parent as ThingWithComps)?.GetComp<CompPlayerOnly>();
-            if (comp != null && (comp.mode == PlayerOnlyMode.Take || comp.mode == PlayerOnlyMode.Use))
+            if (__result) return;
+            if (!pawn.CanUseIt(t))
             {
                 __result = true;
+            }
+            else
+            {
+                var slotGroup = t.GetSlotGroup();
+                var comp = (slotGroup?.parent as ThingWithComps)?.GetComp<CompPlayerOnly>();
+                if (comp != null && (comp.mode == PlayerOnlyMode.Take || comp.mode == PlayerOnlyMode.Use))
+                {
+                    __result = true;
+                }
             }
         }
     }

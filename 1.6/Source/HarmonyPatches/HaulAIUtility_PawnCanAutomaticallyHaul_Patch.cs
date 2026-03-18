@@ -27,6 +27,12 @@ namespace PerspectiveShift
                     return false;
                 }
             }
+
+            if (!p.CanUseIt(t))
+            {
+                __result = false;
+                return false;
+            }
             return true;
         }
     }

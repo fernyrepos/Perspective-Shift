@@ -34,7 +34,6 @@ namespace PerspectiveShift
         private Vector3 _leanVelocity = Vector3.zero;
 
         public Thing CarriedThing => pawn.carryTracker?.CarriedThing;
-        public Thing LastManualTarget;
 
         private Building pendingMinifiedPickup;
         private Building_Door interactingDoor;
@@ -446,7 +445,7 @@ namespace PerspectiveShift
                     physicsPosition = null;
                 }
 
-                if (pawn.Drafted && !pawn.InMentalState && !State.ControlsFrozen && !(pawn.stances.curStance is Stance_Busy))
+                if (pawn.Drafted && !pawn.InMentalState && !State.ControlsFrozen && pawn.stances.curStance is not Stance_Busy)
                 {
                     RotateTowardsMouse();
                 }
@@ -565,12 +564,12 @@ namespace PerspectiveShift
                 pawn.pather.nextCell = nextCell;
             }
 
-            if (pawn.Drawer?.leaner != null && !(pawn.stances.curStance is Stance_Busy))
+            if (pawn.Drawer?.leaner != null && pawn.stances.curStance is not Stance_Busy)
             {
                 LeanTarget = Vector3.zero;
             }
 
-            if (!(pawn.stances.curStance is Stance_Busy))
+            if (pawn.stances.curStance is not Stance_Busy)
             {
                 if (pawn.Drafted)
                 {
@@ -777,7 +776,15 @@ namespace PerspectiveShift
 
                     Thing foodSource = null;
                     ThingDef foodDef = null;
-                    FoodUtility.TryFindBestFoodSourceFor(pawn, pawn, desperate, out foodSource, out foodDef, canRefillDispenser: true, canUseInventory: true, canUsePackAnimalInventory: true, allowForbidden: false, allowCorpse, allowSociallyImproper: false, pawn.IsWildMan(), forceScanWholeMap: true, ignoreReservations: false, calculateWantedStackCount: false, allowVenerated: false, minPrefOverride: foodPreferability);
+                    if (CarriedThing != null && CarriedThing.def.IsNutritionGivingIngestible && pawn.WillEat(CarriedThing, pawn, true))
+                    {
+                        foodSource = CarriedThing;
+                        foodDef = FoodUtility.GetFinalIngestibleDef(foodSource);
+                    }
+                    else
+                    {
+                        FoodUtility.TryFindBestFoodSourceFor(pawn, pawn, desperate, out foodSource, out foodDef, canRefillDispenser: true, canUseInventory: true, canUsePackAnimalInventory: true, allowForbidden: false, allowCorpse, allowSociallyImproper: false, pawn.IsWildMan(), forceScanWholeMap: true, ignoreReservations: false, calculateWantedStackCount: false, allowVenerated: false, minPrefOverride: foodPreferability);
+                    }
 
                     if (foodSource != null && Toils_Ingest.TryFindChairOrSpot(pawn, foodSource, out var _))
                     {
@@ -810,7 +817,7 @@ namespace PerspectiveShift
                         Find.Selector.Deselect(pawn);
                 }
 
-                if (!Find.TickManager.Paused && !State.ControlsFrozen && !(pawn.stances.curStance is Stance_Busy))
+                if (!Find.TickManager.Paused && !State.ControlsFrozen && pawn.stances.curStance is not Stance_Busy)
                 {
                     Vector3 toMouse = UI.MouseMapPosition() - pawn.DrawPos;
                     toMouse.y = 0f;
@@ -996,10 +1003,7 @@ namespace PerspectiveShift
                         LeanTarget = Vector3.zero;
                         return;
                     }
-                    Thing bestTarget = targetCell.GetThingList(pawn.Map)
-                        ?.FirstOrDefault(t => t is Pawn && t != pawn)
-                        ?? targetCell.GetThingList(pawn.Map)
-                            ?.FirstOrDefault(t => t.def.category == ThingCategory.Building);
+                    Thing bestTarget = targetCell.GetThingList(pawn.Map).FirstOrDefault(t => t is Pawn && t != pawn) ?? targetCell.GetThingList(pawn.Map).FirstOrDefault(t => t.def.category == ThingCategory.Building);
                     LocalTargetInfo target = bestTarget != null
                         ? new LocalTargetInfo(bestTarget)
                         : new LocalTargetInfo(targetCell);
@@ -1058,8 +1062,8 @@ namespace PerspectiveShift
             var targetCell = UI.MouseCell();
             if (!targetCell.InBounds(pawn.Map)) return;
             var things = targetCell.GetThingList(pawn.Map);
-            Thing bestTarget = things?.FirstOrDefault(t => t is Pawn && t != pawn)
-                ?? things?.FirstOrDefault(t => t.def.category == ThingCategory.Building || t.def.category == ThingCategory.Item);
+            Thing bestTarget = things.FirstOrDefault(t => t is Pawn && t != pawn)
+                ?? things.FirstOrDefault(t => t.def.category == ThingCategory.Building || t.def.category == ThingCategory.Item);
             LocalTargetInfo target = bestTarget != null
                 ? new LocalTargetInfo(bestTarget)
                 : new LocalTargetInfo(targetCell);
@@ -1094,7 +1098,7 @@ namespace PerspectiveShift
             var wasSelected = Find.Selector.IsSelected(gizmoSource);
             if (!wasSelected)
             {
-                prevSelected = new List<object>(Find.Selector.SelectedObjects);
+                prevSelected = [.. Find.Selector.SelectedObjects];
                 Find.Selector.selected.Clear();
                 Find.Selector.selected.Add(gizmoSource);
             }
@@ -1273,41 +1277,38 @@ namespace PerspectiveShift
             var clickCell = UI.MouseCell();
             bool itemInRange = pawn.Position.DistanceTo(clickCell) <= PerspectiveShiftMod.settings.grabRange;
             bool inRange = itemInRange;
+            var things = clickCell.GetThingList(pawn.Map);
 
             if (!inRange)
             {
-                var things = clickCell.GetThingList(pawn.Map);
-                if (things != null)
+                foreach (var t in things)
                 {
-                    foreach (var t in things)
+                    if (t.def.hasInteractionCell && t.InteractionCell == pawn.Position)
                     {
-                        if (t.def.hasInteractionCell && t.InteractionCell == pawn.Position)
+                        inRange = true;
+                        break;
+                    }
+                    if (t.def.building?.watchBuildingStandDistanceRange != null)
+                    {
+                        var watchCells = WatchBuildingUtility.CalculateWatchCells(t.def, t.Position, t.Rotation, pawn.Map);
+                        if (watchCells.Contains(pawn.Position))
                         {
                             inRange = true;
                             break;
                         }
-                        if (t.def.building?.watchBuildingStandDistanceRange != null)
+                    }
+                    if (t.def.size.x > 1 || t.def.size.z > 1)
+                    {
+                        foreach (var c in t.OccupiedRect())
                         {
-                            var watchCells = WatchBuildingUtility.CalculateWatchCells(t.def, t.Position, t.Rotation, pawn.Map);
-                            if (watchCells.Contains(pawn.Position))
+                            if (pawn.Position.DistanceTo(c) <= PerspectiveShiftMod.settings.grabRange)
                             {
                                 inRange = true;
                                 break;
                             }
                         }
-                        if (t.def.size.x > 1 || t.def.size.z > 1)
-                        {
-                            foreach (var c in t.OccupiedRect())
-                            {
-                                if (pawn.Position.DistanceTo(c) <= PerspectiveShiftMod.settings.grabRange)
-                                {
-                                    inRange = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (inRange) break;
                     }
+                    if (inRange) break;
                 }
             }
 
@@ -1318,7 +1319,7 @@ namespace PerspectiveShift
 
             if (CarriedThing == null)
             {
-                var storageBuilding = clickCell.GetThingList(pawn.Map)?.OfType<Building_Storage>().FirstOrDefault();
+                var storageBuilding = things.OfType<Building_Storage>().FirstOrDefault();
                 if (storageBuilding != null)
                 {
                     if (pawn.Map.designationManager.DesignationOn(storageBuilding, DesignationDefOf.Deconstruct) != null)
@@ -1341,90 +1342,87 @@ namespace PerspectiveShift
             }
             else
             {
-                var item = clickCell.GetFirstItem(pawn.Map);
+                var item = clickCell.GetFirstItem(this.pawn.Map);
                 if (item != null && item.def.category == ThingCategory.Item && itemInRange)
                 {
-                    if (!pawn.Awake())
+                    if (!this.pawn.Awake())
                     {
-                        RestUtility.WakeUp(pawn);
+                        RestUtility.WakeUp(this.pawn);
                     }
                     ExecutePickup(item);
                     return true;
                 }
 
-                var downedPawn = clickCell.GetFirstPawn(pawn.Map);
-                if (downedPawn != null && downedPawn != pawn
-                    && (downedPawn.Downed || downedPawn.IsSelfShutdown()) && itemInRange)
+                var clickedPawn = clickCell.GetFirstPawn(this.pawn.Map);
+                if (clickedPawn != null && clickedPawn != this.pawn
+                    && (clickedPawn.Downed || clickedPawn.IsSelfShutdown()) && itemInRange)
                 {
-                    if (!pawn.Awake()) RestUtility.WakeUp(pawn);
-                    ExecutePickup(downedPawn);
+                    if (!this.pawn.Awake()) RestUtility.WakeUp(this.pawn);
+                    ExecutePickup(clickedPawn);
                     return true;
                 }
             }
 
             if (CarriedThing != null)
             {
-                var cellThingsEarly = clickCell.GetThingList(pawn.Map);
-                if (cellThingsEarly != null)
+                foreach (var t in things)
                 {
-                    foreach (var t in cellThingsEarly)
+                    if (ModCompatibility.IsVehiclePawn(t))
                     {
-                        if (ModCompatibility.IsVehiclePawn(t))
+                        if (ModCompatibility.PutCargoToVehicle(t, CarriedThing))
                         {
-                            if (ModCompatibility.PutCargoToVehicle(t, CarriedThing))
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        var container = t.TryGetInnerInteractableThingOwner();
+                        if (container != null)
+                        {
+                            var sound = CarriedThing.def.soundDrop;
+                            if (pawn.carryTracker.innerContainer.TryTransferToContainer(CarriedThing, container, CarriedThing.stackCount) > 0)
                             {
+                                sound?.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
                                 return true;
                             }
-                        }
-                        else if (t.TryGetInnerInteractableThingOwner() != null)
-                        {
-                            var job = HaulAIUtility.HaulToContainerJob(pawn, CarriedThing, t);
-                            if (job != null && TryStartForcedJob(job))
-                                return true;
                         }
                     }
                 }
             }
+
+            var blueprint = things.OfType<Blueprint>().FirstOrDefault();
+            if (blueprint != null && InteractWith(blueprint)) return true;
+            var frame = things.OfType<Frame>().FirstOrDefault();
+            if (frame != null && InteractWith(frame)) return true;
 
             List<FloatMenuOption> opts = null;
-            try
+            foreach (var building in things.OfType<Building>())
             {
-                var building = clickCell.GetFirstBuilding(pawn.Map);
-                if (building != null && !building.Destroyed && building.Spawned)
+                if (building.def.Minifiable && (building.Faction == pawn.Faction || building.def.building.alwaysUninstallable))
                 {
-                    if (building.def.Minifiable && (building.Faction == pawn.Faction || building.def.building.alwaysUninstallable))
+                    var reinstallBp = InstallBlueprintUtility.ExistingBlueprintFor(building);
+                    if (reinstallBp != null)
                     {
-                        var reinstallBp = InstallBlueprintUtility.ExistingBlueprintFor(building);
-                        if (reinstallBp != null)
+                        var unJob = JobMaker.MakeJob(JobDefOf.Uninstall, building);
+                        unJob.ignoreDesignations = true;
+                        if (TryStartForcedJob(unJob))
                         {
-                            var unJob = JobMaker.MakeJob(JobDefOf.Uninstall, building);
-                            unJob.ignoreDesignations = true;
-                            if (TryStartForcedJob(unJob))
-                            {
-                                pendingMinifiedPickup = building;
-                                return true;
-                            }
-                        }
-                        if (pawn.Map.designationManager.DesignationOn(building, DesignationDefOf.Uninstall) != null)
-                        {
-                            var unJob = JobMaker.MakeJob(JobDefOf.Uninstall, building);
-                            unJob.ignoreDesignations = true;
-                            if (TryStartForcedJob(unJob)) return true;
+                            pendingMinifiedPickup = building;
+                            return true;
                         }
                     }
-
-                    if (InteractWith(building))
+                    if (pawn.Map.designationManager.DesignationOn(building, DesignationDefOf.Uninstall) != null)
                     {
-                        LastManualTarget = building;
-                        return true;
+                        var unJob = JobMaker.MakeJob(JobDefOf.Uninstall, building);
+                        unJob.ignoreDesignations = true;
+                        if (TryStartForcedJob(unJob)) return true;
                     }
                 }
 
-                opts = FloatMenuMakerMap.GetOptions(new List<Pawn> { pawn }, clickCell.ToVector3Shifted(), out _);
+                if (InteractWith(building)) return true;
             }
-            finally
-            {
-            }
+
+            opts = FloatMenuMakerMap.GetOptions(new List<Pawn> { pawn }, clickCell.ToVector3Shifted(), out _);
             if (opts != null)
             {
                 if (pawn.equipment?.Primary != null)
@@ -1473,9 +1471,7 @@ namespace PerspectiveShift
             }
 
             var mineable = clickCell.GetFirstMineable(pawn.Map);
-            if (mineable != null
-                && !pawn.WorkTypeIsDisabled(WorkTypeDefOf.Mining)
-                && pawn.CanReserve(mineable))
+            if (mineable != null && !pawn.WorkTypeIsDisabled(WorkTypeDefOf.Mining) && pawn.CanReserve(mineable))
             {
                 var job = JobMaker.MakeJob(JobDefOf.Mine, mineable, 20000, checkOverrideOnExpiry: true);
                 job.ignoreDesignations = true;
@@ -1731,79 +1727,76 @@ namespace PerspectiveShift
             }
 
             var cellThings = cell.GetThingList(pawn.Map);
-            if (cellThings != null)
+
+            if (CarriedThing?.def.IsMedicine == true)
             {
-                if (CarriedThing?.def.IsMedicine == true)
+                var patient = cell.GetFirstPawn(pawn.Map);
+                if (patient != null && patient.health.HasHediffsNeedingTend())
                 {
-                    var patient = cell.GetFirstPawn(pawn.Map);
-                    if (patient != null && patient.health.HasHediffsNeedingTend())
-                    {
-                        var job = JobMaker.MakeJob(JobDefOf.TendPatient, patient, CarriedThing);
-                        if (TryStartForcedJob(job)) return true;
-                    }
+                    var job = JobMaker.MakeJob(JobDefOf.TendPatient, patient, CarriedThing);
+                    if (TryStartForcedJob(job)) return true;
                 }
+            }
 
-                var mortar = cellThings.OfType<Building_TurretGun>().FirstOrDefault(t => t.gun != null && t.gun.TryGetComp<CompChangeableProjectile>() != null);
-                if (mortar != null && CarriedThing != null)
+            var mortar = cellThings.OfType<Building_TurretGun>().FirstOrDefault(t => t.gun != null && t.gun.TryGetComp<CompChangeableProjectile>() != null);
+            if (mortar != null && CarriedThing != null)
+            {
+                var comp = mortar.gun.TryGetComp<CompChangeableProjectile>();
+                if (!comp.Loaded && comp.allowedShellsSettings.AllowedToAccept(CarriedThing))
                 {
-                    var comp = mortar.gun.TryGetComp<CompChangeableProjectile>();
-                    if (!comp.Loaded && comp.allowedShellsSettings.AllowedToAccept(CarriedThing))
-                    {
-                        var shell = CarriedThing;
-                        comp.LoadShell(shell.def, 1);
-                        shell.SplitOff(1).Destroy();
-                        SoundDefOf.Artillery_ShellLoaded.PlayOneShot(new TargetInfo(mortar.Position, pawn.Map));
-                        Messages.Message("PS_ShellLoaded".Translate(shell.def.label), MessageTypeDefOf.TaskCompletion);
-                        return true;
-                    }
-                }
-
-                var installBp = cellThings.OfType<Blueprint_Install>().FirstOrDefault();
-                if (installBp != null && installBp.MiniToInstallOrBuildingToReinstall == CarriedThing)
-                {
-                    installBp.TryReplaceWithSolidThing(pawn, out _, out _);
+                    var shell = CarriedThing;
+                    comp.LoadShell(shell.def, 1);
+                    shell.SplitOff(1).Destroy();
+                    SoundDefOf.Artillery_ShellLoaded.PlayOneShot(new TargetInfo(mortar.Position, pawn.Map));
+                    Messages.Message("PS_ShellLoaded".Translate(shell.def.label), MessageTypeDefOf.TaskCompletion);
                     return true;
                 }
+            }
 
-                var refuelableThing = cellThings.FirstOrDefault(t => t.TryGetComp<CompRefuelable>() != null);
-                if (refuelableThing != null)
-                {
-                    var comp = refuelableThing.TryGetComp<CompRefuelable>();
-                    if (comp.Props.fuelFilter.Allows(CarriedThing) && comp.GetFuelCountToFullyRefuel() > 0)
-                    {
-                        var amount = Mathf.Min(CarriedThing.stackCount, comp.GetFuelCountToFullyRefuel());
-                        comp.Refuel(amount);
-                        CarriedThing.SplitOff(amount).Destroy();
-                        if (refuelableThing.def.soundInteract != null) refuelableThing.def.soundInteract.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
-                        return true;
-                    }
-                }
+            var installBp = cellThings.OfType<Blueprint_Install>().FirstOrDefault();
+            if (installBp != null && installBp.MiniToInstallOrBuildingToReinstall == CarriedThing)
+            {
+                installBp.TryReplaceWithSolidThing(pawn, out _, out _);
+                return true;
+            }
 
-                var blueprint = cellThings.OfType<Blueprint_Build>().FirstOrDefault();
-                if (blueprint != null && blueprint.ThingCountNeeded(CarriedThing.def) > 0 && blueprint.TryReplaceWithSolidThing(pawn, out Thing frameThing, out _) && frameThing is Frame frame1)
+            var refuelableThing = cellThings.FirstOrDefault(t => t.TryGetComp<CompRefuelable>() != null);
+            if (refuelableThing != null)
+            {
+                var comp = refuelableThing.TryGetComp<CompRefuelable>();
+                if (comp.Props.fuelFilter.Allows(CarriedThing) && comp.GetFuelCountToFullyRefuel() > 0)
                 {
-                    var needed = frame1.ThingCountNeeded(CarriedThing.def);
-                    if (needed > 0)
-                    {
-                        pawn.carryTracker.innerContainer.TryTransferToContainer(CarriedThing, frame1.resourceContainer, Mathf.Min(CarriedThing.stackCount, needed));
-                    }
+                    var amount = Mathf.Min(CarriedThing.stackCount, comp.GetFuelCountToFullyRefuel());
+                    comp.Refuel(amount);
+                    CarriedThing.SplitOff(amount).Destroy();
+                    if (refuelableThing.def.soundInteract != null) refuelableThing.def.soundInteract.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
                     return true;
                 }
+            }
 
-                var frame2 = cellThings.OfType<Frame>().FirstOrDefault();
-                if (frame2 != null)
+            var blueprint = cellThings.OfType<Blueprint_Build>().FirstOrDefault();
+            if (blueprint != null && blueprint.ThingCountNeeded(CarriedThing.def) > 0 && blueprint.TryReplaceWithSolidThing(pawn, out Thing frameThing, out _) && frameThing is Frame frame1)
+            {
+                var needed = frame1.ThingCountNeeded(CarriedThing.def);
+                if (needed > 0)
                 {
-                    var needed = frame2.ThingCountNeeded(CarriedThing.def);
-                    if (needed > 0)
-                    {
-                        pawn.carryTracker.innerContainer.TryTransferToContainer(CarriedThing, frame2.resourceContainer, Mathf.Min(CarriedThing.stackCount, needed));
-                        return true;
-                    }
+                    pawn.carryTracker.innerContainer.TryTransferToContainer(CarriedThing, frame1.resourceContainer, Mathf.Min(CarriedThing.stackCount, needed));
+                }
+                return true;
+            }
+
+            var frame2 = cellThings.OfType<Frame>().FirstOrDefault();
+            if (frame2 != null)
+            {
+                var needed = frame2.ThingCountNeeded(CarriedThing.def);
+                if (needed > 0)
+                {
+                    pawn.carryTracker.innerContainer.TryTransferToContainer(CarriedThing, frame2.resourceContainer, Mathf.Min(CarriedThing.stackCount, needed));
+                    return true;
                 }
             }
 
             var building = cell.GetFirstBuilding(pawn.Map);
-
             if (building is IBillGiver billGiver)
             {
                 if (TryDepositIntoBill(billGiver, building))
@@ -1878,17 +1871,16 @@ namespace PerspectiveShift
             }
 
             bool wouldWipe = false;
-            if (cellThings != null)
+
+            foreach (var t in cellThings)
             {
-                foreach (var t in cellThings)
+                if (GenSpawn.SpawningWipes(CarriedThing.def, t.def))
                 {
-                    if (GenSpawn.SpawningWipes(CarriedThing.def, t.def))
-                    {
-                        wouldWipe = true;
-                        break;
-                    }
+                    wouldWipe = true;
+                    break;
                 }
             }
+
             ThingPlaceMode placeMode = wouldWipe ? ThingPlaceMode.Near : ThingPlaceMode.Direct;
 
             if (!itemInRange) return false;
@@ -1975,7 +1967,7 @@ namespace PerspectiveShift
 
         private bool TryDepositInDestination(IHaulDestination dest, Thing item, IntVec3 cell, ThingPlaceMode placeMode)
         {
-            if (dest is Building b && !(b is ISlotGroupParent))
+            if (dest is Building b && b is not ISlotGroupParent)
             {
                 var thingOwner = b.TryGetInnerInteractableThingOwner();
                 if (thingOwner != null)
@@ -2025,7 +2017,7 @@ namespace PerspectiveShift
 
                     var container = building.TryGetInnerInteractableThingOwner();
 
-                    if (container != null && !(building is ISlotGroupParent))
+                    if (container != null && building is not ISlotGroupParent)
                     {
                         int transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(heldItem, container, heldItem.stackCount);
 
