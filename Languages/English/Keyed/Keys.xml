@@ -135,4 +135,7 @@
     <PS_NeedRanOut_Comfort>You are feeling very uncomfortable.</PS_NeedRanOut_Comfort>
     <PS_NeedRanOut_Joy>You feel very bored.</PS_NeedRanOut_Joy>
     <PS_CannotDropOnBlueprint>Cannot drop here: blueprint does not need this material.</PS_CannotDropOnBlueprint>
+    <PS_Kidnapped>{PAWN_nameDef} has been kidnapped.</PS_Kidnapped>
+    <PS_LostToFaction>{PAWN_nameDef} is no longer under your control.</PS_LostToFaction>
+    <PS_CannotSprintExhausted>You are too exhausted to sprint.</PS_CannotSprintExhausted>
 </LanguageData>

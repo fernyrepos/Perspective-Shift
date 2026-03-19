@@ -21,7 +21,6 @@ namespace PerspectiveShift
         public static SoundDef PS_SprintSound;
         public static ThinkTreeDef LordDuty;
         public static ThinkTreeDef Downed;
-
         static DefsOf()
         {
             DefOfHelper.EnsureInitializedInCtor(typeof(DefsOf));

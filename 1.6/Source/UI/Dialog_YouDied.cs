@@ -20,7 +20,12 @@ namespace PerspectiveShift
             doCloseX = false;
 
             this.pawn = pawn;
-            deathMessage = HealthUtility.GetDiedLetterText(pawn, dinfo, hediff);
+            if (pawn.Dead)
+                deathMessage = HealthUtility.GetDiedLetterText(pawn, dinfo, hediff);
+            else if (pawn.IsKidnapped())
+                deathMessage = "PS_Kidnapped".Translate(pawn.Named("PAWN")).Resolve();
+            else
+                deathMessage = "PS_LostToFaction".Translate(pawn.Named("PAWN")).Resolve();
         }
 
         public override void OnCancelKeyPressed()

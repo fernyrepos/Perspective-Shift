@@ -6,5 +6,4 @@ namespace PerspectiveShift
     public class HotSwappableAttribute : Attribute
     {
     }
-
 }

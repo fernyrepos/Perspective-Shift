@@ -131,7 +131,7 @@ namespace PerspectiveShift
             }
             if (CurrentMode == PlaystyleMode.Authentic)
             {
-                if (pawn.Dead)
+                if (pawn.Dead || pawn.IsKidnapped())
                 {
                     pendingDeathMenu = true;
                     Find.WindowStack.Add(new Dialog_YouDied(pawn, dinfo, hediff));
