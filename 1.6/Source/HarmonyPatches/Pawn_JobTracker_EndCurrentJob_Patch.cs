@@ -55,7 +55,10 @@ namespace PerspectiveShift
             {
                 return;
             }
-            State.Avatar.InteractWith(__state.targetA.Thing);
+            if (__state.targetA.HasThing && __state.targetA.ThingDestroyed is false && __state.targetA.ThingDiscarded)
+            {
+                State.Avatar.InteractWith(__state.targetA.Thing);
+            }
         }
     }
 }

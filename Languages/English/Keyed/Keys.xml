@@ -118,6 +118,8 @@
     <PS_BedForSlavesOnly>This bed is for slaves only.</PS_BedForSlavesOnly>
     <PS_BedForColonistsOnly>This bed is for colonists only.</PS_BedForColonistsOnly>
     <PS_EatingFood>Eating {0}</PS_EatingFood>
+    <PS_DoingRecreation>Doing recreation</PS_DoingRecreation>
+    <PS_NoRecreationAvailable>No recreation available</PS_NoRecreationAvailable>
     <PS_ShellLoaded>Loaded {0}</PS_ShellLoaded>
     <PS_HoldToFire>Hold to fire</PS_HoldToFire>
     <PS_HoldToFireDesc>Holding the left mouse button while drafted will continuously fire your weapon without disabling cooldowns.</PS_HoldToFireDesc>

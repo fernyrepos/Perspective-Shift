@@ -114,7 +114,7 @@ namespace PerspectiveShift
 
         private void HandleFiring()
         {
-            if (pawn.stances.curStance is Stance_Busy) return;
+            if (pawn.stances.curStance is Stance_Busy || pawn.CurJobDef != JobDefOf.Wait_Combat) return;
             var verb = GetActiveVerb();
             if (verb == null) return;
 

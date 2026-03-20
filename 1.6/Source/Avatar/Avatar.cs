@@ -133,11 +133,14 @@ namespace PerspectiveShift
             if (IsMoving && pawn.pather != null)
             {
                 pawn.pather.lastMovedTick = Find.TickManager.TicksGame;
-                var baseSpeed = pawn.GetStatValue(StatDefOf.MoveSpeed);
-                float speedMult = isSprinting ? PerspectiveShiftMod.settings.sprintSpeedMultiplier
+                
+                float terrainMult = GetMovementSpeedMultiplier(pawn.Position);
+                float gaitMult = isSprinting ? PerspectiveShiftMod.settings.sprintSpeedMultiplier
                                 : isWalking ? PerspectiveShiftMod.settings.sneakSpeedMultiplier
                                 : 1f;
-                pawn.pather.nextCellCostTotal = Mathf.Max(60f / Mathf.Max(baseSpeed, 0.1f) / speedMult, 1f);
+                
+                float moveSpeed = pawn.GetStatValue(StatDefOf.MoveSpeed) * PerspectiveShiftMod.settings.moveSpeedMultiplier * terrainMult * gaitMult;
+                pawn.pather.nextCellCostTotal = Mathf.Max(60f / Mathf.Max(moveSpeed, 0.1f), 1f);
             }
         }
 

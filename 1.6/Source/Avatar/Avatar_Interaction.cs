@@ -47,19 +47,16 @@ namespace PerspectiveShift
             if (CarriedThing != null)
                 return HandleDropOrInteract(clickCell, withinGrabRange, CarriedThing);
 
-            bool anyInRange = false;
             foreach (var thing in things)
             {
-                bool inRange = withinGrabRange || IsWithinInteractionRange(thing);
-                if (!inRange) continue;
-                anyInRange = true;
+                if (!withinGrabRange && !IsWithinInteractionRange(thing)) continue;
                 if (TryHandleStorageBuilding(thing)) return true;
                 if (TryHandleConstructionThing(thing)) return true;
                 if (TryHandleBuildingInteractions(thing)) return true;
             }
 
             if (withinGrabRange && TryHandlePickup(clickCell)) return true;
-            if (anyInRange && TryHandleFloatMenu(clickCell)) return true;
+            if (TryHandleFloatMenu(clickCell)) return true;
 
             return TryExecuteDesignatorlessFallback(clickCell, withinGrabRange);
         }
@@ -687,7 +684,7 @@ namespace PerspectiveShift
 
         public bool InteractWith(Thing target)
         {
-            if (target == null || target.Destroyed)
+            if (target == null || target.Destroyed || target.Spawned is false)
             {
                 return false;
             }

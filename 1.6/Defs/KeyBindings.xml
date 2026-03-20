@@ -75,4 +75,11 @@
         <category>PS_Controls</category>
         <defaultKeyCodeA>F</defaultKeyCodeA>
     </KeyBindingDef>
+
+    <KeyBindingDef>
+        <defName>PS_DoRecreation</defName>
+        <label>Do Recreation</label>
+        <category>PS_Controls</category>
+        <defaultKeyCodeA>J</defaultKeyCodeA>
+    </KeyBindingDef>
 </Defs>

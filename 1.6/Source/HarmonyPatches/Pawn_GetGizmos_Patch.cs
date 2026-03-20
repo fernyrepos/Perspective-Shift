@@ -47,7 +47,7 @@ namespace PerspectiveShift
                 yield return g;
             }
 
-            if (__instance != State.Avatar?.pawn && __instance.Faction == Faction.OfPlayer)
+            if (__instance != State.Avatar?.pawn && __instance.Faction == Faction.OfPlayer && !__instance.RaceProps.Animal)
             {
                 State.seekAtWillPawns ??= new HashSet<int>();
                 bool isRanged = __instance.equipment?.Primary?.def?.IsRangedWeapon ?? false;

@@ -12,6 +12,7 @@ namespace PerspectiveShift
         private float moveInputDuration = 0f;
         private bool wasSprinting = false;
         private Vector3 lastVehicleMoveInput = Vector3.zero;
+        private IntVec3 prevCell = IntVec3.Invalid;
         private int vehicleStopGraceTicks = 0;
         private int vehiclePathFailCooldown = 0;
         private Vector3 _leanVelocity = Vector3.zero;
@@ -163,11 +164,12 @@ namespace PerspectiveShift
 
             if (moveInput.sqrMagnitude > 1f) moveInput.Normalize();
 
+            bool sprintKeyDown = DefsOf.PS_Sprint.KeyDownEvent;
             isSprinting = PerspectiveShiftMod.settings.enableSprinting && DefsOf.PS_Sprint.IsDown;
             if (isSprinting && pawn.needs?.rest != null && pawn.needs.rest.CurLevelPercentage <= 0.01f)
             {
                 isSprinting = false;
-                if (wasSprinting)
+                if (sprintKeyDown)
                 {
                     Messages.Message("PS_CannotSprintExhausted".Translate(), MessageTypeDefOf.RejectInput, false);
                 }
@@ -275,17 +277,18 @@ namespace PerspectiveShift
                                  : 1f;
             float speed = baseSpeed * PerspectiveShiftMod.settings.moveSpeedMultiplier * terrainMultiplier * gaitMultiplier * Time.deltaTime * Find.TickManager.TickRateMultiplier;
             speed = Mathf.Min(speed, PerspectiveShiftMod.settings.playerMoveSpeedCap);
-            Vector3 newPos = physicsPosition.Value;
 
-            IntVec3 lookAheadCell = (physicsPosition.Value + deltaRaw * 1.5f).ToIntVec3();
-            if (lookAheadCell != pawn.Position && lookAheadCell.InBounds(pawn.Map))
+            IntVec3 forwardCell = (physicsPosition.Value + deltaRaw * 0.8f).ToIntVec3();
+            if (forwardCell != pawn.Position && forwardCell.InBounds(pawn.Map))
             {
-                var lookAheadDoor = lookAheadCell.GetDoor(pawn.Map);
-                if (lookAheadDoor != null && lookAheadDoor.PawnCanOpen(pawn))
+                var forwardDoor = forwardCell.GetDoor(pawn.Map);
+                if (forwardDoor != null && forwardDoor.PawnCanOpen(pawn))
                 {
-                    lookAheadDoor.Notify_PawnApproaching(pawn, 1);
+                    forwardDoor.Notify_PawnApproaching(pawn, 1f);
                 }
             }
+
+            Vector3 newPos = physicsPosition.Value;
 
             float distanceRemaining = speed;
             while (distanceRemaining > 0)
@@ -325,22 +328,25 @@ namespace PerspectiveShift
                 return;
             }
 
-            var door = nextCell.GetDoor(pawn.Map);
-            if (door != null && !door.Open && door.PawnCanOpen(pawn))
+            if (nextCell != pawn.Position)
             {
-                door.Notify_PawnApproaching(pawn, 0);
-                if (door.TicksToOpenNow > 0)
+                var door = nextCell.GetDoor(pawn.Map);
+                if (door != null && door.PawnCanOpen(pawn))
                 {
-                    door.StartManualOpenBy(pawn);
-                    pawn.Map.fogGrid.Notify_PawnEnteringDoor(door, pawn);
-                    interactingDoor = door;
-                    return;
+                    if (door.SlowsPawns && (!door.Open || door.TicksTillFullyOpened > 0))
+                    {
+                        if (!door.Open) door.StartManualOpenBy(pawn);
+                        pawn.Map.fogGrid.Notify_PawnEnteringDoor(door, pawn);
+                        interactingDoor = door;
+                        return;
+                    }
                 }
             }
 
             physicsPosition = newPos;
             if (pawn.Position != nextCell)
             {
+                prevCell = pawn.Position;
                 pawn.Position = nextCell;
                 pawn.Notify_Teleported(endCurrentJob: false, resetTweenedPos: false);
                 pawn.pather.nextCell = nextCell;
@@ -402,13 +408,17 @@ namespace PerspectiveShift
 
             float num = Pawn_PathFollower.CostToMoveIntoCell(pawn, cell);
 
-            if (cell.x != pawn.Position.x && cell.z != pawn.Position.z)
+            if (prevCell.IsValid && prevCell != pawn.Position)
             {
-                num = (num - pawn.TicksPerMoveDiagonal) + pawn.TicksPerMoveCardinal;
+                int wrongPrevCost = pawn.Map.pathing.For(pawn).pathGrid.CalculatedCostAt(cell, perceivedStatic: false, pawn.Position);
+                int rightPrevCost = pawn.Map.pathing.For(pawn).pathGrid.CalculatedCostAt(cell, perceivedStatic: false, prevCell);
+                num += rightPrevCost - wrongPrevCost;
             }
 
-            if (num > 450f) num = 450f;
+            if (cell.x != pawn.Position.x && cell.z != pawn.Position.z)
+                num = num - pawn.TicksPerMoveDiagonal + pawn.TicksPerMoveCardinal;
 
+            num = Mathf.Clamp(num, 1f, 450f);
             return pawn.TicksPerMoveCardinal / Mathf.Max(num, 1f);
         }
 
@@ -438,20 +448,10 @@ namespace PerspectiveShift
         {
             if (!cell.InBounds(pawn.Map)) return false;
 
+            if (!cell.WalkableBy(pawn.Map, pawn)) return false;
+
             var door = cell.GetDoor(pawn.Map);
             if (door != null && !door.Open && !door.PawnCanOpen(pawn)) return false;
-
-            var edifice = cell.GetEdifice(pawn.Map);
-            if (edifice != null && edifice.def.passability == Traversability.Impassable) return false;
-
-            if (!cell.Walkable(pawn.Map))
-            {
-                if (edifice != null && edifice.def.building != null && edifice.def.building.isFence) return true;
-
-                if (Pawn_PathFollower.CostToMoveIntoCell(pawn, cell) < 10000f) return true;
-
-                return false;
-            }
 
             return true;
         }
@@ -517,7 +517,7 @@ namespace PerspectiveShift
         private void HandleDoorInteraction()
         {
             if (interactingDoor == null) return;
-            if (interactingDoor.Open || interactingDoor.Destroyed)
+            if (interactingDoor.TicksTillFullyOpened <= 0 || interactingDoor.Destroyed)
                 interactingDoor = null;
         }
     }

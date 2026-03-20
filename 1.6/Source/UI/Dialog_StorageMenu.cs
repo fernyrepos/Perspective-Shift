@@ -93,6 +93,19 @@ namespace PerspectiveShift
             DrawActionButton(keepRect, Keep, "PS_Keep".Translate(), hasItem, (button) =>
             {
                 int countToTake = (button == 1) ? 1 : cursorItem.stackCount;
+
+                int maxCount = MassUtility.CountToPickUpUntilOverEncumbered(State.Avatar.pawn, cursorItem);
+                if (maxCount < countToTake)
+                {
+                    countToTake = maxCount;
+                }
+                
+                if (countToTake <= 0)
+                {
+                    Messages.Message("PS_CannotCarryMoreWeight".Translate(), MessageTypeDefOf.RejectInput, false);
+                    return;
+                }
+
                 var item = cursorItem.SplitOff(countToTake);
                 if (item == cursorItem) cursorItem = null;
 

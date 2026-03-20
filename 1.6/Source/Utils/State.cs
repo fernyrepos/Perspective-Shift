@@ -15,7 +15,7 @@ namespace PerspectiveShift
         public static bool ShouldSeekEnemy(this Pawn pawn)
         {
             seekAtWillPawns ??= new HashSet<int>();
-            return !pawn.IsAvatar() && pawn.InMentalState is false && pawn.Drafted is false && pawn.Faction == Faction.OfPlayer && seekAtWillPawns.Contains(pawn.thingIDNumber);
+            return !pawn.IsAvatar() && pawn.InMentalState is false && pawn.Drafted is false && pawn.Faction == Faction.OfPlayer && !pawn.RaceProps.Animal && seekAtWillPawns.Contains(pawn.thingIDNumber);
         }
         public enum ForcedInteractionOutcome { None, ForceAccept, ForceReject }
         public static bool TryApplyForcedInteraction(ref float __result)
@@ -44,7 +44,7 @@ namespace PerspectiveShift
         public static bool pendingDeathMenu = false;
         public static bool permadeath = false;
         public static bool allowDirectorInAuthentic = false;
-        public static bool IsActive => Avatar != null && Avatar.pawn != null && !Avatar.pawn.Dead && !WorldComponent_GravshipController.CutsceneInProgress;
+        public static bool IsActive => Avatar?.pawn != null && !Avatar.pawn.Dead && !WorldComponent_GravshipController.CutsceneInProgress;
         public static bool ControlsFrozen
         {
             get

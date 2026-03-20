@@ -21,6 +21,7 @@ namespace PerspectiveShift
             DrawGizmosAndNeeds();
             HandleTabKeyBindings();
             HandleEatFoodBinding();
+            HandleRecreationBinding();
             bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(Event.current.mousePosition);
             bool mouseOverUI = IsMouseOverUI() || IsMouseOverColonistBar();
             HandleHoldToFire(mouseOverGizmo, mouseOverUI);
@@ -86,6 +87,30 @@ namespace PerspectiveShift
             TryToggleInspectTab(DefsOf.PS_NeedsTab, typeof(ITab_Pawn_Needs));
         }
 
+        private void HandleRecreationBinding()
+        {
+            if (!DefsOf.PS_DoRecreation.KeyDownEvent) return;
+
+            bool onlyAvatarSelected = Find.Selector.NumSelected == 0 || (Find.Selector.NumSelected == 1 && Find.Selector.IsSelected(pawn));
+            if (!onlyAvatarSelected || pawn.Downed || pawn.InMentalState || pawn.needs?.joy == null) return;
+
+            var jobGiver = new JobGiver_GetJoy();
+            jobGiver.ResolveReferences();
+            var job = jobGiver.TryGiveJob(pawn);
+            if (job != null)
+            {
+                job.playerForced = true;
+                pawn.jobs.TryTakeOrderedJob(job);
+                Messages.Message("PS_DoingRecreation".Translate(), pawn, MessageTypeDefOf.TaskCompletion, false);
+                Event.current.Use();
+            }
+            else
+            {
+                Messages.Message("PS_NoRecreationAvailable".Translate(), pawn, MessageTypeDefOf.RejectInput, false);
+                Event.current.Use();
+            }
+        }
+
         private void HandleEatFoodBinding()
         {
             if (!DefsOf.PS_EatFood.KeyDownEvent) return;
@@ -127,7 +152,7 @@ namespace PerspectiveShift
             }
             else
             {
-                FoodUtility.TryFindBestFoodSourceFor(pawn, pawn, desperate, out foodSource, out foodDef, canRefillDispenser: true, canUseInventory: true, canUsePackAnimalInventory: true, allowForbidden: false, allowCorpse, allowSociallyImproper: false, pawn.IsWildMan(), forceScanWholeMap: true, ignoreReservations: false, calculateWantedStackCount: false, allowVenerated: false, minPrefOverride: foodPreferability);
+                FoodUtility.TryFindBestFoodSourceFor(pawn, pawn, desperate, out foodSource, out foodDef, canRefillDispenser: false, canUseInventory: true, canUsePackAnimalInventory: true, allowForbidden: false, allowCorpse, allowSociallyImproper: false, pawn.IsWildMan(), forceScanWholeMap: true, ignoreReservations: false, calculateWantedStackCount: false, allowVenerated: false, minPrefOverride: foodPreferability);
             }
 
             if (foodSource != null && Toils_Ingest.TryFindChairOrSpot(pawn, foodSource, out var _))
