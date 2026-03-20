@@ -101,7 +101,7 @@ namespace PerspectiveShift
             {
                 job.playerForced = true;
                 pawn.jobs.TryTakeOrderedJob(job);
-                Messages.Message("PS_DoingRecreation".Translate(), pawn, MessageTypeDefOf.TaskCompletion, false);
+                Messages.Message("PS_DoingRecreation".Translate(job.def.reportString), pawn, MessageTypeDefOf.TaskCompletion, false);
                 Event.current.Use();
             }
             else
