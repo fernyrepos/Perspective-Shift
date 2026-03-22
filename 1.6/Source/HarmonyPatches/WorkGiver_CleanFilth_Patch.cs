@@ -9,7 +9,7 @@ namespace PerspectiveShift
     {
         public static bool Prefix(Pawn pawn, ref bool __result)
         {
-            if (pawn.IsAvatar() && Avatar.IsAvatarLeftClick is false)
+            if (pawn.IsAvatar() && Avatar.IsAvatarLeftClick)
             {
                 __result = false;
                 return false;
