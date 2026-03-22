@@ -92,7 +92,7 @@ namespace PerspectiveShift
             if (!DefsOf.PS_DoRecreation.KeyDownEvent) return;
 
             bool onlyAvatarSelected = Find.Selector.NumSelected == 0 || (Find.Selector.NumSelected == 1 && Find.Selector.IsSelected(pawn));
-            if (!onlyAvatarSelected || pawn.Downed || pawn.InMentalState || pawn.needs?.joy == null) return;
+            if (!onlyAvatarSelected || pawn.Downed || pawn.InMentalState || passedOut || pawn.needs?.joy == null) return;
 
             var jobGiver = new JobGiver_GetJoy();
             jobGiver.ResolveReferences();
@@ -117,7 +117,7 @@ namespace PerspectiveShift
 
             bool onlyAvatarSelected = Find.Selector.NumSelected == 0 || (Find.Selector.NumSelected == 1 && Find.Selector.IsSelected(pawn));
 
-            if (!onlyAvatarSelected || pawn.Downed || pawn.InMentalState || pawn.needs?.food == null) return;
+            if (!onlyAvatarSelected || pawn.Downed || pawn.InMentalState || passedOut || pawn.needs?.food == null) return;
 
             FoodPreferability foodPreferability = FoodPreferability.Undefined;
             bool allowCorpse = false;

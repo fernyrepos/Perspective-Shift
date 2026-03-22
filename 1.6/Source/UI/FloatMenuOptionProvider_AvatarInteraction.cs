@@ -4,15 +4,16 @@ using Verse;
 
 namespace PerspectiveShift
 {
+    [HotSwappable]
     public abstract class FloatMenuOptionProvider_AvatarInteraction : FloatMenuOptionProvider_AvatarBase
     {
         public static Dictionary<int, int> lastInteractionByTarget = new Dictionary<int, int>();
 
         protected bool CanInteractWithTarget(Pawn target, InteractionDef interactionDef)
         {
-            if (target == State.Avatar.pawn)
+            if (target == State.Avatar.pawn || target.Spawned is false)
                 return false;
-
+            lastInteractionByTarget ??= new Dictionary<int, int>();
             if (lastInteractionByTarget.TryGetValue(target.thingIDNumber, out int lastTick))
             {
                 if (Find.TickManager.TicksGame < lastTick + (GenDate.TicksPerDay / 2))

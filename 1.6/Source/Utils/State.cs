@@ -17,6 +17,10 @@ namespace PerspectiveShift
             seekAtWillPawns ??= new HashSet<int>();
             return !pawn.IsAvatar() && pawn.InMentalState is false && pawn.Drafted is false && pawn.Faction == Faction.OfPlayer && !pawn.RaceProps.Animal && seekAtWillPawns.Contains(pawn.thingIDNumber);
         }
+        public static bool IsUnderAIControl(this Pawn pawn)
+        {
+            return pawn.GetLord() != null || pawn.mindState?.duty != null;
+        }
         public enum ForcedInteractionOutcome { None, ForceAccept, ForceReject }
         public static bool TryApplyForcedInteraction(ref float __result)
         {
@@ -45,6 +49,19 @@ namespace PerspectiveShift
         public static bool permadeath = false;
         public static bool allowDirectorInAuthentic = false;
         public static bool IsActive => Avatar?.pawn != null && !Avatar.pawn.Dead && !WorldComponent_GravshipController.CutsceneInProgress;
+
+        public static float lastTickRealTime = 0f;
+        public static float smoothedTickTime = 1f / 60f;
+
+        public static float ActualTickRateMultiplier
+        {
+            get
+            {
+                if (smoothedTickTime <= 0.0001f) return Find.TickManager.TickRateMultiplier;
+                return (1f / smoothedTickTime) / 60f;
+            }
+        }
+
         public static bool ControlsFrozen
         {
             get
@@ -97,10 +114,17 @@ namespace PerspectiveShift
                 CleanupPawnState(Avatar.pawn);
             }
 
-            if (_savedConfig != null && Find.CameraDriver != null)
+            if (Find.CameraDriver != null)
             {
-                Find.CameraDriver.config = _savedConfig;
-                _savedConfig = null;
+                if (_savedConfig != null)
+                {
+                    Find.CameraDriver.config = _savedConfig;
+                    _savedConfig = null;
+                }
+                else if (Find.CameraDriver.config is CameraMapConfig_Avatar)
+                {
+                    Find.CameraDriver.config = new CameraMapConfig_Normal();
+                }
             }
             CameraLockPosition = null;
             Avatar = null;
@@ -160,6 +184,17 @@ namespace PerspectiveShift
         public static void Tick()
         {
             if (!IsActive) return;
+
+            float now = Time.realtimeSinceStartup;
+            if (lastTickRealTime != 0f)
+            {
+                float delta = now - lastTickRealTime;
+                if (delta < 1f)
+                {
+                    smoothedTickTime = Mathf.Lerp(smoothedTickTime, delta, 0.1f);
+                }
+            }
+            lastTickRealTime = now;
 
             Avatar.Tick();
         }

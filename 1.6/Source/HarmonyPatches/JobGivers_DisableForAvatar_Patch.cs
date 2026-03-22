@@ -25,7 +25,7 @@ namespace PerspectiveShift
         {
             if (pawn.IsAvatar() && !pawn.InMentalState)
             {
-                if (!pawn.Drafted && (pawn.GetLord() != null || pawn.mindState?.duty != null))
+                if (!pawn.Drafted && pawn.IsUnderAIControl())
                 {
                     return true;
                 }
@@ -48,7 +48,7 @@ namespace PerspectiveShift
         public static bool Prefix(Pawn pawn, Thing t, ref Job __result)
         {
             if (!pawn.IsAvatar() || pawn.InMentalState) return true;
-            if (!pawn.Drafted && (pawn.GetLord() != null || pawn.mindState?.duty != null)) return true;
+            if (!pawn.Drafted && pawn.IsUnderAIControl()) return true;
             if (t is IConstructible c && !c.TotalMaterialCost().Any()) return true;
             __result = null;
             return false;

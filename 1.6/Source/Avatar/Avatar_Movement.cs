@@ -187,7 +187,7 @@ namespace PerspectiveShift
         {
             if (interactingDoor != null) return;
 
-            if (!pawn.Drafted && (pawn.GetLord() != null || pawn.mindState?.duty != null))
+            if (!pawn.Drafted && pawn.IsUnderAIControl())
             {
                 physicsPosition = null;
                 return;
@@ -271,11 +271,12 @@ namespace PerspectiveShift
             var currentMultiplier = GetMovementSpeedMultiplier(pawn.Position);
             var futureMultiplier = GetMovementSpeedMultiplier(testNewPos.ToIntVec3());
             var terrainMultiplier = Mathf.Min(currentMultiplier, futureMultiplier);
-            var baseSpeed = pawn.GetStatValue(StatDefOf.MoveSpeed);
+            var baseSpeed = 60f / Mathf.Max(pawn.TicksPerMoveCardinal, 1f);
             float gaitMultiplier = isSprinting ? PerspectiveShiftMod.settings.sprintSpeedMultiplier
-                                 : isWalking   ? PerspectiveShiftMod.settings.sneakSpeedMultiplier
+                                 : isWalking ? PerspectiveShiftMod.settings.sneakSpeedMultiplier
                                  : 1f;
-            float speed = baseSpeed * PerspectiveShiftMod.settings.moveSpeedMultiplier * terrainMultiplier * gaitMultiplier * Time.deltaTime * Find.TickManager.TickRateMultiplier;
+            float tickRate = Mathf.Min(State.ActualTickRateMultiplier, Find.TickManager.TickRateMultiplier);
+            float speed = baseSpeed * PerspectiveShiftMod.settings.moveSpeedMultiplier * terrainMultiplier * gaitMultiplier * Time.deltaTime * tickRate;
             speed = Mathf.Min(speed, PerspectiveShiftMod.settings.playerMoveSpeedCap);
 
             IntVec3 forwardCell = (physicsPosition.Value + deltaRaw * 0.8f).ToIntVec3();

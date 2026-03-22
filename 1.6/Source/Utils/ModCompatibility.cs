@@ -543,7 +543,7 @@ namespace PerspectiveShift
 
         public static IEnumerable<Gizmo> VehiclePawnGetGizmosPostfix(IEnumerable<Gizmo> __result, object __instance)
         {
-            if (State.IsActive && !State.DrawingTopRightGizmos && IsPawnInVehicle(State.Avatar?.pawn, out Pawn vehicle, out bool isDriver, out _))
+            if (State.IsActive && !State.DrawingTopRightGizmos && !PerspectiveShiftMod.settings.disableCustomGizmos && IsPawnInVehicle(State.Avatar?.pawn, out Pawn vehicle, out bool isDriver, out _))
             {
                 if (vehicle == __instance && isDriver)
                 {

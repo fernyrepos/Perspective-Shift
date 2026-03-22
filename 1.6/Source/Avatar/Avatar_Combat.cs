@@ -66,7 +66,7 @@ namespace PerspectiveShift
 
             if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
             {
-                if (pawn.carryTracker?.CarriedThing != null && pawn.inventory != null)
+                if (pawn.carryTracker?.CarriedThing != null && pawn.inventory != null && pawn.carryTracker.CarriedThing is not (Pawn or Corpse))
                 {
                     var carried = pawn.carryTracker.CarriedThing;
                     int count = carried.stackCount;

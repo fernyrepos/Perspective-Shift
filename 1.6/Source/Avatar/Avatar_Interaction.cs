@@ -63,6 +63,8 @@ namespace PerspectiveShift
 
         private bool HandleDropOrInteract(IntVec3 cell, bool itemInRange, Thing carriedThing)
         {
+            if (!itemInRange) return false;
+
             if (!cell.InBounds(pawn.Map))
             {
                 return false;
@@ -110,8 +112,6 @@ namespace PerspectiveShift
             }
 
             ThingPlaceMode placeMode = wouldWipe ? ThingPlaceMode.Near : ThingPlaceMode.Direct;
-
-            if (!itemInRange) return false;
 
             if (haulDest != null)
             {
@@ -296,7 +296,7 @@ namespace PerspectiveShift
 
         private bool TryHandleBedDrop(Thing t, Thing carriedThing, IntVec3 cell)
         {
-            if (t is Building_Bed bed && carriedThing is Pawn carriedPawn && carriedPawn.Downed)
+            if (t is Building_Bed bed && carriedThing is Pawn carriedPawn && (carriedPawn.Downed || carriedPawn.DevelopmentalStage == DevelopmentalStage.Baby || !carriedPawn.Awake()))
             {
                 if (bed.ForPrisoners && !carriedPawn.IsPrisonerOfColony)
                 {
@@ -362,20 +362,35 @@ namespace PerspectiveShift
 
         private bool TryHandleContainerTransfer(Thing t, Thing carriedThing)
         {
-            if (t != pawn)
+            if (t == pawn) return false;
+            if (carriedThing is Pawn carriedPawn)
             {
-                var container = t.TryGetInnerInteractableThingOwner();
-                if (container != null)
+                if (t is Building_Enterable enterable && enterable.CanAcceptPawn(carriedPawn))
                 {
-                    var sound = carriedThing.def.soundDrop;
-                    int countBefore = carriedThing.stackCount;
-                    int transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(carriedThing, container, carriedThing.stackCount);
+                    enterable.TryAcceptPawn(carriedPawn);
+                    return true;
+                }
+                return false;
+            }
+            if (t is Building_Casket casket && casket.Accepts(carriedThing))
+            {
+                return casket.TryAcceptThing(carriedThing);
+            }
 
-                    if (transferred > 0 || carriedThing.Destroyed || carriedThing.stackCount < countBefore || pawn.carryTracker.CarriedThing != carriedThing)
-                    {
-                        sound?.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
-                        return true;
-                    }
+            if (carriedThing is Corpse) return false;
+            if (t is IBillGiver) return false;
+
+            var container = t.TryGetInnerInteractableThingOwner();
+            if (container != null)
+            {
+                var sound = carriedThing.def.soundDrop;
+                int countBefore = carriedThing.stackCount;
+                int transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(carriedThing, container, carriedThing.stackCount);
+
+                if (transferred > 0 || carriedThing.Destroyed || carriedThing.stackCount < countBefore || pawn.carryTracker.CarriedThing != carriedThing)
+                {
+                    sound?.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
+                    return true;
                 }
             }
             return false;
@@ -431,17 +446,6 @@ namespace PerspectiveShift
                 {
                     if (bill.ShouldDoNow() && bill.IsFixedOrAllowedIngredient(carriedThing))
                     {
-                        var container = thing.TryGetInnerInteractableThingOwner();
-                        if (container != null && thing is not ISlotGroupParent)
-                        {
-                            int transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(carriedThing, container, carriedThing.stackCount);
-
-                            if (transferred > 0)
-                            {
-                                TryStartBillJob(billGiver);
-                                return true;
-                            }
-                        }
                         if (pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out Thing droppedItem))
                         {
                             TryStartBillJob(billGiver);
@@ -616,6 +620,12 @@ namespace PerspectiveShift
 
                         foreach (var opt in provider.GetOptionsFor(actualThing, context))
                         {
+                            if (actualThing is Pawn mech && mech.RaceProps.IsMechanoid)
+                            {
+                                if (opt.Label == "DisconnectMech".Translate(mech.LabelShort))
+                                    continue;
+                            }
+
                             if (opt.iconThing == null) opt.iconThing = actualThing;
                             opt.targetsDespawned = !actualThing.Spawned;
                             opts.Add(opt);
@@ -682,41 +692,41 @@ namespace PerspectiveShift
             return false;
         }
 
-        public bool InteractWith(Thing target)
+        public bool InteractWith(Thing target, JobDef forcedJob = null)
         {
             if (target == null || target.Destroyed || target.Spawned is false)
             {
                 return false;
             }
-            if (TryStartBuildingDeconstructJob(target)) return true;
-            if (TryStartMeditationOrReignJob(target)) return true;
-            if (TryStartWorkGiverJob(target)) return true;
+            if (TryStartBuildingDeconstructJob(target, forcedJob)) return true;
+            if (TryStartMeditationOrReignJob(target, forcedJob)) return true;
+            if (TryStartWorkGiverJob(target, forcedJob)) return true;
             if (TryHandleResearchBench(target)) return true;
-            if (TryHandleBedRest(target)) return true;
-            if (TryHandleJoyBuilding(target)) return true;
+            if (TryHandleBedRest(target, forcedJob)) return true;
+            if (TryHandleJoyBuilding(target, forcedJob)) return true;
 
             return false;
         }
 
-        private bool TryStartBuildingDeconstructJob(Thing thing)
+        private bool TryStartBuildingDeconstructJob(Thing thing, JobDef forcedJob = null)
         {
             if (pawn.Map.designationManager.DesignationOn(thing, DesignationDefOf.Deconstruct) != null)
             {
-                if (TryStartForcedJobWithIgnoreDesignations(thing, JobDefOf.Deconstruct)) return true;
+                if (TryStartForcedJobWithIgnoreDesignations(thing, JobDefOf.Deconstruct, forcedJob)) return true;
             }
 
             var blueprint = thing.Position.GetThingList(pawn.Map).OfType<Blueprint>().FirstOrDefault();
             if (blueprint != null && GenConstruct.BlocksConstruction(blueprint, thing) && thing is Building building
              && building.DeconstructibleBy(pawn.Faction).Accepted)
             {
-                if (TryStartForcedJobWithIgnoreDesignations(thing, JobDefOf.Deconstruct))
+                if (TryStartForcedJobWithIgnoreDesignations(thing, JobDefOf.Deconstruct, forcedJob))
                     return true;
             }
 
             return false;
         }
 
-        private bool TryStartMeditationOrReignJob(Thing thing)
+        private bool TryStartMeditationOrReignJob(Thing thing, JobDef forcedJob = null)
         {
             if (thing.def == ThingDefOf.MeditationSpot || thing is Building_Throne throne1 && throne1.AssignedPawn == pawn)
             {
@@ -732,16 +742,17 @@ namespace PerspectiveShift
                     {
                         def = JobDefOf.MeditatePray;
                     }
-                    job = JobMaker.MakeJob(def, thing, null, thing);
+                    LocalTargetInfo targetC = (ModsConfig.RoyaltyActive ? MeditationUtility.BestFocusAt(thing, pawn) : LocalTargetInfo.Invalid);
+                    job = JobMaker.MakeJob(def, thing, null, targetC);
                 }
                 job.ignoreJoyTimeAssignment = true;
-                if (TryStartForcedJob(job)) return true;
+                if (TryStartForcedJob(job, forcedJob)) return true;
             }
 
             return false;
         }
 
-        private bool TryStartWorkGiverJob(Thing target)
+        private bool TryStartWorkGiverJob(Thing target, JobDef forcedJob = null)
         {
             if (pawn.workSettings == null) return false;
 
@@ -760,7 +771,7 @@ namespace PerspectiveShift
                                 if (job.def == JobDefOf.HaulToContainer && pawn.carryTracker?.CarriedThing == null) continue;
                                 if (job.def == JobDefOf.Refuel && pawn.carryTracker?.CarriedThing == null) continue;
                                 if (job.def == JobDefOf.RefuelAtomic && pawn.carryTracker?.CarriedThing == null) continue;
-                                if (TryStartForcedJob(job)) return true;
+                                if (TryStartForcedJob(job, forcedJob)) return true;
                             }
                         }
                         else if (pawn.WorkTypeIsDisabled(scanner.def.workType))
@@ -783,11 +794,11 @@ namespace PerspectiveShift
             return false;
         }
 
-        private bool TryHandleBedRest(Thing target)
+        private bool TryHandleBedRest(Thing target, JobDef forcedJob = null)
         {
             if (target is Building_Bed bed && !bed.ForPrisoners && !bed.Medical && pawn.needs?.rest != null && RestUtility.CanUseBedEver(pawn, bed.def) && pawn.CanReserveAndReach(bed, PathEndMode.OnCell, Danger.Deadly, bed.SleepingSlotsCount, 0))
             {
-                if (TryStartForcedJob(JobMaker.MakeJob(JobDefOf.LayDown, bed)))
+                if (TryStartForcedJob(JobMaker.MakeJob(JobDefOf.LayDown, bed), forcedJob))
                 {
                     return true;
                 }
@@ -795,7 +806,7 @@ namespace PerspectiveShift
             return false;
         }
 
-        private bool TryHandleJoyBuilding(Thing target)
+        private bool TryHandleJoyBuilding(Thing target, JobDef forcedJob = null)
         {
             if (pawn.needs?.joy == null) return false;
 
@@ -814,14 +825,14 @@ namespace PerspectiveShift
                         if (chair != null && !chair.def.building.isSittable) chair = null;
                         var job = JobMaker.MakeJob(jgDef.jobDef, target, pawn.Position, chair);
                         job.ignoreJoyTimeAssignment = true;
-                        if (TryStartForcedJob(job)) return true;
+                        if (TryStartForcedJob(job, forcedJob)) return true;
                     }
                     continue;
                 }
                 if (jgDef.Worker is JoyGiver_InteractBuilding worker)
                 {
                     var job = worker.TryGivePlayJob(pawn, target);
-                    if (job != null && TryStartForcedJob(job)) return true;
+                    if (job != null && TryStartForcedJob(job, forcedJob)) return true;
                 }
             }
             return false;
@@ -889,19 +900,21 @@ namespace PerspectiveShift
             return true;
         }
 
-        private bool TryStartForcedJob(Job job)
+        private bool TryStartForcedJob(Job job, JobDef forcedJob = null)
         {
             if (job == null) return false;
+            if (forcedJob != null && job.def != forcedJob) return false;
             if (!JobTargetsInRange(job)) return false;
             job.playerForced = true;
             return pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
         }
 
-        private bool TryStartForcedJobWithIgnoreDesignations(Thing thing, JobDef jobDef)
+        private bool TryStartForcedJobWithIgnoreDesignations(Thing thing, JobDef jobDef, JobDef forcedJob = null)
         {
+            if (forcedJob != null && jobDef != forcedJob) return false;
             var job = JobMaker.MakeJob(jobDef, thing);
             job.ignoreDesignations = true;
-            return TryStartForcedJob(job);
+            return TryStartForcedJob(job, forcedJob);
         }
     }
 }

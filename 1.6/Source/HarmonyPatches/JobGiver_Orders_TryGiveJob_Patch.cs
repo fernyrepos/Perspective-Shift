@@ -15,8 +15,7 @@ namespace PerspectiveShift
 			if (__result != null || !pawn.IsAvatar()) return;
 			if (pawn.InMentalState) return;
 
-			if (pawn.mindState?.duty != null) return;
-			if (pawn.GetLord() != null) return;
+			if (pawn.IsUnderAIControl()) return;
 			if (HasVoluntarilyJoinableLord(pawn)) return;
 
 			var wait = JobMaker.MakeJob(JobDefOf.Wait);

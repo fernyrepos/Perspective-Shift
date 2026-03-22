@@ -38,7 +38,7 @@ namespace PerspectiveShift
 
         public void Tick()
         {
-            if (pawn.Downed || !pawn.Spawned || pawn.Map == null || pawn.GetLord() != null || pawn.mindState.duty != null || pawn.InMentalState) return;
+            if (pawn.Downed || !pawn.Spawned || pawn.Map == null || pawn.IsUnderAIControl() || pawn.InMentalState) return;
 
             HandleNeeds();
             HandleCarriedThing();
@@ -133,12 +133,12 @@ namespace PerspectiveShift
             if (IsMoving && pawn.pather != null)
             {
                 pawn.pather.lastMovedTick = Find.TickManager.TicksGame;
-                
+
                 float terrainMult = GetMovementSpeedMultiplier(pawn.Position);
                 float gaitMult = isSprinting ? PerspectiveShiftMod.settings.sprintSpeedMultiplier
                                 : isWalking ? PerspectiveShiftMod.settings.sneakSpeedMultiplier
                                 : 1f;
-                
+
                 float moveSpeed = pawn.GetStatValue(StatDefOf.MoveSpeed) * PerspectiveShiftMod.settings.moveSpeedMultiplier * terrainMult * gaitMult;
                 pawn.pather.nextCellCostTotal = Mathf.Max(60f / Mathf.Max(moveSpeed, 0.1f), 1f);
             }
