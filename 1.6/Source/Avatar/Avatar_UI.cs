@@ -184,16 +184,17 @@ namespace PerspectiveShift
             var inspectPane = (MainTabWindow_Inspect)MainButtonDefOf.Inspect.TabWindow;
             if (inspectPane != null)
             {
-                var tab = inspectPane.CurTabs.FirstOrDefault(t => t.GetType() == tabType);
+                var tab = inspectPane.CurTabs.FirstOrDefault(t => tabType.IsAssignableFrom(t.GetType()));
                 if (tab != null)
                 {
-                    if (inspectPane.OpenTabType == tabType)
+                    var actualType = tab.GetType();
+                    if (inspectPane.OpenTabType == actualType)
                     {
                         inspectPane.CloseOpenTab();
                         Find.Selector.Deselect(pawn);
                     }
                     else
-                        inspectPane.OpenTabType = tabType;
+                        inspectPane.OpenTabType = actualType;
                 }
             }
             Event.current.Use();
