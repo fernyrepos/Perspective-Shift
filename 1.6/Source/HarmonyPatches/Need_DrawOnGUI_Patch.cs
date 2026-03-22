@@ -17,7 +17,7 @@ namespace PerspectiveShift
 
         public static void Postfix(Need __instance, Rect rect)
         {
-            if (Avatar.DrawingAvatarNeeds || __instance.pawn != State.Avatar?.pawn || State.CurrentMode == PlaystyleMode.Director) return;
+            if (Avatar.DrawingAvatarNeeds || __instance.pawn != State.Avatar?.pawn || State.CurrentMode == PlaystyleMode.Director && PerspectiveShiftMod.settings.totalFreedom is false) return;
 
             float pinScale = Mathf.InverseLerp(0f, 70f, rect.height);
             if (rect.height >= 70f) pinScale = 0.9f;
