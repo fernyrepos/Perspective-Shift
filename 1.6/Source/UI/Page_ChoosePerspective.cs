@@ -211,7 +211,7 @@ namespace PerspectiveShift
 
             float checkSize = 24f;
             var checkRect = new Rect(inner.xMax - checkSize - 100f, inner.y, checkSize, checkSize);
-            Widgets.Checkbox(checkRect.x, checkRect.y, ref value);
+            Widgets.CheckboxDraw(checkRect.x, checkRect.y, value, false, checkSize);
 
             Text.Font = GameFont.Medium;
             var titleRect = new Rect(inner.x, inner.y, inner.width - checkSize - 110f, 30f);

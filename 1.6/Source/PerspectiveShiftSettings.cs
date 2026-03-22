@@ -38,7 +38,7 @@ namespace PerspectiveShift
         public float sprintFoodDrain = 1.5f;
         public float sprintSleepDrain = 2f;
         public bool disableCustomGizmos = false;
-        public List<string> pinnedNeeds = new List<string>() { "Mood", "Food", "Rest" };
+        public List<string> pinnedNeeds = new List<string>() { "Mood", "Food", "Rest", "Joy" };
 
         public override void ExposeData()
         {
@@ -71,7 +71,7 @@ namespace PerspectiveShift
 
             if (pinnedNeeds == null)
             {
-                pinnedNeeds = new List<string>() { "Mood", "Food", "Rest" };
+                pinnedNeeds = new List<string>() { "Mood", "Food", "Rest", "Joy" };
             }
         }
     }

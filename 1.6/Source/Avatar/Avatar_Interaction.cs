@@ -63,6 +63,11 @@ namespace PerspectiveShift
 
         private bool HandleDropOrInteract(IntVec3 cell, bool itemInRange, Thing carriedThing)
         {
+            if (Event.current.clickCount == 2 && TryMakeWearOrEquipJob(pawn, carriedThing, out Job job))
+            {
+                return pawn.jobs.TryTakeOrderedJob(job);
+            }
+
             if (!itemInRange) return false;
 
             if (!cell.InBounds(pawn.Map))
@@ -352,7 +357,7 @@ namespace PerspectiveShift
                     if (dropped is Pawn droppedMech)
                     {
                         var chargeJob = JobMaker.MakeJob(JobDefOf.MechCharge, charger);
-                        droppedMech.jobs.TryTakeOrderedJob(chargeJob, JobTag.Misc);
+                        droppedMech.jobs.TryTakeOrderedJob(chargeJob);
                     }
                     return true;
                 }
@@ -478,7 +483,7 @@ namespace PerspectiveShift
                 var job = workGiver.JobOnThing(pawn, billGiverThing, forced: true);
                 if (job != null)
                 {
-                    pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
+                    pawn.jobs.TryTakeOrderedJob(job);
                 }
             }
         }
@@ -906,7 +911,7 @@ namespace PerspectiveShift
             if (forcedJob != null && job.def != forcedJob) return false;
             if (!JobTargetsInRange(job)) return false;
             job.playerForced = true;
-            return pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
+            return pawn.jobs.TryTakeOrderedJob(job);
         }
 
         private bool TryStartForcedJobWithIgnoreDesignations(Thing thing, JobDef jobDef, JobDef forcedJob = null)
@@ -915,6 +920,36 @@ namespace PerspectiveShift
             var job = JobMaker.MakeJob(jobDef, thing);
             job.ignoreDesignations = true;
             return TryStartForcedJob(job, forcedJob);
+        }
+
+        public static bool TryMakeWearOrEquipJob(Pawn pawn, Thing item, out Job job)
+        {
+            job = null;
+            if (item is Apparel apparel)
+            {
+                if (!apparel.PawnCanWear(pawn, ignoreGender: true))
+                {
+                    return false;
+                }
+
+                if (!ApparelUtility.HasPartsToWear(pawn, apparel.def))
+                {
+                    return false;
+                }
+
+                job = JobMaker.MakeJob(JobDefOf.Wear, item);
+                return true;
+            }
+            else if (item is ThingWithComps thingWithComps && thingWithComps.def.equipmentType == EquipmentType.Primary)
+            {
+                if (!EquipmentUtility.CanEquip(item, pawn, out string cantReason))
+                {
+                    return false;
+                }
+                job = JobMaker.MakeJob(JobDefOf.Equip, item);
+                return true;
+            }
+            return false;
         }
     }
 }

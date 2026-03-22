@@ -84,7 +84,7 @@ namespace PerspectiveShift
             var holdRect = new Rect(inRect.x + btnW + buttonSpacing, btnY, btnW, bottomHeight);
             var equipRect = new Rect(inRect.x + (btnW + buttonSpacing) * 2f, btnY, btnW, bottomHeight);
 
-            bool hasItem  = cursorItem != null && !cursorItem.Destroyed;
+            bool hasItem = cursorItem != null && !cursorItem.Destroyed;
             bool isWeapon = hasItem && cursorItem.def.IsWeapon;
             bool isApparel = hasItem && cursorItem is Apparel;
             bool canEquip = isWeapon || isApparel;
@@ -99,7 +99,7 @@ namespace PerspectiveShift
                 {
                     countToTake = maxCount;
                 }
-                
+
                 if (countToTake <= 0)
                 {
                     Messages.Message("PS_CannotCarryMoreWeight".Translate(), MessageTypeDefOf.RejectInput, false);
@@ -150,10 +150,10 @@ namespace PerspectiveShift
                 cursorItem = null;
                 if (!item.Spawned)
                     GenSpawn.Spawn(item, State.Avatar.pawn.Position, State.Avatar.pawn.Map, WipeMode.Vanish);
-                Job job = item is Apparel
-                    ? JobMaker.MakeJob(JobDefOf.Wear,  item)
-                    : JobMaker.MakeJob(JobDefOf.Equip, item);
-                State.Avatar.pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
+                if (Avatar.TryMakeWearOrEquipJob(State.Avatar.pawn, item, out Job job))
+                {
+                    State.Avatar.pawn.jobs.TryTakeOrderedJob(job);
+                }
                 Close();
             });
 
