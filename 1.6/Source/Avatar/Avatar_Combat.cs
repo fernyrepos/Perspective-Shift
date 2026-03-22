@@ -114,7 +114,8 @@ namespace PerspectiveShift
 
         private void HandleFiring()
         {
-            if (pawn.stances.curStance is Stance_Busy || pawn.CurJobDef != JobDefOf.Wait_Combat) return;
+            if (pawn.stances.curStance is Stance_Busy) return;
+            if (IsAbilityCastJob()) return;
             var verb = GetActiveVerb();
             if (verb == null) return;
 
@@ -245,6 +246,16 @@ namespace PerspectiveShift
             if (verb == null || verb.verbProps.IsMeleeAttack)
                 verb = pawn.VerbTracker?.AllVerbs?.FirstOrDefault(v => v is Verb_MeleeAttack && v.Available());
             return verb;
+        }
+
+        private bool IsAbilityCastJob()
+        {
+            var jobDef = pawn.CurJobDef;
+            if (jobDef == JobDefOf.CastAbilityOnThing || jobDef == JobDefOf.CastAbilityOnWorldTile || jobDef == JobDefOf.CastJump)
+                return true;
+            if (ModCompatibility.IsVEFAbilityCast(pawn))
+                return true;
+            return false;
         }
 
         private LocalTargetInfo GetBestTarget(IntVec3 targetCell)

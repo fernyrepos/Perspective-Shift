@@ -203,6 +203,12 @@ namespace PerspectiveShift
             return true;
         }
 
+        public static bool IsVEFAbilityCast(Pawn pawn)
+        {
+            if (!VanillaExpandedFrameworkAvailable) return false;
+            return pawn.jobs?.curDriver != null && jobDriverCastAbilityOnceType.IsAssignableFrom(pawn.jobs.curDriver.GetType());
+        }
+
         public static string GetVEFAbilityName(Pawn pawn)
         {
             if (!VanillaExpandedFrameworkAvailable)
