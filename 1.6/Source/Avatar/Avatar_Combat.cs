@@ -250,8 +250,7 @@ namespace PerspectiveShift
 
         private bool IsAbilityCastJob()
         {
-            var jobDef = pawn.CurJobDef;
-            if (jobDef == JobDefOf.CastAbilityOnThing || jobDef == JobDefOf.CastAbilityOnWorldTile || jobDef == JobDefOf.CastJump)
+            if (pawn.CurJob?.ability != null)
                 return true;
             if (ModCompatibility.IsVEFAbilityCast(pawn))
                 return true;
