@@ -19,6 +19,7 @@ namespace PerspectiveShift
         public static readonly bool SimpleCameraSettingAvailable;
         public static readonly bool VanillaVehiclesExpandedAvailable;
         public static readonly bool VanillaExpandedFrameworkAvailable;
+        public static readonly bool AchtungAvailable;
 
         private static Type vehiclePawnType;
         private static MethodInfo addOrTransferMethod;
@@ -85,6 +86,10 @@ namespace PerspectiveShift
             VanillaExpandedFrameworkAvailable = ModsConfig.IsActive("OskarPotocki.VanillaFactionsExpanded.Core");
             if (VanillaExpandedFrameworkAvailable && !InitVEFCompat())
                 VanillaExpandedFrameworkAvailable = false;
+
+            AchtungAvailable = ModsConfig.IsActive("brrainz.achtung");
+            if (AchtungAvailable && !InitAchtungCompat())
+                AchtungAvailable = false;
         }
 
         public static void ClearCaches()
@@ -200,6 +205,16 @@ namespace PerspectiveShift
             if (!Require(ref abilityDefType, () => AccessTools.TypeByName("VEF.Abilities.AbilityDef"), "AbilityDef", "VEF")) return false;
             if (!Require(ref abilityLabelCapProperty, () => AccessTools.Property(abilityDefType, "LabelCap"), "LabelCap", "VEF")) return false;
             if (!Require(ref jobDriverCastAbilityOnceType, () => AccessTools.TypeByName("VEF.Abilities.JobDriver_CastAbilityOnce"), "JobDriver_CastAbilityOnce", "VEF")) return false;
+            return true;
+        }
+
+        private static bool InitAchtungCompat()
+        {
+            Type cleanRoomProviderType = null;
+            
+            if (!Require(ref cleanRoomProviderType, () => AccessTools.TypeByName("AchtungMod.FloatMenuOptionProvider_CleanRoom"), "FloatMenuOptionProvider_CleanRoom type", "Achtung")) return false;
+            
+            Avatar.FloatMenuProviderBlacklist.Add(cleanRoomProviderType);
             return true;
         }
 

@@ -11,7 +11,7 @@ namespace PerspectiveShift
 {
     public partial class Avatar
     {
-        private static readonly HashSet<Type> FloatMenuProviderBlacklist = new HashSet<Type>
+        public static HashSet<Type> FloatMenuProviderBlacklist = new HashSet<Type>
         {
             typeof(FloatMenuOptionProvider_DropEquipment),
             typeof(FloatMenuOptionProvider_CleanRoom),
