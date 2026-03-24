@@ -12,6 +12,10 @@ namespace PerspectiveShift
     public static class State
     {
         public static HashSet<int> seekAtWillPawns = new HashSet<int>();
+        private static int _avatarPawnId = -1;
+        private static int _isAvatarCacheFrame = -999;
+        private static bool _isActiveCache;
+        private static int _isActiveCacheFrame = -999;
         public static bool ShouldSeekEnemy(this Pawn pawn)
         {
             seekAtWillPawns ??= new HashSet<int>();
@@ -48,7 +52,18 @@ namespace PerspectiveShift
         public static bool pendingDeathMenu = false;
         public static bool permadeath = false;
         public static bool allowDirectorInAuthentic = false;
-        public static bool IsActive => Avatar?.pawn != null && !Avatar.pawn.Dead && !WorldComponent_GravshipController.CutsceneInProgress;
+        public static bool IsActive
+        {
+            get
+            {
+                if (Time.frameCount != _isActiveCacheFrame)
+                {
+                    _isActiveCache = Avatar?.pawn != null && !Avatar.pawn.Dead && !WorldComponent_GravshipController.CutsceneInProgress;
+                    _isActiveCacheFrame = Time.frameCount;
+                }
+                return _isActiveCache;
+            }
+        }
 
         public static float lastTickRealTime = 0f;
         public static float smoothedTickTime = 1f / 60f;
@@ -266,8 +281,15 @@ namespace PerspectiveShift
             return null;
         }
 
-        public static bool IsAvatar(this Pawn pawn) =>
-            IsActive && pawn == Avatar.pawn;
+        public static bool IsAvatar(this Pawn pawn)
+        {
+            if (Time.frameCount != _isAvatarCacheFrame)
+            {
+                _avatarPawnId = IsActive && Avatar?.pawn != null ? Avatar.pawn.thingIDNumber : -1;
+                _isAvatarCacheFrame = Time.frameCount;
+            }
+            return pawn.thingIDNumber == _avatarPawnId;
+        }
 
         public static bool CanUseIt(this Pawn pawn, Thing thing)
         {

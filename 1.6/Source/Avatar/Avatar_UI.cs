@@ -13,6 +13,9 @@ namespace PerspectiveShift
         public static bool DrawingAvatarNeeds = false;
         private Rect gizmoBounds;
         private List<object> prevSelected;
+        private List<Gizmo> _cachedGizmos = [];
+        private Thing _lastGizmoSource;
+        private int _lastGizmoCacheFrame = -999;
 
         public void OnGUI()
         {
@@ -305,17 +308,25 @@ namespace PerspectiveShift
                 Find.Selector.selected.Clear();
                 Find.Selector.selected.Add(gizmoSource);
             }
-            var gizmos = gizmoSource.GetGizmos()
-                .Distinct()
-                .OrderBy(g => g.Order)
-                .Where(g => g.Visible)
-                .ToList();
+
+            if (gizmoSource != _lastGizmoSource || Time.frameCount - _lastGizmoCacheFrame >= 30)
+            {
+                _cachedGizmos = gizmoSource.GetGizmos()
+                    .Distinct()
+                    .OrderBy(g => g.Order)
+                    .ToList();
+                _lastGizmoSource = gizmoSource;
+                _lastGizmoCacheFrame = Time.frameCount;
+            }
+
             if (!wasSelected)
             {
                 Find.Selector.selected.Clear();
                 Find.Selector.selected.AddRange(prevSelected);
             }
             State.DrawingTopRightGizmos = false;
+
+            var gizmos = _cachedGizmos.Where(g => g.Visible).ToList();
 
             float scale = 0.85f * Prefs.UIScale;
             float actualSize = 75f;
