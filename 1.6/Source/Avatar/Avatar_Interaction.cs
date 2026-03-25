@@ -43,9 +43,13 @@ namespace PerspectiveShift
             var clickCell = UI.MouseCell();
             var things = clickCell.GetThingList(pawn.Map);
             bool withinGrabRange = pawn.Position.DistanceTo(clickCell) <= PerspectiveShiftMod.settings.grabRange;
+            bool shiftHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
             if (CarriedThing != null)
                 return HandleDropOrInteract(clickCell, withinGrabRange, CarriedThing);
+
+            if (shiftHeld && withinGrabRange)
+                return false;
 
             foreach (var thing in things)
             {
