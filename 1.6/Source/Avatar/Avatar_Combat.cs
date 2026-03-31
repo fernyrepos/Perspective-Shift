@@ -312,7 +312,8 @@ namespace PerspectiveShift
                 {
                     Cursor.visible = false;
                     //DrawReticle(Event.current.mousePosition); // works for me, but bugged for others
-                    DrawReticle(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y)); // might work?
+                    //DrawReticle(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y)); // works on 1x scale, bugged on other scale values
+                    DrawReticle(UI.MousePositionOnUIInverted); // might work? fucking please do
                 }
             }
             else
