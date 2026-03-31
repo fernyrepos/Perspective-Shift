@@ -51,6 +51,7 @@ namespace PerspectiveShift
 
             if (!physicsPosition.HasValue) return;
             var tweener = pawn.Drawer.tweener;
+            tweener.lastTickSpringPos = tweener.tweenedPos;
             tweener.tweenedPos = physicsPosition.Value;
             tweener.lastDrawFrame = RealTime.frameCount;
             tweener.lastDrawTick = GenTicks.TicksGame;

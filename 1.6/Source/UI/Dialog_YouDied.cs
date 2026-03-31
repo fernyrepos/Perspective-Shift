@@ -72,17 +72,17 @@ namespace PerspectiveShift
                 DrawRow(inRect, ref y, btnW, rowH, descOffset,
                     "PS_ContinueDynamicMode".Translate(),
                     "PS_ContinueDynamicMode_Desc".Translate(),
-                    () => { State.CurrentMode = PlaystyleMode.Dynamic; Close(); });
+                    () => { State.CurrentMode = PlaystyleMode.Dynamic; State.ClearAvatar(); Close(); });
 
                 DrawRow(inRect, ref y, btnW, rowH, descOffset,
                     "PS_ContinueSwapMode".Translate(),
                     "PS_ContinueSwapMode_Desc".Translate(),
-                    () => { State.CurrentMode = PlaystyleMode.Swap; Close(); });
+                    () => { State.CurrentMode = PlaystyleMode.Swap; State.ClearAvatar(); Close(); });
 
                 DrawRow(inRect, ref y, btnW, rowH, descOffset,
                     "PS_ContinueDirectorMode".Translate(),
                     "PS_ContinueDirectorMode_Desc".Translate(),
-                    () => { State.CurrentMode = PlaystyleMode.Director; Close(); });
+                    () => { State.CurrentMode = PlaystyleMode.Director; State.ClearAvatar(); Close(); });
 
                 y += 6f;
             }

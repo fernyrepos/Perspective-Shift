@@ -45,11 +45,19 @@ namespace PerspectiveShift
             bool withinGrabRange = pawn.Position.DistanceTo(clickCell) <= PerspectiveShiftMod.settings.grabRange;
             bool shiftHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 
+            var selfFire = pawn.GetAttachment(ThingDefOf.Fire);
+            if (selfFire != null && clickCell == pawn.Position)
+            {
+                if (TryStartForcedJob(JobMaker.MakeJob(JobDefOf.ExtinguishSelf, selfFire))) return true;
+            }
+
             if (CarriedThing != null)
                 return HandleDropOrInteract(clickCell, withinGrabRange, CarriedThing);
 
             if (shiftHeld && withinGrabRange)
                 return false;
+
+            if (withinGrabRange && TryHandlePickup(clickCell)) return true;
 
             foreach (var thing in things)
             {
@@ -59,7 +67,6 @@ namespace PerspectiveShift
                 if (TryHandleBuildingInteractions(thing)) return true;
             }
 
-            if (withinGrabRange && TryHandlePickup(clickCell)) return true;
             if (TryHandleFloatMenu(clickCell)) return true;
 
             return TryExecuteDesignatorlessFallback(clickCell, withinGrabRange);
@@ -509,6 +516,24 @@ namespace PerspectiveShift
             {
                 return false;
             }
+
+            int capacity = storageBuilding.AllSlotCellsList().Count * storageBuilding.def.building.maxItemsInCell;
+            if (capacity == 1)
+            {
+                if (CarriedThing != null)
+                {
+                    if (storageBuilding.Accepts(CarriedThing))
+                    {
+                        TryDepositInDestination(storageBuilding, CarriedThing, storageBuilding.Position, ThingPlaceMode.Direct);
+                        return true;
+                    }
+                }
+                else
+                {
+                    var heldItem = storageBuilding.Position.GetFirstItem(pawn.Map);
+                    if (heldItem != null && TryPickup(heldItem)) return true;
+                }
+            }
             Find.WindowStack.Add(new Dialog_StorageMenu(storageBuilding));
             return true;
         }
@@ -616,7 +641,10 @@ namespace PerspectiveShift
                     FloatMenuMakerMap.currentProvider = provider;
                     if (!context.ValidSelectedPawns.Any() || !provider.Applies(context)) continue;
 
-                    opts.AddRange(provider.GetOptions(context));
+                    if (withinGrabRange)
+                    {
+                        opts.AddRange(provider.GetOptions(context));
+                    }
 
                     foreach (var thing in context.ClickedThings)
                     {
@@ -631,7 +659,9 @@ namespace PerspectiveShift
                         {
                             if (actualThing is Pawn mech && mech.RaceProps.IsMechanoid)
                             {
-                                if (opt.Label == "DisconnectMech".Translate(mech.LabelShort))
+                                string disconnectStr = "DisconnectMech".Translate(mech.LabelShort).Resolve();
+                                string disassembleStr = "DisassembleMech".Translate(mech.LabelCap).Resolve();
+                                if (opt.Label.Contains(disconnectStr) || opt.Label.Contains(disassembleStr))
                                     continue;
                             }
 
@@ -707,6 +737,7 @@ namespace PerspectiveShift
             {
                 return false;
             }
+            if (target is Skyfaller || target is ActiveTransporter) return false;
             if (TryStartBuildingDeconstructJob(target, forcedJob)) return true;
             if (TryStartMeditationOrReignJob(target, forcedJob)) return true;
             if (TryStartWorkGiverJob(target, forcedJob)) return true;
@@ -914,6 +945,7 @@ namespace PerspectiveShift
             if (job == null) return false;
             if (forcedJob != null && job.def != forcedJob) return false;
             if (!JobTargetsInRange(job)) return false;
+            if (job.def.HasModExtension<DisableLeftClickExtension>()) return false;
             job.playerForced = true;
             return pawn.jobs.TryTakeOrderedJob(job);
         }

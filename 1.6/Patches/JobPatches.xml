@@ -1,113 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Patch>
-    <Operation Class="PatchOperationAdd">
-        <xpath>/Defs/JobDef[defName="Mine"]</xpath>
+    <Operation Class="PatchOperationAddModExtension">
+        <xpath>/Defs/JobDef[defName="Mine"
+            or defName="Harvest"
+            or defName="FinishFrame"
+            or defName="HarvestDesignated"
+            or defName="Deconstruct"
+            or defName="DeconstructForBlueprint"
+            or defName="SmoothFloor"
+            or defName="RemoveFloor"
+            or defName="RemoveFoundation"
+            or defName="SmoothWall"
+            or defName="Repair"]</xpath>
         <value>
-            <modExtensions>
-                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
-            </modExtensions>
+            <li Class="PerspectiveShift.JobRequiresHoldExtension" />
         </value>
     </Operation>
-
-    <Operation Class="PatchOperationAdd">
-        <xpath>/Defs/JobDef[defName="Harvest"]</xpath>
+    <!--
+    <Operation Class="PatchOperationAddModExtension">
+        <xpath>/Defs/JobDef[defName="SomeJobYouWantToDisable"]</xpath>
         <value>
-            <modExtensions>
-                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
-            </modExtensions>
+            <li Class="PerspectiveShift.DisableLeftClickExtension" />
         </value>
     </Operation>
-
-    <Operation Class="PatchOperationAdd">
-        <xpath>/Defs/JobDef[defName="FinishFrame"]</xpath>
-        <value>
-            <modExtensions>
-                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
-            </modExtensions>
-        </value>
-    </Operation>
-
-    <Operation Class="PatchOperationAdd">
-        <xpath>/Defs/JobDef[defName="HarvestDesignated"]</xpath>
-        <value>
-            <modExtensions>
-                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
-            </modExtensions>
-        </value>
-    </Operation>
-
-    <Operation Class="PatchOperationAdd">
-        <xpath>/Defs/JobDef[defName="HarvestDesignated"]</xpath>
-        <value>
-            <modExtensions>
-                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
-            </modExtensions>
-        </value>
-    </Operation>
-
-    <Operation Class="PatchOperationAdd">
-        <xpath>/Defs/JobDef[defName="Deconstruct"]</xpath>
-        <value>
-            <modExtensions>
-                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
-            </modExtensions>
-        </value>
-    </Operation>
-
-    <Operation Class="PatchOperationAdd">
-        <xpath>/Defs/JobDef[defName="DeconstructForBlueprint"]</xpath>
-        <value>
-            <modExtensions>
-                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
-            </modExtensions>
-        </value>
-    </Operation>
-
-    <Operation Class="PatchOperationAdd">
-        <xpath>/Defs/JobDef[defName="SmoothFloor"]</xpath>
-        <value>
-            <modExtensions>
-                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
-            </modExtensions>
-        </value>
-    </Operation>
-
-    <Operation Class="PatchOperationAdd">
-        <xpath>/Defs/JobDef[defName="RemoveFloor"]</xpath>
-        <value>
-            <modExtensions>
-                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
-            </modExtensions>
-        </value>
-    </Operation>
-
-    <Operation Class="PatchOperationAdd">
-        <xpath>/Defs/JobDef[defName="RemoveFoundation"]</xpath>
-        <value>
-            <modExtensions>
-                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
-            </modExtensions>
-        </value>
-    </Operation>
-
-    <Operation Class="PatchOperationAdd">
-        <xpath>/Defs/JobDef[defName="SmoothWall"]</xpath>
-        <value>
-            <modExtensions>
-                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
-            </modExtensions>
-        </value>
-    </Operation>
-
-    <Operation Class="PatchOperationAdd">
-        <xpath>/Defs/JobDef[defName="Repair"]</xpath>
-        <value>
-            <modExtensions>
-                <li Class="PerspectiveShift.JobRequiresHoldExtension" />
-            </modExtensions>
-        </value>
-    </Operation>
-
-
-
+    -->
 </Patch>

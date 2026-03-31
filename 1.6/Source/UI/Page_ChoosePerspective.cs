@@ -65,7 +65,7 @@ namespace PerspectiveShift
             else
                 DrawAuthenticOptions(mainRect);
 
-            string nextLabel = (step == PageStep.Role && !roleIsCharacter) ? "Start".Translate() : "Next".Translate();
+            string nextLabel = ((step == PageStep.Role && !roleIsCharacter) || (step == PageStep.Playstyle && selectedPlaystyle == PlaystyleMode.Dynamic)) ? "Start".Translate() : "Next".Translate();
             DoBottomButtons(rect, nextLabel, null, null, true, true);
         }
 

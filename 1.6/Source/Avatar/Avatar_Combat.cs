@@ -291,17 +291,6 @@ namespace PerspectiveShift
                         Find.Selector.Deselect(pawn);
                 }
 
-                if (!Find.TickManager.Paused && !State.ControlsFrozen && pawn.stances.curStance is not Stance_Busy)
-                {
-                    Vector3 toMouse = UI.MouseMapPosition() - pawn.DrawPos;
-                    toMouse.y = 0f;
-                    if (toMouse.sqrMagnitude >= 0.01f)
-                    {
-                        aimAngle = Mathf.Atan2(toMouse.x, toMouse.z) * Mathf.Rad2Deg;
-                        if (aimAngle < 0f) aimAngle += 360f;
-                    }
-                }
-
                 if (mouseOverUI || mouseOverGizmo || Find.TickManager.Paused || State.ControlsFrozen || Find.Targeter.IsTargeting)
                 {
                     Cursor.visible = true;

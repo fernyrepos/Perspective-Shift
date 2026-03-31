@@ -392,8 +392,13 @@ namespace PerspectiveShift
         {
             var pawnCenter = pawn.Position.ToVector3Shifted();
             Vector3 toMouse = UI.MouseMapPosition() - pawnCenter;
+            toMouse.y = 0f;
             if (toMouse.sqrMagnitude > 0.1f)
-                pawn.Rotation = Rot4.FromAngleFlat(NormAngle(Mathf.Atan2(toMouse.x, toMouse.z) * Mathf.Rad2Deg));
+            {
+                float angle = NormAngle(Mathf.Atan2(toMouse.x, toMouse.z) * Mathf.Rad2Deg);
+                pawn.Rotation = Rot4.FromAngleFlat(angle);
+                aimAngle = angle;
+            }
         }
 
         private static float NormAngle(float a)
