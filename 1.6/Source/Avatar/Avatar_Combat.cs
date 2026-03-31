@@ -296,7 +296,6 @@ namespace PerspectiveShift
 
         private void UpdateCursorAndReticle(bool mouseOverGizmo, bool mouseOverUI)
         {
-
             if (pawn.Drafted && !pawn.InMentalState)
             {
                 if (!Find.TickManager.Paused && Find.Selector.IsSelected(pawn) && !Find.Targeter.IsTargeting)
@@ -312,7 +311,8 @@ namespace PerspectiveShift
                 else
                 {
                     Cursor.visible = false;
-                    DrawReticle(Event.current.mousePosition);
+                    //DrawReticle(Event.current.mousePosition); // works for me, but bugged for others
+                    DrawReticle(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y)); // might work?
                 }
             }
             else

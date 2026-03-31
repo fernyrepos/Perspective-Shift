@@ -174,7 +174,7 @@ namespace PerspectiveShift
         private void TryToggleInspectTab(KeyBindingDef keyDef, Type tabType)
         {
             if (!keyDef.KeyDownEvent) return;
-            if (Find.DesignatorManager.SelectedDesignator != null) return;
+            if (Find.DesignatorManager.SelectedDesignator != null || Find.Targeter.targetingSource != null) return;
 
             if (Find.Selector.SingleSelectedThing != pawn)
             {
