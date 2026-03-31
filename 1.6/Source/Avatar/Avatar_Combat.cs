@@ -183,6 +183,8 @@ namespace PerspectiveShift
 
         private void DrawReticle(Vector2 center)
         {
+            if (Event.current.type != EventType.Repaint) return;
+
             if (pawn.stances.curStance is Stance_Busy)
             {
                 bool isCooldown = pawn.stances.curStance is Stance_Cooldown;

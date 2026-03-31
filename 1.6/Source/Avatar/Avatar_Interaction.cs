@@ -556,6 +556,7 @@ namespace PerspectiveShift
 
         private bool TryPickup(Thing target)
         {
+            if (target is Skyfaller || target is ActiveTransporter) return false;
             var reservers = new HashSet<Pawn>();
             pawn.Map.reservationManager.ReserversOf(target, reservers);
             foreach (var r in reservers.ToList())
@@ -737,7 +738,6 @@ namespace PerspectiveShift
             {
                 return false;
             }
-            if (target is Skyfaller || target is ActiveTransporter) return false;
             if (TryStartBuildingDeconstructJob(target, forcedJob)) return true;
             if (TryStartMeditationOrReignJob(target, forcedJob)) return true;
             if (TryStartWorkGiverJob(target, forcedJob)) return true;
