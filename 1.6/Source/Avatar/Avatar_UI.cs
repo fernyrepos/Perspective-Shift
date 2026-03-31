@@ -206,7 +206,7 @@ namespace PerspectiveShift
 
         private void DebugLog()
         {
-            bool shouldLogMovement = false;
+            bool shouldLogMovement = true;
             if (shouldLogMovement)
             {
                 bool desyncDetected = physicsPosition.HasValue && physicsPosition.Value.ToIntVec3() != pawn.Position;
@@ -220,6 +220,7 @@ namespace PerspectiveShift
                     $"camPos={Find.CameraDriver?.rootPos} " +
                     $"mouseUI={UI.MousePositionOnUI} " +
                     $"mouseCell={UI.MouseCell()} " +
+                    $"Event.current.mousePosition={Event.current.mousePosition} " +
                     $"IsMoving={IsMoving} " +
                     $"paused={Find.TickManager.Paused}" +
                     desyncMsg);
