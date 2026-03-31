@@ -119,6 +119,18 @@ namespace PerspectiveShift
             var verb = GetActiveVerb();
             if (verb == null) return;
 
+            if (pawn.WorkTagIsDisabled(WorkTags.Violent))
+            {
+                Messages.Message("IsIncapableOfViolence".Translate(pawn.LabelShort, pawn), MessageTypeDefOf.RejectInput);
+                return;
+            }
+
+            if (!verb.verbProps.IsMeleeAttack && pawn.WorkTagIsDisabled(WorkTags.Shooting))
+            {
+                Messages.Message("IsIncapableOfShooting".Translate(pawn), MessageTypeDefOf.RejectInput);
+                return;
+            }
+
             var targetCell = UI.MouseCell();
             if (!targetCell.InBounds(pawn.Map)) return;
 

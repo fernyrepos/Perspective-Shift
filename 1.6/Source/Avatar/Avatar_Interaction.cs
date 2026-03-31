@@ -978,6 +978,14 @@ namespace PerspectiveShift
             }
             else if (item is ThingWithComps thingWithComps && thingWithComps.def.equipmentType == EquipmentType.Primary)
             {
+                if (thingWithComps.def.IsWeapon && pawn.WorkTagIsDisabled(WorkTags.Violent))
+                {
+                    return false;
+                }
+                if (thingWithComps.def.IsRangedWeapon && pawn.WorkTagIsDisabled(WorkTags.Shooting))
+                {
+                    return false;
+                }
                 if (!EquipmentUtility.CanEquip(item, pawn, out string cantReason))
                 {
                     return false;
