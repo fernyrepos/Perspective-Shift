@@ -23,6 +23,7 @@ namespace PerspectiveShift
             DrawCameraLockReturnButton();
             DrawGizmosAndNeeds();
             HandleTabKeyBindings();
+
             HandleEatFoodBinding();
             HandleRecreationBinding();
             bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(Event.current.mousePosition);
@@ -206,7 +207,8 @@ namespace PerspectiveShift
 
         private void DebugLog()
         {
-            bool shouldLogMovement = true;
+            State.Message($"Event.current.mousePosition={Event.current.mousePosition}");
+            bool shouldLogMovement = false;
             if (shouldLogMovement)
             {
                 bool desyncDetected = physicsPosition.HasValue && physicsPosition.Value.ToIntVec3() != pawn.Position;
@@ -220,7 +222,6 @@ namespace PerspectiveShift
                     $"camPos={Find.CameraDriver?.rootPos} " +
                     $"mouseUI={UI.MousePositionOnUI} " +
                     $"mouseCell={UI.MouseCell()} " +
-                    $"Event.current.mousePosition={Event.current.mousePosition} " +
                     $"IsMoving={IsMoving} " +
                     $"paused={Find.TickManager.Paused}" +
                     desyncMsg);
