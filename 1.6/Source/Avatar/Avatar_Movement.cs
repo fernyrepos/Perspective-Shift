@@ -1,4 +1,5 @@
 using RimWorld;
+using RimWorld.Planet;
 using UnityEngine;
 using Verse;
 using Verse.AI;
@@ -156,6 +157,7 @@ namespace PerspectiveShift
         private void UpdateInput()
         {
             moveInput = Vector3.zero;
+            if (WorldRendererUtility.WorldSelected) return;
 
             if (DefsOf.PS_MoveForward.IsDown) moveInput += Vector3.forward;
             if (DefsOf.PS_MoveBack.IsDown) moveInput += Vector3.back;
