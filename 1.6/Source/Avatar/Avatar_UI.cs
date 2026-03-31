@@ -207,7 +207,12 @@ namespace PerspectiveShift
 
         private void DebugLog()
         {
-            State.Message($"Event.current.mousePosition={Event.current.mousePosition}");
+            string text = $"Event.current.mousePosition={Event.current.mousePosition}\n" +
+                          $"Input.mousePosition={new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y)}";
+            Rect rect = new Rect(10, 10, 400, 60);
+            Widgets.DrawWindowBackground(rect);
+            Widgets.Label(rect, text);
+
             bool shouldLogMovement = false;
             if (shouldLogMovement)
             {
