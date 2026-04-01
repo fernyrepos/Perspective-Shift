@@ -642,10 +642,7 @@ namespace PerspectiveShift
                     FloatMenuMakerMap.currentProvider = provider;
                     if (!context.ValidSelectedPawns.Any() || !provider.Applies(context)) continue;
 
-                    if (withinGrabRange)
-                    {
-                        opts.AddRange(provider.GetOptions(context));
-                    }
+                    opts.AddRange(provider.GetOptions(context));
 
                     foreach (var thing in context.ClickedThings)
                     {
