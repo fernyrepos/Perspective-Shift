@@ -57,12 +57,17 @@ namespace PerspectiveShift
             if (shiftHeld && withinGrabRange)
                 return false;
 
+            foreach (var thing in things)
+            {
+                if (!withinGrabRange && !IsWithinInteractionRange(thing)) continue;
+                if (TryHandleStorageBuilding(thing)) return true;
+            }
+
             if (withinGrabRange && TryHandlePickup(clickCell)) return true;
 
             foreach (var thing in things)
             {
                 if (!withinGrabRange && !IsWithinInteractionRange(thing)) continue;
-                if (TryHandleStorageBuilding(thing)) return true;
                 if (TryHandleConstructionThing(thing)) return true;
                 if (TryHandleBuildingInteractions(thing)) return true;
             }
