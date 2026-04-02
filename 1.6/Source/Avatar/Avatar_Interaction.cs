@@ -561,7 +561,7 @@ namespace PerspectiveShift
 
         private bool TryPickup(Thing target)
         {
-            if (target is Skyfaller || target is ActiveTransporter || !target.def.EverHaulable) return false;
+            if (target is Skyfaller || target is ActiveTransporter || target is not Pawn && !target.def.EverHaulable) return false;
             var reservers = new HashSet<Pawn>();
             pawn.Map.reservationManager.ReserversOf(target, reservers);
             foreach (var r in reservers.ToList())
