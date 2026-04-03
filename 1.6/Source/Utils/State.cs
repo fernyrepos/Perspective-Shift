@@ -140,6 +140,7 @@ namespace PerspectiveShift
                 {
                     Find.CameraDriver.config = new CameraMapConfig_Normal();
                 }
+                ModCompatibility.ResetSimpleCameraSetting();
             }
             CameraLockPosition = null;
             Avatar = null;

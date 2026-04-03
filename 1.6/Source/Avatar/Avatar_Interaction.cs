@@ -215,6 +215,7 @@ namespace PerspectiveShift
             {
                 if (bpCheck.ThingCountNeeded(carriedThing.def) <= 0)
                 {
+                    if (bpCheck.def.entityDefToBuild is TerrainDef) return false;
                     Messages.Message("PS_CannotDropOnBlueprint".Translate(), MessageTypeDefOf.RejectInput, false);
                     return true;
                 }
@@ -255,6 +256,7 @@ namespace PerspectiveShift
             {
                 if (frame.ThingCountNeeded(carriedThing.def) <= 0)
                 {
+                    if (frame.def.entityDefToBuild is TerrainDef) return false;
                     Messages.Message("PS_CannotDropOnBlueprint".Translate(), MessageTypeDefOf.RejectInput, false);
                     return true;
                 }

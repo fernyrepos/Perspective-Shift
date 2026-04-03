@@ -48,6 +48,8 @@ namespace PerspectiveShift
         private static PropertyInfo vveStatMoveSpeedProp;
         private static FieldInfo vveHandbrakeAppliedField;
 
+        private static MethodInfo simpleCameraConfigPatchMethod;
+
         private static Type compAbilitiesType;
         private static FieldInfo currentlyCastingField;
         private static FieldInfo abilityDefField;
@@ -69,7 +71,6 @@ namespace PerspectiveShift
         static ModCompatibility()
         {
             GiddyUpAvailable = ModsConfig.IsActive("MemeGoddess.GiddyUp");
-            SimpleCameraSettingAvailable = ModsConfig.IsActive("ray1203.SimpleCameraSetting");
 
             RunAndGunAvailable = ModsConfig.IsActive("MemeGoddess.RunAndGun") || ModsConfig.IsActive("roolo.RunAndGun");
             if (RunAndGunAvailable && !InitRunAndGunCompat())
@@ -90,6 +91,10 @@ namespace PerspectiveShift
             AchtungAvailable = ModsConfig.IsActive("brrainz.achtung");
             if (AchtungAvailable && !InitAchtungCompat())
                 AchtungAvailable = false;
+
+            SimpleCameraSettingAvailable = ModsConfig.IsActive("ray1203.SimpleCameraSetting");
+            if (SimpleCameraSettingAvailable && !InitSimpleCameraSettingCompat())
+                SimpleCameraSettingAvailable = false;
         }
 
         public static void ClearCaches()
@@ -211,10 +216,19 @@ namespace PerspectiveShift
         private static bool InitAchtungCompat()
         {
             Type cleanRoomProviderType = null;
-            
+
             if (!Require(ref cleanRoomProviderType, () => AccessTools.TypeByName("AchtungMod.FloatMenuOptionProvider_CleanRoom"), "FloatMenuOptionProvider_CleanRoom type", "Achtung")) return false;
-            
+
             Avatar.FloatMenuProviderBlacklist.Add(cleanRoomProviderType);
+            return true;
+        }
+
+        private static bool InitSimpleCameraSettingCompat()
+        {
+            Type cameraConfigPatchType = null;
+
+            if (!Require(ref cameraConfigPatchType, () => AccessTools.TypeByName("SimpleCameraSetting.CameraConfigPatch"), "CameraConfigPatch type", "SimpleCameraSetting")) return false;
+            if (!Require(ref simpleCameraConfigPatchMethod, () => AccessTools.Method(cameraConfigPatchType, "ConfigPatch"), "ConfigPatch method", "SimpleCameraSetting")) return false;
             return true;
         }
 
@@ -650,6 +664,19 @@ namespace PerspectiveShift
             if (!VehicleFrameworkAvailable || t == null)
                 return false;
             return vehiclePawnType != null && vehiclePawnType.IsAssignableFrom(t.GetType());
+        }
+
+        public static void ResetSimpleCameraSetting()
+        {
+            if (!SimpleCameraSettingAvailable) return;
+            try
+            {
+                simpleCameraConfigPatchMethod.Invoke(null, null);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[PS] Error resetting SimpleCameraSetting: {ex}");
+            }
         }
     }
 }
