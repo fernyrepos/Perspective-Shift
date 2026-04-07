@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <TipSetDef>
+    <defName>Ferny_PerspectiveShiftTips</defName>
+    <tips>
+      <li TKey="FernyPerspectiveShift1">Playing the game in character mode lets you fully embody a colonist and control them with your keyboard.</li>
+    </tips>
+  </TipSetDef>
+  
+</Defs>

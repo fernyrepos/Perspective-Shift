@@ -23,6 +23,11 @@
 			<downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
 			<steamWorkshopUrl>https://steamcommunity.com/workshop/filedetails/?id=2009463077</steamWorkshopUrl>
 		</li>
+		<li>
+			<packageId>ray1203.simplecamerasetting</packageId>
+			<displayName>SimpleCameraSetting</displayName>
+			<steamWorkshopUrl>https://steamcommunity.com/workshop/filedetails/?id=3232415388</steamWorkshopUrl>
+		</li>
 	</modDependencies>
     <incompatibleWith>
         <li>addvans.wasdedpawn</li>
