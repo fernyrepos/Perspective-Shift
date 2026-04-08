@@ -19,6 +19,8 @@ namespace PerspectiveShift
 
             if (__instance.SelectedPawns.Contains(State.Avatar.pawn)) return;
 
+            if (State.Avatar.pawn.jobs?.curDriver?.asleep ?? false) return;
+
             FloatMenuMap_AvatarTracker.currentMenuSubject = State.Avatar.pawn;
             __state = [.. __instance.selected];
             __instance.selected.Add(State.Avatar.pawn);
