@@ -288,7 +288,8 @@ namespace PerspectiveShift
                 && Input.GetMouseButton(0)
                 && !mouseOverUI && !mouseOverGizmo
                 && !State.ControlsFrozen
-                && !Find.Targeter.IsTargeting)
+                && !Find.Targeter.IsTargeting
+                && !Find.TickManager.Paused)
             {
                 HandleFiring();
             }
