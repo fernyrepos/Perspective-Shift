@@ -17,12 +17,12 @@
         </value>
     </Operation>
 
-    <Operation Class="PatchOperationAddModExtension">
+    <!-- <Operation Class="PatchOperationAddModExtension">
         <xpath>/Defs/JobDef[defName="DisconnectMech"]</xpath>
         <value>
             <li Class="PerspectiveShift.DisableLeftClickExtension" />
         </value>
-    </Operation>
+    </Operation> -->
    
     <Operation Class="PatchOperationAddModExtension">
         <xpath>/Defs/JobDef[defName="DisassembleMech"]</xpath>
