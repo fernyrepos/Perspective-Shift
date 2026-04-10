@@ -640,6 +640,18 @@ namespace PerspectiveShift
             var opts = new List<FloatMenuOption>();
             FloatMenuMakerMap.makingFor = pawn;
 
+            bool ShouldFilterPawnOption(Pawn targetPawn, FloatMenuOption opt)
+            {
+                if (targetPawn.RaceProps.IsMechanoid)
+                {
+                    string disconnectStr = "DisconnectMech".Translate(targetPawn.LabelShort).Resolve();
+                    string disassembleStr = "DisassembleMech".Translate(targetPawn.LabelCap).Resolve();
+                    if (opt.Label.Contains(disconnectStr) || opt.Label.Contains(disassembleStr))
+                        return true;
+                }
+                return false;
+            }
+
             foreach (var provider in FloatMenuMakerMap.providers)
             {
                 if (FloatMenuProviderBlacklist.Contains(provider.GetType())) continue;
@@ -662,13 +674,8 @@ namespace PerspectiveShift
 
                         foreach (var opt in provider.GetOptionsFor(actualThing, context))
                         {
-                            if (actualThing is Pawn mech && mech.RaceProps.IsMechanoid)
-                            {
-                                string disconnectStr = "DisconnectMech".Translate(mech.LabelShort).Resolve();
-                                string disassembleStr = "DisassembleMech".Translate(mech.LabelCap).Resolve();
-                                if (opt.Label.Contains(disconnectStr) || opt.Label.Contains(disassembleStr))
-                                    continue;
-                            }
+                            if (actualThing is Pawn pawn && ShouldFilterPawnOption(pawn, opt))
+                                continue;
 
                             if (opt.iconThing == null) opt.iconThing = actualThing;
                             opt.targetsDespawned = !actualThing.Spawned;
@@ -684,6 +691,9 @@ namespace PerspectiveShift
 
                         foreach (var opt in provider.GetOptionsFor(clickedPawn, context))
                         {
+                            if (ShouldFilterPawnOption(clickedPawn, opt))
+                                continue;
+
                             if (opt.iconThing == null) opt.iconThing = clickedPawn;
                             opt.targetsDespawned = !clickedPawn.Spawned;
                             opts.Add(opt);
