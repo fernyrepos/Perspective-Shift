@@ -16,12 +16,20 @@
             <li Class="PerspectiveShift.JobRequiresHoldExtension" />
         </value>
     </Operation>
-    <!--
+
     <Operation Class="PatchOperationAddModExtension">
-        <xpath>/Defs/JobDef[defName="SomeJobYouWantToDisable"]</xpath>
+        <xpath>/Defs/JobDef[defName="DisconnectMech"]</xpath>
         <value>
             <li Class="PerspectiveShift.DisableLeftClickExtension" />
         </value>
     </Operation>
-    -->
+   
+    <Operation Class="PatchOperationAddModExtension">
+        <xpath>/Defs/JobDef[defName="DisassembleMech"]</xpath>
+        <value>
+            <li Class="PerspectiveShift.DisableLeftClickExtension" />
+        </value>
+    </Operation>
+
+
 </Patch>
