@@ -121,7 +121,7 @@ namespace PerspectiveShift
                     haulDest = dest;
                 }
 
-                if (GenSpawn.SpawningWipes(carriedThing.def, t.def))
+                if (GenSpawn.SpawningWipes(carriedThing.def, t.def) || t is Blueprint || t is Frame)
                 {
                     wouldWipe = true;
                 }
@@ -941,7 +941,11 @@ namespace PerspectiveShift
 
             if (job.targetA.IsValid && !IsTargetInRange(job.targetA)) return false;
             if (job.targetB.IsValid && !IsTargetInRange(job.targetB)) return false;
-            if (job.targetC.IsValid && !IsTargetInRange(job.targetC)) return false;
+
+            if (job.def != JobDefOf.Meditate && job.def != JobDefOf.MeditatePray)
+            {
+                if (job.targetC.IsValid && !IsTargetInRange(job.targetC)) return false;
+            }
 
             if (job.targetQueueA != null)
                 foreach (var t in job.targetQueueA)

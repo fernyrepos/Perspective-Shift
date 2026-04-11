@@ -212,7 +212,7 @@ namespace PerspectiveShift
 
             if (cursorItem != null && !cursorItem.Destroyed)
             {
-                var mouseRect = new Rect(Event.current.mousePosition.x - cellSize / 2f, Event.current.mousePosition.y - cellSize / 2f, cellSize, cellSize);
+                var mouseRect = new Rect(UI.MousePositionOnUIInverted.x - cellSize / 2f, UI.MousePositionOnUIInverted.y - cellSize / 2f, cellSize, cellSize);
                 var iconRect = new Rect(mouseRect.x + iconPadding, mouseRect.y + iconPadding, mouseRect.width - iconPadding * 2f, mouseRect.height - iconPadding * 2f);
                 Widgets.ThingIcon(iconRect, cursorItem);
                 if (cursorItem.stackCount > 1 || cursorItem.def.stackLimit > 1)

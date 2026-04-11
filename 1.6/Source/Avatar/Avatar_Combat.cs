@@ -140,15 +140,14 @@ namespace PerspectiveShift
             if (toTarget.sqrMagnitude > 0.01f)
                 pawn.Rotation = Rot4.FromAngleFlat(NormAngle(Mathf.Atan2(toTarget.x, toTarget.z) * Mathf.Rad2Deg));
 
-            if (verb.verbProps.IsMeleeAttack)
+            if (pawn.Position.DistanceTo(targetCell) <= ShootTuning.MeleeRange)
             {
-                if (pawn.Position.AdjacentTo8WayOrInside(targetCell) && target.Thing != null)
+                if (target.Thing != null)
                     pawn.meleeVerbs.TryMeleeAttack(target.Thing);
             }
-            else
+            else if (verb.CanHitTarget(target))
             {
-                if (verb.CanHitTarget(target))
-                    verb.TryStartCastOn(target, false, true);
+                verb.TryStartCastOn(target, false, true);
             }
         }
 
@@ -312,9 +311,7 @@ namespace PerspectiveShift
                 else
                 {
                     Cursor.visible = false;
-                    //DrawReticle(Event.current.mousePosition); // works for me, but bugged for others
-                    //DrawReticle(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y)); // works on 1x scale, bugged on other scale values
-                    DrawReticle(UI.MousePositionOnUIInverted); // might work? fucking please do
+                    DrawReticle(UI.MousePositionOnUIInverted);
                 }
             }
             else

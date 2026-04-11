@@ -26,7 +26,7 @@ namespace PerspectiveShift
 
             HandleEatFoodBinding();
             HandleRecreationBinding();
-            bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(Event.current.mousePosition);
+            bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(UI.MousePositionOnUIInverted);
             bool mouseOverUI = IsMouseOverUI() || IsMouseOverColonistBar();
             HandleHoldToFire(mouseOverGizmo, mouseOverUI);
             UpdateCursorAndReticle(mouseOverGizmo, mouseOverUI);
@@ -210,7 +210,7 @@ namespace PerspectiveShift
             bool shouldShowOverlay = false;
             if (shouldShowOverlay)
             {
-                string text = $"Event.current.mousePosition={Event.current.mousePosition}\n" +
+                string text = $"UI.MousePositionOnUIInverted={UI.MousePositionOnUIInverted}\n" +
               $"Input.mousePosition={new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y)}";
                 Rect rect = new Rect(10, 10, 400, 60);
                 Widgets.DrawWindowBackground(rect);
@@ -248,7 +248,7 @@ namespace PerspectiveShift
 
         private bool IsMouseOverUI()
         {
-            Vector2 mousePos = Event.current.mousePosition;
+            Vector2 mousePos = UI.MousePositionOnUIInverted;
             Vector2 mouseInverted = UI.MousePositionOnUIInverted;
 
             if (gizmoBounds.Contains(mousePos))
@@ -288,7 +288,7 @@ namespace PerspectiveShift
             var entries = Find.ColonistBar.Entries;
             var drawLocs = Find.ColonistBar.DrawLocs;
             var size = Find.ColonistBar.Size;
-            Vector2 mousePos = Event.current.mousePosition;
+            Vector2 mousePos = UI.MousePositionOnUIInverted;
             for (int i = 0; i < entries.Count && i < drawLocs.Count; i++)
             {
                 var rect = new Rect(drawLocs[i].x, drawLocs[i].y, size.x, size.y);
