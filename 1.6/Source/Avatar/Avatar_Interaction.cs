@@ -110,9 +110,9 @@ namespace PerspectiveShift
                 {
                     if (ModCompatibility.PutCargoToVehicle(t, carriedThing)) return true;
                 }
-                else
+                else if(TryHandleContainerTransfer(t, carriedThing))
                 {
-                    if (TryHandleContainerTransfer(t, carriedThing)) return true;
+                    return true;
                 }
                 if (TryDepositIntoBill(t, carriedThing)) return true;
 
@@ -121,7 +121,7 @@ namespace PerspectiveShift
                     haulDest = dest;
                 }
 
-                if (GenSpawn.SpawningWipes(carriedThing.def, t.def) || t is Blueprint || t is Frame)
+                if (GenSpawn.SpawningWipes(carriedThing.def, t.def))
                 {
                     wouldWipe = true;
                 }
@@ -386,6 +386,7 @@ namespace PerspectiveShift
         private bool TryHandleContainerTransfer(Thing t, Thing carriedThing)
         {
             if (t == pawn) return false;
+            if (t is Frame or Blueprint) return false;
             if (carriedThing is Pawn carriedPawn)
             {
                 if (t is Building_Enterable enterable && enterable.CanAcceptPawn(carriedPawn))
@@ -406,6 +407,7 @@ namespace PerspectiveShift
             var container = t.TryGetInnerInteractableThingOwner();
             if (container != null)
             {
+                if (!container.CanAcceptAnyOf(carriedThing)) return false;
                 var sound = carriedThing.def.soundDrop;
                 int countBefore = carriedThing.stackCount;
                 int transferred = pawn.carryTracker.innerContainer.TryTransferToContainer(carriedThing, container, carriedThing.stackCount);
