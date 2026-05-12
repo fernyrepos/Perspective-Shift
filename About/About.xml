@@ -15,6 +15,7 @@
         <li>Ludeon.RimWorld.Anomaly</li>
         <li>Ludeon.RimWorld.Odyssey</li>
         <li>brrainz.harmony</li>
+        <li>ay1203.simplecamerasetting</li>
     </loadAfter>
 	<modDependencies>
 		<li>
@@ -27,6 +28,11 @@
 			<packageId>ray1203.simplecamerasetting</packageId>
 			<displayName>SimpleCameraSetting</displayName>
 			<steamWorkshopUrl>https://steamcommunity.com/workshop/filedetails/?id=3232415388</steamWorkshopUrl>
+		</li>
+		<li>
+			<packageId>ferny.ResourceDeliveryHelper</packageId>
+			<displayName>Resource Delivery Helper</displayName>
+			<steamWorkshopUrl>https://steamcommunity.com/sharedfiles/filedetails/?id=3696859196</steamWorkshopUrl>
 		</li>
 	</modDependencies>
     <incompatibleWith>

@@ -104,7 +104,7 @@
     <PS_AllowSwitchingToDirectorModeDesc>With this toggle enabled, for the duration of this run you may switch to director mode whenever you'd like. However, you are still forced to embody only one colonist and to protect their life.\n\nRecommended for players who want to embody a specific character, but would like to optionally keep the original gameplay fully intact.</PS_AllowSwitchingToDirectorModeDesc>
     <PS_SprintFoodDrainMultiplier>Sprint food drain multiplier: {0}</PS_SprintFoodDrainMultiplier>
     <PS_SprintSleepDrainMultiplier>Sprint sleep drain multiplier: {0}</PS_SprintSleepDrainMultiplier>
-    <PS_SeekAtWill>Seek at will</PS_SeekAtWill>
+    <PS_SeekAtWill>Passively seek</PS_SeekAtWill>
     <PS_SeekAtWillDesc>Automatically seek and attack enemies within range. Not available while drafted.</PS_SeekAtWillDesc>
     <PS_SeekAtWillDraftedReason>Seek at will is not available while drafted. Draft mode is for manual control only.</PS_SeekAtWillDraftedReason>
     <PS_InhabitNewCharacter_Desc>Play as somebody else in your game. This will send you back into director mode, where you can click a new character and choose to permanently embody them.</PS_InhabitNewCharacter_Desc>
