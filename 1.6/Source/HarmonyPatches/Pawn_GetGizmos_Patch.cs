@@ -49,32 +49,31 @@ namespace PerspectiveShift
 
             if (__instance != State.Avatar?.pawn && __instance.Faction == Faction.OfPlayer && !__instance.RaceProps.Animal)
             {
-                State.seekAtWillPawns ??= new HashSet<int>();
-                bool isRanged = __instance.equipment?.Primary?.def?.IsRangedWeapon ?? false;
-                var seekAtWill = new Command_Toggle
+                if (__instance.Drafted is false)
                 {
-                    defaultLabel = "PS_SeekAtWill".Translate(),
-                    defaultDesc = "PS_SeekAtWillDesc".Translate(),
-                    icon = ContentFinder<Texture2D>.Get(isRanged ? "Gizmos/SeekAtWill_Ranged" : "Gizmos/SeekAtWill_Melee"),
-                    isActive = () => State.seekAtWillPawns.Contains(__instance.thingIDNumber),
-                    toggleAction = () =>
-                    {
-                        if (State.seekAtWillPawns.Contains(__instance.thingIDNumber))
-                        {
-                            State.seekAtWillPawns.Remove(__instance.thingIDNumber);
-                        }
-                        else
-                        {
-                            State.seekAtWillPawns.Add(__instance.thingIDNumber);
-                        }
-                    },
-                };
 
-                if (__instance.Drafted)
-                {
-                    seekAtWill.Disable("PS_SeekAtWillDraftedReason".Translate());
+                    State.seekAtWillPawns ??= new HashSet<int>();
+                    bool isRanged = __instance.equipment?.Primary?.def?.IsRangedWeapon ?? false;
+                    var seekAtWill = new Command_Toggle
+                    {
+                        defaultLabel = "PS_SeekAtWill".Translate(),
+                        defaultDesc = "PS_SeekAtWillDesc".Translate(),
+                        icon = ContentFinder<Texture2D>.Get(isRanged ? "Gizmos/SeekAtWill_Ranged" : "Gizmos/SeekAtWill_Melee"),
+                        isActive = () => State.seekAtWillPawns.Contains(__instance.thingIDNumber),
+                        toggleAction = () =>
+                        {
+                            if (State.seekAtWillPawns.Contains(__instance.thingIDNumber))
+                            {
+                                State.seekAtWillPawns.Remove(__instance.thingIDNumber);
+                            }
+                            else
+                            {
+                                State.seekAtWillPawns.Add(__instance.thingIDNumber);
+                            }
+                        },
+                    };
+                    yield return seekAtWill;
                 }
-                yield return seekAtWill;
             }
 
             if (!__instance.IsColonist && !PerspectiveShiftMod.settings.allowNonHuman) yield break;
