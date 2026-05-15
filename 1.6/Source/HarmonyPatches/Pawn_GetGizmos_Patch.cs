@@ -126,10 +126,10 @@ namespace PerspectiveShift
             {
                 yield return new Command_Action
                 {
-                    defaultLabel = State.CurrentMode == PlaystyleMode.Dynamic && State.Avatar == null
+                    defaultLabel = (State.CurrentMode == PlaystyleMode.Director && State.Avatar == null) || (State.CurrentMode == PlaystyleMode.Dynamic && State.Avatar == null)
                         ? "PS_TakeControl".Translate()
                         : "PS_SwapCharacter".Translate(),
-                    icon = ContentFinder<Texture2D>.Get(State.CurrentMode == PlaystyleMode.Dynamic && State.Avatar == null ? "Gizmos/TakeControl" : "Gizmos/SwapPOV"),
+                    icon = ContentFinder<Texture2D>.Get((State.CurrentMode == PlaystyleMode.Director && State.Avatar == null) || (State.CurrentMode == PlaystyleMode.Dynamic && State.Avatar == null) ? "Gizmos/TakeControl" : "Gizmos/SwapPOV"),
                     action = () => State.SetAvatar(__instance, showMessage: true),
                     disabled = __instance.InMentalState,
                     disabledReason = "PawnIsInMentalState".Translate(__instance)
