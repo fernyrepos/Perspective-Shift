@@ -49,7 +49,7 @@ namespace PerspectiveShift
 
             if (__instance != State.Avatar?.pawn && __instance.Faction == Faction.OfPlayer && !__instance.RaceProps.Animal)
             {
-                if (__instance.Drafted is false)
+                if (__instance.Drafted is false && __instance.WorkTagIsDisabled(WorkTags.Violent) is false)
                 {
 
                     State.seekAtWillPawns ??= new HashSet<int>();
