@@ -11,6 +11,7 @@ namespace PerspectiveShift
     {
         public static PerspectiveShiftSettings settings;
         private Vector2 scrollPosition;
+        private float scrollHeight = 9999999f;
         public PerspectiveShiftMod(ModContentPack pack) : base(pack)
         {
             settings = GetSettings<PerspectiveShiftSettings>();
@@ -19,11 +20,11 @@ namespace PerspectiveShift
 
         public override void DoSettingsWindowContents(Rect rect)
         {
+            var viewRect = new Rect(0f, 0f, rect.width - 30f, scrollHeight);
+            Widgets.BeginScrollView(rect, ref scrollPosition, viewRect);
             var listing = new Listing_Standard();
-            var outRect = new Rect(rect.x, rect.y, rect.width, rect.height);
-            var viewRect = new Rect(0f, 0f, rect.width - 30f, CalculateHeight());
-            Widgets.BeginScrollView(outRect, ref scrollPosition, viewRect);
             listing.Begin(viewRect);
+            var startY = listing.curY;
 
             listing.Label("PS_ZoomSpeed".Translate(settings.zoomSpeed.ToString("F2")));
             settings.zoomSpeed = listing.Slider(settings.zoomSpeed, 0.1f, 1.0f);
@@ -69,7 +70,7 @@ namespace PerspectiveShift
 
             listing.Label("PS_ShootAccuracyMultiplier".Translate(settings.shootAccuracyMultiplier.ToString("P0")));
             settings.shootAccuracyMultiplier = listing.Slider(settings.shootAccuracyMultiplier, 0.1f, 100f);
-            
+
             listing.Label("PS_PlayerMoveSpeedCap".Translate(settings.playerMoveSpeedCap.ToString("F2")));
             settings.playerMoveSpeedCap = listing.Slider(settings.playerMoveSpeedCap, 0.1f, 5.0f);
 
@@ -88,28 +89,9 @@ namespace PerspectiveShift
             listing.CheckboxLabeled("PS_AllowNonHuman".Translate(), ref settings.allowNonHuman, "PS_AllowNonHumanDesc".Translate());
             listing.CheckboxLabeled("PS_RequirePawnInFaction".Translate(), ref settings.requirePawnInFaction, "PS_RequirePawnInFactionDesc".Translate());
 
+            scrollHeight = listing.curY - startY;
             listing.End();
             Widgets.EndScrollView();
-            base.DoSettingsWindowContents(rect);
-        }
-
-        private float CalculateHeight()
-        {
-            var labels = 7;
-            var sliders = 8;
-            var checkboxes = 9;
-            var buttons = 1;
-            if (settings.enableSprinting)
-            {
-                labels += 3;
-                sliders += 3;
-            }
-            if (settings.enableSneaking)
-            {
-                labels += 1;
-                sliders += 1;
-            }
-            return (labels * 24f) + (sliders * 24f) + (checkboxes * 24f) + (buttons * 32f);
         }
 
         public override string SettingsCategory()
