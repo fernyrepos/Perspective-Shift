@@ -56,6 +56,7 @@ namespace PerspectiveShift
         {
             get
             {
+                if (Avatar?.pawn is null) return false;
                 if (Time.frameCount != _isActiveCacheFrame)
                 {
                     _isActiveCache = Avatar?.pawn != null && !Avatar.pawn.Dead && !WorldComponent_GravshipController.CutsceneInProgress;
