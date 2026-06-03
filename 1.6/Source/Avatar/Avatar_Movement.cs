@@ -22,6 +22,14 @@ namespace PerspectiveShift
 
         public void UpdatePhysics()
         {
+            if (pawn.Map == null || pawn.Map != Find.CurrentMap)
+            {
+                moveInput = Vector3.zero;
+                physicsPosition = null;
+                wasMovingLastFrame = false;
+                return;
+            }
+
             if (pawn.Downed)
             {
                 physicsPosition = null;
