@@ -1,5 +1,6 @@
 using RimWorld;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using Verse;
 using Verse.AI;
@@ -12,14 +13,18 @@ namespace PerspectiveShift
     public static class State
     {
         public static HashSet<int> seekAtWillPawns = new HashSet<int>();
-        private static int _avatarPawnId = -1;
-        private static int _isAvatarCacheFrame = -999;
         private static bool _isActiveCache;
         private static int _isActiveCacheFrame = -999;
         public static bool ShouldSeekEnemy(this Pawn pawn)
         {
             seekAtWillPawns ??= new HashSet<int>();
             return !pawn.IsAvatar() && pawn.InMentalState is false && pawn.Drafted is false && pawn.Faction == Faction.OfPlayer && !pawn.RaceProps.Animal && seekAtWillPawns.Contains(pawn.thingIDNumber);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsAvatar(this Pawn pawn)
+        {
+            return Avatar?.pawn == pawn;
         }
         public static bool IsUnderAIControl(this Pawn pawn)
         {
@@ -52,6 +57,7 @@ namespace PerspectiveShift
         public static bool pendingDeathMenu = false;
         public static bool permadeath = false;
         public static bool allowDirectorInAuthentic = false;
+        public static float lastDamageTime = -999f;
         public static bool IsActive
         {
             get
@@ -264,6 +270,18 @@ namespace PerspectiveShift
             }
 
             Avatar.OnGUI();
+
+            if (PerspectiveShiftMod.settings.enableDamageScreenEffect && lastDamageTime > 0f)
+            {
+                float timeSinceDamage = Time.realtimeSinceStartup - lastDamageTime;
+                if (timeSinceDamage < 0.2f)
+                {
+                    Color prevColor = GUI.color;
+                    GUI.color = new Color(1f, 0f, 0f, Mathf.Lerp(0.4f, 0f, timeSinceDamage / 0.2f));
+                    GUI.DrawTexture(new Rect(0, 0, UI.screenWidth, UI.screenHeight), BaseContent.WhiteTex);
+                    GUI.color = prevColor;
+                }
+            }
         }
 
         public static Thing TryGetSpawnedContainer(Pawn pawn)
@@ -281,16 +299,6 @@ namespace PerspectiveShift
                 holder = holder.ParentHolder;
             }
             return null;
-        }
-
-        public static bool IsAvatar(this Pawn pawn)
-        {
-            if (Time.frameCount != _isAvatarCacheFrame)
-            {
-                _avatarPawnId = IsActive && Avatar?.pawn != null ? Avatar.pawn.thingIDNumber : -1;
-                _isAvatarCacheFrame = Time.frameCount;
-            }
-            return pawn.thingIDNumber == _avatarPawnId;
         }
 
         public static bool CanUseIt(this Pawn pawn, Thing thing)

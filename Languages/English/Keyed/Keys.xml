@@ -31,6 +31,12 @@
     <PS_DisableAimingDelay>Disable aiming time for player character</PS_DisableAimingDelay>
     <PS_DisableAimingDelayDesc>When checked, your controlled character fires weapons instantly without having to wait for the weapon's aiming cycle. Cooldown between shots still applies.</PS_DisableAimingDelayDesc>
 
+    <PS_EnableDamageScreenEffect>Enable damage screen effect</PS_EnableDamageScreenEffect>
+    <PS_EnableDamageScreenEffectDesc>Flashes a red overlay on the screen briefly when your controlled character takes damage.</PS_EnableDamageScreenEffectDesc>
+    <PS_WashYourself>Wash yourself</PS_WashYourself>
+    <PS_DrinkWater>Drink water</PS_DrinkWater>
+    <PS_RelieveBladder>Relieve bladder in water</PS_RelieveBladder>
+
     <PS_EnableSprinting>Enable sprinting</PS_EnableSprinting>
     <PS_SprintSpeedMultiplier>Sprint speed multiplier: {0}</PS_SprintSpeedMultiplier>
     <PS_EnableSneaking>Enable sneaking</PS_EnableSneaking>

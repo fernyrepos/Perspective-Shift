@@ -39,6 +39,7 @@ namespace PerspectiveShift
         public float sprintSleepDrain = 2f;
         public bool disableCustomGizmos = false;
         public List<string> pinnedNeeds = new List<string>() { "Mood", "Food", "Rest", "Joy" };
+        public bool enableDamageScreenEffect = true;
 
         public override void ExposeData()
         {
@@ -68,6 +69,7 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref sprintSleepDrain, "sprintSleepDrain", 2f);
             Scribe_Values.Look(ref disableCustomGizmos, "disableCustomGizmos", false);
             Scribe_Collections.Look(ref pinnedNeeds, "pinnedNeeds", LookMode.Value);
+            Scribe_Values.Look(ref enableDamageScreenEffect, "enableDamageScreenEffect", true);
 
             if (pinnedNeeds == null)
             {

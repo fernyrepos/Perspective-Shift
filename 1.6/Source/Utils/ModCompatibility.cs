@@ -6,6 +6,7 @@ using UnityEngine;
 using Verse;
 using Verse.AI;
 using System.Collections;
+using Verse.Sound;
 
 namespace PerspectiveShift
 {
@@ -20,6 +21,9 @@ namespace PerspectiveShift
         public static readonly bool VanillaVehiclesExpandedAvailable;
         public static readonly bool VanillaExpandedFrameworkAvailable;
         public static readonly bool AchtungAvailable;
+        public static readonly bool ProcessorFrameworkAvailable;
+        public static readonly bool RimbodyAvailable;
+        public static readonly bool DubsBadHygieneAvailable;
 
         private static Type vehiclePawnType;
         private static MethodInfo addOrTransferMethod;
@@ -63,6 +67,31 @@ namespace PerspectiveShift
         private static FieldInfo effecterField;
         private static FieldInfo sustainerField;
 
+        private static Type compProcessorType;
+        private static FieldInfo enabledProcessesField;
+        private static MethodInfo spaceLeftForMethod;
+        private static MethodInfo addIngredientMethod;
+        private static Type processFilterType;
+        private static FieldInfo allowedIngredientsField;
+
+        private static Type rimbodyDBType;
+        private static FieldInfo strengthTargetsField;
+        private static FieldInfo cardioTargetsField;
+        private static FieldInfo balanceTargetsField;
+        private static MethodInfo doTryGiveJobStrengthMethod;
+        private static MethodInfo doTryGiveJobCardioMethod;
+        private static MethodInfo doTryGiveJobBalanceMethod;
+
+        private static PropertyInfo thirstNeedProp;
+        private static FieldInfo hygieneNeedField;
+        private static FieldInfo bladderNeedField;
+        private static FieldInfo dbhSettingsField;
+
+        public static JobDef DBH_washAtCell;
+        public static JobDef DBH_DBHDrinkFromGround;
+        public static JobDef DBH_DBHDrinkFromBasin;
+        public static JobDef DBH_haveWildPoo;
+
         private static readonly Dictionary<int, (Pawn vehicle, bool isDriver, bool isGunner, int lastTick)> vehicleRoleCache
             = new Dictionary<int, (Pawn, bool, bool, int)>();
         private static readonly Dictionary<int, int> wasdActiveVehicles
@@ -95,6 +124,18 @@ namespace PerspectiveShift
             SimpleCameraSettingAvailable = ModsConfig.IsActive("ray1203.SimpleCameraSetting");
             if (SimpleCameraSettingAvailable && !InitSimpleCameraSettingCompat())
                 SimpleCameraSettingAvailable = false;
+
+            ProcessorFrameworkAvailable = ModsConfig.IsActive("syrchalis.processor.framework");
+            if (ProcessorFrameworkAvailable && !InitProcessorFrameworkCompat())
+                ProcessorFrameworkAvailable = false;
+
+            RimbodyAvailable = ModsConfig.IsActive("Maux36.Rimbody");
+            if (RimbodyAvailable && !InitRimbodyCompat())
+                RimbodyAvailable = false;
+
+            DubsBadHygieneAvailable = ModsConfig.IsActive("Dubwise.DubsBadHygiene") || ModsConfig.IsActive("Dubwise.DubsBadHygiene.Lite");
+            if (DubsBadHygieneAvailable && !InitDBHCompat())
+                DubsBadHygieneAvailable = false;
         }
 
         public static void ClearCaches()
@@ -229,6 +270,45 @@ namespace PerspectiveShift
 
             if (!Require(ref cameraConfigPatchType, () => AccessTools.TypeByName("SimpleCameraSetting.CameraConfigPatch"), "CameraConfigPatch type", "SimpleCameraSetting")) return false;
             if (!Require(ref simpleCameraConfigPatchMethod, () => AccessTools.Method(cameraConfigPatchType, "ConfigPatch"), "ConfigPatch method", "SimpleCameraSetting")) return false;
+            return true;
+        }
+
+        private static bool InitProcessorFrameworkCompat()
+        {
+            if (!Require(ref compProcessorType, () => AccessTools.TypeByName("ProcessorFramework.CompProcessor"), "CompProcessor type", "ProcessorFramework")) return false;
+            if (!Require(ref enabledProcessesField, () => AccessTools.Field(compProcessorType, "enabledProcesses"), "enabledProcesses field", "ProcessorFramework")) return false;
+            if (!Require(ref spaceLeftForMethod, () => AccessTools.Method(compProcessorType, "SpaceLeftFor"), "SpaceLeftFor method", "ProcessorFramework")) return false;
+            if (!Require(ref addIngredientMethod, () => AccessTools.Method(compProcessorType, "AddIngredient"), "AddIngredient method", "ProcessorFramework")) return false;
+            if (!Require(ref processFilterType, () => AccessTools.TypeByName("ProcessorFramework.ProcessFilter"), "ProcessFilter type", "ProcessorFramework")) return false;
+            if (!Require(ref allowedIngredientsField, () => AccessTools.Field(processFilterType, "allowedIngredients"), "allowedIngredients field", "ProcessorFramework")) return false;
+            return true;
+        }
+
+        private static bool InitRimbodyCompat()
+        {
+            if (!Require(ref rimbodyDBType, () => AccessTools.TypeByName("Maux36.Rimbody.RimbodyDB"), "RimbodyDB type", "Rimbody")) return false;
+            if (!Require(ref strengthTargetsField, () => AccessTools.Field(rimbodyDBType, "StrengthTargets"), "StrengthTargets field", "Rimbody")) return false;
+            if (!Require(ref cardioTargetsField, () => AccessTools.Field(rimbodyDBType, "CardioTargets"), "CardioTargets field", "Rimbody")) return false;
+            if (!Require(ref balanceTargetsField, () => AccessTools.Field(rimbodyDBType, "BalanceTargets"), "BalanceTargets field", "Rimbody")) return false;
+            if (!Require(ref doTryGiveJobStrengthMethod, () => AccessTools.Method(AccessTools.TypeByName("Maux36.Rimbody.JobGiver_DoStrengthBuilding"), "DoTryGiveTargetJob"), "DoTryGiveTargetJob method", "Rimbody")) return false;
+            if (!Require(ref doTryGiveJobCardioMethod, () => AccessTools.Method(AccessTools.TypeByName("Maux36.Rimbody.JobGiver_DoCardioBuilding"), "DoTryGiveJob"), "DoTryGiveJob method", "Rimbody")) return false;
+            if (!Require(ref doTryGiveJobBalanceMethod, () => AccessTools.Method(AccessTools.TypeByName("Maux36.Rimbody.JobGiver_DoBalanceBuilding"), "DoTryGiveTargetJob"), "DoTryGiveTargetJob method", "Rimbody")) return false;
+            return true;
+        }
+
+        private static bool InitDBHCompat()
+        {
+            var dbhSettingsType = AccessTools.TypeByName("DubsBadHygiene.Settings");
+            if (!Require(ref thirstNeedProp, () => AccessTools.Property(dbhSettingsType, "ThirstNeed"), "ThirstNeed property", "DubsBadHygiene")) return false;
+            if (!Require(ref hygieneNeedField, () => AccessTools.Field(dbhSettingsType, "HygieneNeed"), "HygieneNeed field", "DubsBadHygiene")) return false;
+            if (!Require(ref bladderNeedField, () => AccessTools.Field(dbhSettingsType, "BladderNeed"), "BladderNeed field", "DubsBadHygiene")) return false;
+            if (!Require(ref dbhSettingsField, () => AccessTools.Field(AccessTools.TypeByName("DubsBadHygiene.DubsBadHygieneMod"), "Settings"), "Settings field", "DubsBadHygiene")) return false;
+
+            var dubDefType = AccessTools.TypeByName("DubsBadHygiene.DubDef");
+            DBH_washAtCell = AccessTools.Field(dubDefType, "washAtCell")?.GetValue(null) as JobDef;
+            DBH_DBHDrinkFromGround = AccessTools.Field(dubDefType, "DBHDrinkFromGround")?.GetValue(null) as JobDef;
+            DBH_DBHDrinkFromBasin = AccessTools.Field(dubDefType, "DBHDrinkFromBasin")?.GetValue(null) as JobDef;
+            DBH_haveWildPoo = AccessTools.Field(dubDefType, "haveWildPoo")?.GetValue(null) as JobDef;
             return true;
         }
 
@@ -677,6 +757,88 @@ namespace PerspectiveShift
             {
                 Log.Error($"[PS] Error resetting SimpleCameraSetting: {ex}");
             }
+        }
+
+        public static bool TryHandleProcessorFramework(Thing t, Thing carriedThing, Pawn avatar)
+        {
+            if (!ProcessorFrameworkAvailable) return false;
+
+            var comp = (t as ThingWithComps)?.AllComps?.FirstOrDefault(c => compProcessorType.IsAssignableFrom(c.GetType()));
+            if (comp == null) return false;
+
+            var enabledProcesses = enabledProcessesField.GetValue(comp) as IDictionary;
+            if (enabledProcesses == null) return false;
+
+            foreach (DictionaryEntry entry in enabledProcesses)
+            {
+                var processDef = entry.Key;
+                var allowedIngredients = allowedIngredientsField.GetValue(entry.Value) as List<ThingDef>;
+
+                if (allowedIngredients != null && allowedIngredients.Contains(carriedThing.def))
+                {
+                    var spaceLeft = (int)spaceLeftForMethod.Invoke(comp, new object[] { processDef, 1f });
+                    if (spaceLeft > 0)
+                    {
+                        addIngredientMethod.Invoke(comp, new object[] { carriedThing, processDef });
+                        carriedThing.def.soundDrop?.PlayOneShot(new TargetInfo(avatar.Position, avatar.Map));
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public static bool TryHandleRimbody(Thing t, Pawn avatar)
+        {
+            if (!RimbodyAvailable) return false;
+
+            var strengthTargets = strengthTargetsField.GetValue(null) as List<ThingDef>;
+            var cardioTargets = cardioTargetsField.GetValue(null) as List<ThingDef>;
+            var balanceTargets = balanceTargetsField.GetValue(null) as List<ThingDef>;
+
+            Job job = null;
+            if (strengthTargets != null && strengthTargets.Contains(t.def))
+                job = doTryGiveJobStrengthMethod.Invoke(null, new object[] { avatar, t }) as Job;
+            else if (cardioTargets != null && cardioTargets.Contains(t.def))
+                job = doTryGiveJobCardioMethod.Invoke(null, new object[] { avatar, t }) as Job;
+            else if (balanceTargets != null && balanceTargets.Contains(t.def))
+                job = doTryGiveJobBalanceMethod.Invoke(null, new object[] { avatar, t }) as Job;
+
+            if (job != null)
+            {
+                job.playerForced = true;
+                avatar.jobs.TryTakeOrderedJob(job);
+                return true;
+            }
+            return false;
+        }
+
+        public static bool IsDBHThirstEnabled() => DubsBadHygieneAvailable && (bool)thirstNeedProp.GetValue(null, null);
+
+        public static bool IsDBHHygieneEnabled() => DubsBadHygieneAvailable && (bool)hygieneNeedField.GetValue(dbhSettingsField.GetValue(null));
+
+        public static bool IsDBHBladderEnabled() => DubsBadHygieneAvailable && (bool)bladderNeedField.GetValue(dbhSettingsField.GetValue(null));
+
+        public static bool IsDBHDrinkableItem(Thing t)
+        {
+            if (t?.def?.modExtensions == null) return false;
+            foreach (var ext in t.def.modExtensions)
+            {
+                if (ext.GetType().Name == "WaterExt") return true;
+            }
+            return false;
+        }
+
+        public static bool IsDBHBasin(Thing t)
+        {
+            if (t == null) return false;
+            var fixtureProp = AccessTools.Property(t.GetType(), "fixture");
+            if (fixtureProp != null)
+            {
+                var val = fixtureProp.GetValue(t, null);
+                if (val != null && val.ToString() == "Basin") return true;
+            }
+            return false;
         }
     }
 }

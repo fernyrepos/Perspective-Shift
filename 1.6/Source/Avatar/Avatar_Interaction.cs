@@ -68,6 +68,7 @@ namespace PerspectiveShift
             foreach (var thing in things)
             {
                 if (!withinGrabRange && !IsWithinInteractionRange(thing)) continue;
+                if (ModCompatibility.TryHandleRimbody(thing, pawn)) return true;
                 if (TryHandleConstructionThing(thing)) return true;
                 if (TryHandleBuildingInteractions(thing)) return true;
             }
@@ -102,6 +103,7 @@ namespace PerspectiveShift
                 if (TryHandleBlueprintInstall(t, carriedThing)) return true;
                 if (TryHandleFrame(t, carriedThing)) return true;
                 if (TryHandleMedicineDrop(t, carriedThing)) return true;
+                if (ModCompatibility.TryHandleProcessorFramework(t, carriedThing, pawn)) return true;
                 if (TryHandleTurretLoad(t, carriedThing)) return true;
                 if (TryHandleRefuel(t, carriedThing)) return true;
                 if (TryHandleBedDrop(t, carriedThing, cell)) return true;
