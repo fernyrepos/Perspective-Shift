@@ -554,6 +554,8 @@ namespace PerspectiveShift
             var item = clickCell.GetFirstItem(pawn.Map);
             if (item != null && item.def.category == ThingCategory.Item)
             {
+                if (item is MinifiedThing mt && pawn.Map.designationManager.DesignationOn(mt, DesignationDefOf.Deconstruct) != null)
+                    return false;
                 return TryPickup(item);
             }
             var clickedPawn = clickCell.GetFirstPawn(pawn.Map);

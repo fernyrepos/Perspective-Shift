@@ -81,8 +81,11 @@ namespace PerspectiveShift
             bool hideForTab = PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomLeft && Find.MainTabsRoot?.OpenTab != null;
             if (hideForTab) return;
 
-            if (!PerspectiveShiftMod.settings.disableCustomGizmos) DrawPlayerGizmos();
-            DrawNeeds();
+            if (!PerspectiveShiftMod.settings.disableCustomGizmos)
+            {
+                DrawPlayerGizmos();
+                DrawNeeds();
+            }
         }
 
         private void HandleTabKeyBindings()
@@ -203,6 +206,7 @@ namespace PerspectiveShift
                 }
             }
             Event.current.Use();
+            Find.TickManager.CurTimeSpeed = TimeSpeed.Paused;
         }
 
         private void DebugLog()
