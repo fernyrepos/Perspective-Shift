@@ -178,35 +178,48 @@ namespace PerspectiveShift
         {
             if (!keyDef.KeyDownEvent) return;
             if (Find.DesignatorManager.SelectedDesignator != null || Find.Targeter.targetingSource != null) return;
-
-            if (Find.Selector.SingleSelectedThing != pawn)
+            if (Find.Selector.SelectedPawns.Contains(pawn))
             {
-                Find.Selector.ClearSelection();
-                Find.Selector.Select(pawn);
-            }
-            if (Find.MainTabsRoot.OpenTab != MainButtonDefOf.Inspect)
-            {
-                Find.MainTabsRoot.SetCurrentTab(MainButtonDefOf.Inspect);
-            }
-
-            var inspectPane = (MainTabWindow_Inspect)MainButtonDefOf.Inspect.TabWindow;
-            if (inspectPane != null)
-            {
+                if (Find.MainTabsRoot.OpenTab != MainButtonDefOf.Inspect)
+                {
+                    Find.MainTabsRoot.SetCurrentTab(MainButtonDefOf.Inspect);
+                }
+                var inspectPane = (MainTabWindow_Inspect)MainButtonDefOf.Inspect.TabWindow;
                 var tab = inspectPane.CurTabs.FirstOrDefault(t => tabType.IsAssignableFrom(t.GetType()));
                 if (tab != null)
                 {
                     var actualType = tab.GetType();
-                    if (inspectPane.OpenTabType == actualType)
+                    if (InspectPaneUtility.IsOpen(tab, inspectPane))
                     {
                         inspectPane.CloseOpenTab();
                         Find.Selector.Deselect(pawn);
                     }
                     else
-                        inspectPane.OpenTabType = actualType;
+                    {
+                        Find.Selector.ClearSelection();
+                        Find.Selector.Select(pawn);
+                        InspectPaneUtility.OpenTab(actualType);
+                    }
                 }
             }
+            else
+            {
+                Find.Selector.ClearSelection();
+                Find.Selector.Select(pawn);
+                if (Find.MainTabsRoot.OpenTab != MainButtonDefOf.Inspect)
+                {
+                    Find.MainTabsRoot.SetCurrentTab(MainButtonDefOf.Inspect);
+                }
+                var inspectPane = (MainTabWindow_Inspect)MainButtonDefOf.Inspect.TabWindow;
+                var tab = inspectPane.CurTabs.FirstOrDefault(t => tabType.IsAssignableFrom(t.GetType()));
+                var actualType = tab.GetType();
+                InspectPaneUtility.OpenTab(actualType);
+            }
             Event.current.Use();
-            Find.TickManager.CurTimeSpeed = TimeSpeed.Paused;
+            if (pawn.Drafted)
+            {
+                Find.TickManager.CurTimeSpeed = TimeSpeed.Paused;
+            }
         }
 
         private void DebugLog()
