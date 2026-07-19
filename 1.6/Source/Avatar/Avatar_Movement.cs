@@ -132,8 +132,8 @@ namespace PerspectiveShift
             if (pawn.Map == Find.CurrentMap && pawn.Spawned)
             {
                 targetCamPos = State.CameraLockPosition
-                    ?? physicsPosition
-                    ?? pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
+                ?? physicsPosition
+                ?? pawn.DrawPos;
             }
             else
             {
