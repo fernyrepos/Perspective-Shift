@@ -24,6 +24,7 @@ namespace PerspectiveShift
         public static readonly bool ProcessorFrameworkAvailable;
         public static readonly bool RimbodyAvailable;
         public static readonly bool DubsBadHygieneAvailable;
+        public static readonly bool LightsOutAvailable;
 
         private static Type vehiclePawnType;
         private static MethodInfo addOrTransferMethod;
@@ -83,6 +84,9 @@ namespace PerspectiveShift
         private static MethodInfo doTryGiveJobBalanceMethod;
 
         private static PropertyInfo thirstNeedProp;
+        private static MethodInfo lightsOutShouldTurnOffAllLightsMethod;
+        private static MethodInfo lightsOutDisableAllLightsMethod;
+        private static MethodInfo lightsOutEnableAllLightsMethod;
         private static FieldInfo hygieneNeedField;
         private static FieldInfo bladderNeedField;
         private static FieldInfo dbhSettingsField;
@@ -136,6 +140,10 @@ namespace PerspectiveShift
             DubsBadHygieneAvailable = ModsConfig.IsActive("Dubwise.DubsBadHygiene") || ModsConfig.IsActive("Dubwise.DubsBadHygiene.Lite");
             if (DubsBadHygieneAvailable && !InitDBHCompat())
                 DubsBadHygieneAvailable = false;
+
+            LightsOutAvailable = ModsConfig.IsActive("juanlopez2008.LightsOut");
+            if (LightsOutAvailable && !InitLightsOutCompat())
+                LightsOutAvailable = false;
         }
 
         public static void ClearCaches()
@@ -839,6 +847,47 @@ namespace PerspectiveShift
                 if (val != null && val.ToString() == "Basin") return true;
             }
             return false;
+        }
+
+        private static bool InitLightsOutCompat()
+        {
+            Type lightsType = AccessTools.TypeByName("LightsOut.Common.Lights");
+            if (lightsType == null) return false;
+
+            if (!Require(ref lightsOutShouldTurnOffAllLightsMethod, () => AccessTools.Method(lightsType, "ShouldTurnOffAllLights", new Type[] { typeof(Room), typeof(Pawn) }), "ShouldTurnOffAllLights", "LightsOut")) return false;
+            if (!Require(ref lightsOutDisableAllLightsMethod, () => AccessTools.Method(lightsType, "DisableAllLights", new Type[] { typeof(Room), typeof(bool) }), "DisableAllLights", "LightsOut")) return false;
+            if (!Require(ref lightsOutEnableAllLightsMethod, () => AccessTools.Method(lightsType, "EnableAllLights", new Type[] { typeof(Room) }), "EnableAllLights", "LightsOut")) return false;
+
+            return true;
+        }
+
+        public static void NotifyLightsOutPawnMoved(Pawn pawn, IntVec3 prevCell, IntVec3 nextCell)
+        {
+            if (!LightsOutAvailable || pawn.Map == null) return;
+
+            Room oldRoom = prevCell.GetRoom(pawn.Map);
+            Room newRoom = nextCell.GetRoom(pawn.Map);
+
+            if (newRoom != oldRoom)
+            {
+                if (oldRoom != null)
+                {
+                    bool shouldTurnOff = (bool)lightsOutShouldTurnOffAllLightsMethod.Invoke(null, new object[] { oldRoom, pawn });
+                    if (shouldTurnOff)
+                    {
+                        lightsOutDisableAllLightsMethod.Invoke(null, new object[] { oldRoom, true });
+                    }
+                }
+
+                if (newRoom != null)
+                {
+                    bool shouldTurnOn = (bool)lightsOutShouldTurnOffAllLightsMethod.Invoke(null, new object[] { newRoom, pawn });
+                    if (shouldTurnOn)
+                    {
+                        lightsOutEnableAllLightsMethod.Invoke(null, new object[] { newRoom });
+                    }
+                }
+            }
         }
     }
 }

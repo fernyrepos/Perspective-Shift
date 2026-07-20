@@ -361,6 +361,7 @@ namespace PerspectiveShift
                 pawn.Position = nextCell;
                 pawn.Notify_Teleported(endCurrentJob: false, resetTweenedPos: false);
                 pawn.pather.nextCell = nextCell;
+                ModCompatibility.NotifyLightsOutPawnMoved(pawn, prevCell, nextCell);
             }
 
             if (pawn.Drawer?.leaner != null && pawn.stances.curStance is not Stance_Busy)
