@@ -112,7 +112,14 @@ namespace PerspectiveShift
             {
                 if (pawn.Drafted)
                 {
-                    pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out _);
+                    // Yayo's Combat Addon moves reload ammo into the carry tracker until its
+                    // reload toil consumes it. Dropping that ammo here makes the job fail.
+                    string jobDefName = pawn.CurJobDef?.defName;
+                    bool isYcaReloadJob = jobDefName == "YCA_ReloadFromInventory"
+                        || jobDefName == "YCA_ReloadFromSurrounding";
+
+                    if (!isYcaReloadJob)
+                        pawn.carryTracker.TryDropCarriedThing(pawn.Position, ThingPlaceMode.Near, out _);
                 }
                 else if (pawn.CurJob != null)
                 {
