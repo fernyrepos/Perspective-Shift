@@ -22,10 +22,12 @@ namespace PerspectiveShift
             DebugLog();
             DrawCameraLockReturnButton();
             DrawGizmosAndNeeds();
-            HandleTabKeyBindings();
-
-            HandleEatFoodBinding();
-            HandleRecreationBinding();
+            if (!State.ControlsFrozen)
+            {
+                HandleTabKeyBindings();
+                HandleEatFoodBinding();
+                HandleRecreationBinding();
+            }
             bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(UI.MousePositionOnUIInverted);
             bool mouseOverUI = IsMouseOverUI() || IsMouseOverColonistBar();
             HandleHoldToFire(mouseOverGizmo, mouseOverUI);
@@ -407,7 +409,7 @@ namespace PerspectiveShift
             float boundsMinY = UI.screenHeight;
             float boundsMaxY = 0f;
 
-            bool suppressHotkeys = Find.Selector.NumSelected > 0 && !Find.Selector.IsSelected(pawn);
+            bool suppressHotkeys = (Find.Selector.NumSelected > 0 && !Find.Selector.IsSelected(pawn)) || State.ControlsFrozen;
 
             Matrix4x4 prevMatrix = GUI.matrix;
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1f));
