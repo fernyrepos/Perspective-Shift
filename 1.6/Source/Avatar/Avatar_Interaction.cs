@@ -106,6 +106,7 @@ namespace PerspectiveShift
                 if (ModCompatibility.TryHandleProcessorFramework(t, carriedThing, pawn)) return true;
                 if (TryHandleTurretLoad(t, carriedThing)) return true;
                 if (TryHandleRefuel(t, carriedThing)) return true;
+                if (TryHandleEntityHolderCapture(t, carriedThing)) return true;
                 if (TryHandleBedDrop(t, carriedThing, cell)) return true;
                 if (TryHandleMechCharger(t, carriedThing)) return true;
                 if (ModCompatibility.IsVehiclePawn(t))
@@ -317,6 +318,45 @@ namespace PerspectiveShift
                 return true;
             }
             return false;
+        }
+
+        private bool TryHandleEntityHolderCapture(Thing t, Thing carriedThing)
+        {
+            if (carriedThing is not Pawn carriedPawn) return false;
+
+            var holderComp = t.TryGetComp<CompEntityHolder>();
+            if (holderComp == null) return false;
+
+            if (!holderComp.Available)
+            {
+                return RejectInteraction("PS_HoldingPlatformOccupied");
+            }
+
+            var targetComp = carriedPawn.TryGetComp<CompHoldingPlatformTarget>();
+            if (targetComp == null || !targetComp.CanBeCaptured || !targetComp.StudiedAtHoldingPlatform)
+            {
+                return RejectInteraction("PS_CannotCaptureEntity");
+            }
+
+            holderComp.Container.TryAddOrTransfer(carriedPawn, 1);
+            targetComp.Notify_HeldOnPlatform(holderComp.Container);
+
+            if (targetComp.Props.capturedLetterLabel != null)
+            {
+                Find.LetterStack.ReceiveLetter(
+                    targetComp.Props.capturedLetterLabel,
+                    targetComp.Props.capturedLetterText.Formatted(pawn.Named("PAWN")),
+                    LetterDefOf.NeutralEvent,
+                    holderComp.parent);
+            }
+
+            if (!carriedPawn.RaceProps.Humanlike || carriedPawn.IsMutant)
+            {
+                TaleRecorder.RecordTale(TaleDefOf.Captured, pawn, carriedPawn);
+            }
+
+            SoundDefOf.ChainToPlatform.PlayOneShot(new TargetInfo(holderComp.parent.Position, pawn.Map));
+            return true;
         }
 
         private bool TryHandleBedDrop(Thing t, Thing carriedThing, IntVec3 cell)

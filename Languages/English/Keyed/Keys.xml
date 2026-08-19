@@ -146,4 +146,6 @@
     <PS_Kidnapped>{PAWN_nameDef} has been kidnapped.</PS_Kidnapped>
     <PS_LostToFaction>{PAWN_nameDef} is no longer under your control.</PS_LostToFaction>
     <PS_CannotSprintExhausted>You are too exhausted to sprint.</PS_CannotSprintExhausted>
+    <PS_HoldingPlatformOccupied>This holding platform is already occupied.</PS_HoldingPlatformOccupied>
+    <PS_CannotCaptureEntity>This entity cannot be captured to a holding platform.</PS_CannotCaptureEntity>
 </LanguageData>
