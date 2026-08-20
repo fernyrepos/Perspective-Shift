@@ -80,7 +80,7 @@ namespace PerspectiveShift
 
         private bool HandleDropOrInteract(IntVec3 cell, bool itemInRange, Thing carriedThing)
         {
-            if (Event.current.clickCount == 2 && TryMakeWearOrEquipJob(pawn, carriedThing, out Job job))
+            if (!PerspectiveShiftMod.settings.disableDoubleClickEquip && Event.current.clickCount == 2 && TryMakeWearOrEquipJob(pawn, carriedThing, out Job job))
             {
                 return pawn.jobs.TryTakeOrderedJob(job);
             }
