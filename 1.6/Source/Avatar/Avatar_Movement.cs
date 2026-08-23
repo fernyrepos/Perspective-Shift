@@ -208,7 +208,7 @@ namespace PerspectiveShift
                 moveInputDuration = 0f;
                 if (wasMovingLastFrame)
                 {
-                    if (pawn.pather.curPath != null) pawn.pather.StopDead();
+                    if (pawn.pather?.curPath != null && !(pawn.jobs?.curJob?.playerForced ?? false)) pawn.pather.StopDead();
                     wasMovingLastFrame = false;
                 }
 
@@ -257,7 +257,7 @@ namespace PerspectiveShift
                 wasMovingLastFrame = true;
             }
 
-            if (pawn.pather != null && pawn.pather.curPath != null) pawn.pather.StopDead();
+            if (pawn.pather?.curPath != null && !(pawn.jobs?.curJob?.playerForced ?? false)) pawn.pather.StopDead();
 
             bool isShooting = pawn.stances.curStance is Stance_Warmup || pawn.stances.curStance is Stance_Cooldown;
             var canRunAndGun = ModCompatibility.IsRunAndGunActiveFor(pawn);
