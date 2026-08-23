@@ -341,7 +341,7 @@ namespace PerspectiveShift
             holderComp.Container.TryAddOrTransfer(carriedPawn, 1);
             targetComp.Notify_HeldOnPlatform(holderComp.Container);
 
-            if (targetComp.Props.capturedLetterLabel != null)
+            if (targetComp.Props.capturedLetterLabel != null && targetComp.Props.capturedLetterText != null)
             {
                 Find.LetterStack.ReceiveLetter(
                     targetComp.Props.capturedLetterLabel,
