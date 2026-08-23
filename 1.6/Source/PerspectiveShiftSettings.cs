@@ -21,6 +21,7 @@ namespace PerspectiveShift
         public bool holdToFire = true;
         public bool cameraEasing = true;
         public bool requireHeldClickForJobs = true;
+        public bool disableDoubleClickEquip = false;
 
         public bool enableSprinting = true;
         public bool enableSneaking = true;
@@ -51,6 +52,7 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref holdToFire, "holdToFire", true);
             Scribe_Values.Look(ref cameraEasing, "cameraEasing", true);
             Scribe_Values.Look(ref requireHeldClickForJobs, "requireHeldClickForJobs", true);
+            Scribe_Values.Look(ref disableDoubleClickEquip, "disableDoubleClickEquip", false);
 
             Scribe_Values.Look(ref enableSprinting, "enableSprinting", true);
             Scribe_Values.Look(ref enableSneaking, "enableSneaking", true);

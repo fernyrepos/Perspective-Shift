@@ -133,7 +133,7 @@ namespace PerspectiveShift
             {
                 targetCamPos = State.CameraLockPosition
                 ?? physicsPosition
-                ?? pawn.DrawPos;
+                ?? pawn.Position.ToVector3ShiftedWithAltitude(pawn.def.Altitude);
             }
             else
             {
