@@ -60,6 +60,9 @@ namespace PerspectiveShift
         public static bool shownControlsDialog = false;
         private const float ControlsDialogDelay = 10f;
         private static float controlsDialogDueAt = -1f;
+        private const float SleepFadeDuration = 1.5f;
+        private static float sleepFade;
+        private static float lastSleepFadeTime = -1f;
         public static float lastDamageTime = -999f;
         public static bool IsActive
         {
@@ -299,6 +302,73 @@ namespace PerspectiveShift
                     GUI.color = prevColor;
                 }
             }
+        }
+
+        public static void DrawSleepOverlay()
+        {
+            if (!PerspectiveShiftMod.settings.sleepingPreventsVision) return;
+
+            if (!IsActive || !Avatar.pawn.Spawned || Avatar.pawn.Map != Find.CurrentMap)
+            {
+                sleepFade = 0f;
+                lastSleepFadeTime = -1f;
+                return;
+            }
+
+            var target = Avatar.pawn.Awake() ? 0f : 1f;
+            if (target <= 0f && sleepFade <= 0f)
+            {
+                lastSleepFadeTime = -1f;
+                return;
+            }
+
+            var now = Time.realtimeSinceStartup;
+            var delta = lastSleepFadeTime < 0f ? 0f : Mathf.Min(now - lastSleepFadeTime, 0.25f);
+            lastSleepFadeTime = now;
+            sleepFade = Mathf.MoveTowards(sleepFade, target, delta / SleepFadeDuration);
+            if (sleepFade <= 0f) return;
+
+            GUI.color = new Color(1f, 1f, 1f, sleepFade);
+            GUI.DrawTexture(new Rect(0f, 0f, UI.screenWidth, UI.screenHeight), BaseContent.BlackTex);
+            GUI.color = Color.white;
+        }
+
+        private static int lastMapBlockFrame = -1;
+
+        public static bool MapViewBlocked(Map map)
+        {
+            if (!PerspectiveShiftMod.settings.disallowOtherMapsInAuthentic) return false;
+            if (CurrentMode != PlaystyleMode.Authentic) return false;
+
+            var avatarPawn = Avatar?.pawn;
+            if (avatarPawn == null || avatarPawn.Dead) return false;
+
+            return map != avatarPawn.MapHeld;
+        }
+
+        public static bool MapSwitchBlocked(Map map)
+        {
+            if (!PerspectiveShiftMod.settings.disallowOtherMapsInAuthentic) return false;
+            if (CurrentMode != PlaystyleMode.Authentic) return false;
+            if (Current.ProgramState != ProgramState.Playing) return false;
+            if (Event.current == null) return false;
+            if (WorldComponent_GravshipController.CutsceneInProgress) return false;
+
+            var avatarPawn = Avatar?.pawn;
+            if (avatarPawn == null || avatarPawn.Dead) return false;
+
+            var held = avatarPawn.MapHeld;
+            if (map == held) return false;
+            if (held != null && Find.CurrentMap != held) return false;
+
+            return true;
+        }
+
+        public static void NotifyMapViewBlocked()
+        {
+            if (Time.frameCount == lastMapBlockFrame) return;
+            lastMapBlockFrame = Time.frameCount;
+            Messages.Message("PS_CannotViewOtherMaps".Translate(), MessageTypeDefOf.RejectInput, historical: false);
         }
 
         public static Thing TryGetSpawnedContainer(Pawn pawn)

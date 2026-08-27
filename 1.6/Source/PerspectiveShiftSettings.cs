@@ -42,6 +42,9 @@ namespace PerspectiveShift
         public List<string> pinnedNeeds = new List<string>() { "Mood", "Food", "Rest", "Joy" };
         public bool enableDamageScreenEffect = true;
         public bool showControlsOnFirstInhabit = true;
+        public bool sleepingPreventsVision = true;
+        public float avatarUIScale = 1f;
+        public bool disallowOtherMapsInAuthentic = false;
 
         public override void ExposeData()
         {
@@ -56,6 +59,9 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref disableDoubleClickEquip, "disableDoubleClickEquip", false);
 
             Scribe_Values.Look(ref showControlsOnFirstInhabit, "showControlsOnFirstInhabit", true);
+            Scribe_Values.Look(ref sleepingPreventsVision, "sleepingPreventsVision", true);
+            Scribe_Values.Look(ref avatarUIScale, "avatarUIScale", 1f);
+            Scribe_Values.Look(ref disallowOtherMapsInAuthentic, "disallowOtherMapsInAuthentic", false);
             Scribe_Values.Look(ref enableSprinting, "enableSprinting", true);
             Scribe_Values.Look(ref enableSneaking, "enableSneaking", true);
             Scribe_Values.Look(ref sprintSpeedMultiplier, "sprintSpeedMultiplier", 1.3f);

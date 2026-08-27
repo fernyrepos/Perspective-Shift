@@ -43,6 +43,8 @@ namespace PerspectiveShift
             listing.CheckboxLabeled("PS_RequireHeldClickForJobs".Translate(), ref settings.requireHeldClickForJobs, "PS_RequireHeldClickForJobsDesc".Translate());
             listing.CheckboxLabeled("PS_DisableDoubleClickEquip".Translate(), ref settings.disableDoubleClickEquip, "PS_DisableDoubleClickEquipDesc".Translate());
             listing.CheckboxLabeled("PS_EnableDamageScreenEffect".Translate(), ref settings.enableDamageScreenEffect, "PS_EnableDamageScreenEffectDesc".Translate());
+            listing.CheckboxLabeled("PS_SleepingPreventsVision".Translate(), ref settings.sleepingPreventsVision, "PS_SleepingPreventsVisionDesc".Translate());
+            listing.CheckboxLabeled("PS_DisallowOtherMapsInAuthentic".Translate(), ref settings.disallowOtherMapsInAuthentic, "PS_DisallowOtherMapsInAuthenticDesc".Translate());
             listing.CheckboxLabeled("PS_DisableAimingDelay".Translate(), ref settings.disableAimingDelay, "PS_DisableAimingDelayDesc".Translate());
 
             listing.CheckboxLabeled("PS_EnableSprinting".Translate(), ref settings.enableSprinting);

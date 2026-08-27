@@ -69,6 +69,11 @@
 
     <PS_EnableDamageScreenEffect>Enable damage screen effect</PS_EnableDamageScreenEffect>
     <PS_EnableDamageScreenEffectDesc>Flashes a red overlay on the screen briefly when your controlled character takes damage.</PS_EnableDamageScreenEffectDesc>
+    <PS_SleepingPreventsVision>Sleeping prevents vision</PS_SleepingPreventsVision>
+    <PS_SleepingPreventsVisionDesc>While the character you are inhabiting is asleep or unconscious, the world fades to black until they wake up. Your interface stays visible.</PS_SleepingPreventsVisionDesc>
+    <PS_DisallowOtherMapsInAuthentic>Disallow seeing other maps in authentic style</PS_DisallowOtherMapsInAuthentic>
+    <PS_DisallowOtherMapsInAuthenticDesc>In authentic style you can only look at the map your character is on. Jumping to another colony, to a pawn elsewhere, or to a letter about another map is refused, including while your character is travelling in a caravan.</PS_DisallowOtherMapsInAuthenticDesc>
+    <PS_CannotViewOtherMaps>You can only see where your character is.</PS_CannotViewOtherMaps>
     <PS_WashYourself>Wash yourself</PS_WashYourself>
     <PS_DrinkWater>Drink water</PS_DrinkWater>
     <PS_RelieveBladder>Relieve bladder in water</PS_RelieveBladder>
@@ -81,6 +86,8 @@
     <PS_ShootAccuracyMultiplier>Shooting accuracy multiplier: {0}</PS_ShootAccuracyMultiplier>
     <PS_PlayerMoveSpeedCap>Player move speed cap: {0}</PS_PlayerMoveSpeedCap>
     <PS_GizmoCorner>Gizmo UI position</PS_GizmoCorner>
+    <PS_RotateCornerTip>Move the interface to the next corner.</PS_RotateCornerTip>
+    <PS_ScaleInterfaceTip>Drag to resize the needs and gizmos. Right-click to reset to normal size.</PS_ScaleInterfaceTip>
     <PS_TotalFreedom>Total freedom</PS_TotalFreedom>
     <PS_TotalFreedomDesc>Always allow character switching regardless of any settings.</PS_TotalFreedomDesc>
     <PS_AllowNonHuman>Allow non-human control</PS_AllowNonHuman>

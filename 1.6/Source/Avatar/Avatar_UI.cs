@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using Verse;
 using Verse.AI;
+using Verse.Sound;
 
 namespace PerspectiveShift
 {
@@ -16,6 +17,22 @@ namespace PerspectiveShift
         private List<Gizmo> _cachedGizmos = [];
         private Thing _lastGizmoSource;
         private int _lastGizmoCacheFrame = -999;
+        private Rect needsBounds;
+        private Rect rotateButtonRect;
+        private Rect scaleGripRect;
+        private bool resizingUI;
+        private Vector2 resizeStartMouse;
+        private float resizeStartScale;
+
+        private const float MinAvatarUIScale = 0.5f;
+        private const float MaxAvatarUIScale = 1.5f;
+
+        private static readonly Color NeedsPanelColor = new ColorInt(32, 32, 32).ToColor.WithAlpha(0.7f);
+        private static readonly Color GripIdleColor = new Color(1f, 1f, 1f, 0.45f);
+
+        private static Texture2D _rotateIcon;
+        private static Texture2D RotateIcon => _rotateIcon ??= ContentFinder<Texture2D>.Get("UI/Widgets/RotRight");
+        private static float AvatarUIScale => PerspectiveShiftMod.settings.avatarUIScale;
 
         public void OnGUI()
         {
@@ -87,6 +104,8 @@ namespace PerspectiveShift
             {
                 DrawPlayerGizmos();
                 DrawNeeds();
+                DrawCornerRotateButton();
+                DrawScaleGrip();
             }
         }
 
@@ -273,6 +292,9 @@ namespace PerspectiveShift
             if (gizmoBounds.Contains(mousePos))
                 return true;
 
+            if (resizingUI || rotateButtonRect.Contains(mousePos) || scaleGripRect.Contains(mousePos))
+                return true;
+
             if (Find.WindowStack.GetWindowAt(mouseInverted) != null)
                 return true;
 
@@ -358,7 +380,8 @@ namespace PerspectiveShift
 
             var gizmos = _cachedGizmos.Where(g => g.Visible).ToList();
 
-            float scale = 0.85f * Prefs.UIScale;
+            float s = 0.85f * AvatarUIScale;
+            float scale = s * Prefs.UIScale;
             float actualSize = 75f;
             float spacing = 8f;
 
@@ -370,20 +393,20 @@ namespace PerspectiveShift
             switch (PerspectiveShiftMod.settings.gizmoCorner)
             {
                 case GizmoCorner.TopRight:
-                    startX = (UI.screenWidth - 10f) / 0.85f - actualSize;
-                    startY = 10f / 0.85f;
+                    startX = (UI.screenWidth - 10f) / s - actualSize;
+                    startY = 10f / s;
                     break;
                 case GizmoCorner.BottomRight:
-                    startX = (UI.screenWidth - 10f) / 0.85f - actualSize;
-                    startY = (UI.screenHeight - 10f - mainButtonHeight) / 0.85f - actualSize;
+                    startX = (UI.screenWidth - 10f) / s - actualSize;
+                    startY = (UI.screenHeight - 10f - mainButtonHeight) / s - actualSize;
                     break;
                 case GizmoCorner.BottomLeft:
-                    startX = 10f / 0.85f;
-                    startY = (UI.screenHeight - 10f - mainButtonHeight) / 0.85f - actualSize;
+                    startX = 10f / s;
+                    startY = (UI.screenHeight - 10f - mainButtonHeight) / s - actualSize;
                     break;
                 case GizmoCorner.TopLeft:
-                    startX = 10f / 0.85f;
-                    startY = 10f / 0.85f;
+                    startX = 10f / s;
+                    startY = 10f / s;
                     break;
             }
 
@@ -433,10 +456,10 @@ namespace PerspectiveShift
                     tempHotkey = command.hotKey;
                     if (suppressHotkeys) command.hotKey = null;
                 }
-                float screenX = drawX * 0.85f;
-                float screenY = y * 0.85f;
-                float screenW = gizmoWidth * 0.85f;
-                float screenH = actualSize * 0.85f;
+                float screenX = drawX * s;
+                float screenY = y * s;
+                float screenW = gizmoWidth * s;
+                float screenH = actualSize * s;
 
                 boundsMinX = Mathf.Min(boundsMinX, screenX);
                 boundsMaxX = Mathf.Max(boundsMaxX, screenX + screenW);
@@ -498,6 +521,9 @@ namespace PerspectiveShift
 
         private void DrawNeeds()
         {
+            if (Event.current.type == EventType.Layout) return;
+
+            needsBounds = Rect.zero;
             if (pawn.needs == null || gizmoBounds == Rect.zero) return;
 
             var needs = pawn.needs.AllNeeds
@@ -505,39 +531,149 @@ namespace PerspectiveShift
                 .ToList();
             if (!needs.Any()) return;
 
+            float uiScale = AvatarUIScale;
             float width = 200f;
             float height = 40f;
             float totalHeight = needs.Count * height;
+            float drawnWidth = width * uiScale;
+            float drawnHeight = totalHeight * uiScale;
 
-            var startX = Mathf.Min(gizmoBounds.xMax - width - 10f, UI.screenWidth - width - 10f);
+            var corner = PerspectiveShiftMod.settings.gizmoCorner;
+            var startX = Mathf.Min(gizmoBounds.xMax - drawnWidth - 10f, UI.screenWidth - drawnWidth - 10f);
             float startY = gizmoBounds.yMax + 35f;
 
-            if (PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomRight)
+            if (corner == GizmoCorner.BottomRight)
             {
-                startY = gizmoBounds.yMin - totalHeight - 10f;
+                startY = gizmoBounds.yMin - drawnHeight - 10f;
             }
-            else if (PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomLeft)
+            else if (corner == GizmoCorner.BottomLeft)
             {
                 startX = gizmoBounds.xMin + 10f;
-                startY = gizmoBounds.yMin - totalHeight - 10f;
+                startY = gizmoBounds.yMin - drawnHeight - 10f;
             }
-            else if (PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.TopLeft)
+            else if (corner == GizmoCorner.TopLeft)
             {
                 startX = gizmoBounds.xMin + 10f;
             }
 
-            var unifiedBg = new Rect(startX - 20f, startY - 5f, width + 30f, totalHeight + 10f);
-            Widgets.DrawBoxSolid(unifiedBg, new ColorInt(32, 32, 32).ToColor.WithAlpha(0.7f));
+            var unifiedBg = new Rect(startX - 20f * uiScale, startY - 5f * uiScale, drawnWidth + 30f * uiScale, drawnHeight + 10f * uiScale);
+            Widgets.DrawBoxSolid(unifiedBg, NeedsPanelColor);
+            needsBounds = unifiedBg;
+
+            bool scaled = !Mathf.Approximately(uiScale, 1f);
+            Matrix4x4 prevMatrix = GUI.matrix;
+            if (scaled)
+            {
+                GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(uiScale * Prefs.UIScale, uiScale * Prefs.UIScale, 1f));
+            }
 
             DrawingAvatarNeeds = true;
-            float currentY = startY;
+            float localX = scaled ? startX / uiScale : startX;
+            float currentY = scaled ? startY / uiScale : startY;
             foreach (var need in needs)
             {
-                Rect needRect = new Rect(startX, currentY, width, height);
+                Rect needRect = new Rect(localX, currentY, width, height);
                 need.DrawOnGUI(needRect, maxThresholdMarkers: int.MaxValue, customMargin: 4f, drawArrows: true, doTooltip: true, rectForTooltip: null, drawLabel: true);
                 currentY += height;
             }
             DrawingAvatarNeeds = false;
+
+            if (scaled) GUI.matrix = prevMatrix;
+        }
+
+        private void DrawCornerRotateButton()
+        {
+            if (Event.current.type == EventType.Layout) return;
+
+            rotateButtonRect = Rect.zero;
+            if (needsBounds == Rect.zero) return;
+
+            float uiScale = AvatarUIScale;
+            rotateButtonRect = new Rect(needsBounds.xMin + uiScale, needsBounds.yMin + uiScale, 18f * uiScale, 18f * uiScale);
+
+            if (Widgets.ButtonImage(rotateButtonRect, RotateIcon))
+            {
+                var corner = PerspectiveShiftMod.settings.gizmoCorner;
+                PerspectiveShiftMod.settings.gizmoCorner = (GizmoCorner)(((int)corner + 1) % 4);
+                SoundDefOf.Click.PlayOneShotOnCamera();
+                LoadedModManager.GetMod<PerspectiveShiftMod>()?.WriteSettings();
+            }
+            else if (Mouse.IsOver(rotateButtonRect))
+            {
+                TooltipHandler.TipRegion(rotateButtonRect, "PS_RotateCornerTip".Translate());
+            }
+
+            GenUI.AbsorbClicksInRect(rotateButtonRect);
+        }
+
+        private void DrawScaleGrip()
+        {
+            if (Event.current.type == EventType.Layout) return;
+
+            scaleGripRect = Rect.zero;
+            if (needsBounds == Rect.zero) return;
+
+            var settings = PerspectiveShiftMod.settings;
+            var corner = settings.gizmoCorner;
+            bool gripRight = corner == GizmoCorner.TopLeft || corner == GizmoCorner.BottomLeft;
+
+            float gripSize = 18f;
+            scaleGripRect = new Rect(gripRight ? needsBounds.xMax - gripSize : needsBounds.xMin, needsBounds.yMax - gripSize, gripSize, gripSize);
+
+            bool hovered = Mouse.IsOver(scaleGripRect);
+            if (Event.current.type == EventType.Repaint)
+            {
+                DrawGripLines(scaleGripRect, gripRight, hovered || resizingUI ? Color.white : GripIdleColor);
+            }
+            var ev = Event.current;
+
+            if (ev.type == EventType.MouseDown && hovered)
+            {
+                if (ev.button == 0)
+                {
+                    resizingUI = true;
+                    resizeStartMouse = ev.mousePosition;
+                    resizeStartScale = settings.avatarUIScale;
+                    ev.Use();
+                }
+                else if (ev.button == 1)
+                {
+                    settings.avatarUIScale = 1f;
+                    SoundDefOf.Click.PlayOneShotOnCamera();
+                    LoadedModManager.GetMod<PerspectiveShiftMod>()?.WriteSettings();
+                    ev.Use();
+                }
+            }
+
+            if (!resizingUI)
+            {
+                if (hovered) TooltipHandler.TipRegion(scaleGripRect, "PS_ScaleInterfaceTip".Translate());
+                return;
+            }
+
+            if (ev.rawType == EventType.MouseUp)
+            {
+                resizingUI = false;
+                LoadedModManager.GetMod<PerspectiveShiftMod>()?.WriteSettings();
+                ev.Use();
+                return;
+            }
+
+            var delta = ev.mousePosition - resizeStartMouse;
+            settings.avatarUIScale = Mathf.Clamp(resizeStartScale + (delta.x * (gripRight ? 1f : -1f) + delta.y) / 600f, MinAvatarUIScale, MaxAvatarUIScale);
+            if (ev.type == EventType.MouseDrag) ev.Use();
+        }
+
+        private static void DrawGripLines(Rect rect, bool gripRight, Color color)
+        {
+            float cx = gripRight ? rect.xMax : rect.xMin;
+            float dx = gripRight ? -1f : 1f;
+
+            for (int i = 1; i <= 3; i++)
+            {
+                float d = i * 5f + 1f;
+                Widgets.DrawLine(new Vector2(cx + dx * d, rect.yMax), new Vector2(cx, rect.yMax - d), color, 1f);
+            }
         }
     }
 }
