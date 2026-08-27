@@ -17,9 +17,13 @@ namespace PerspectiveShift
             AuthenticOptions
         }
 
+        private const float RecommendedReserve = 26f;
+        private const float RecommendedFlashDuration = 1.2f;
+
         private PageStep step = PageStep.Role;
         private bool roleIsCharacter = false;
         private PlaystyleMode selectedPlaystyle = PlaystyleMode.Authentic;
+        private float openedAt;
 
         private static Texture2D _directorIcon;
         private static Texture2D DirectorIcon =>
@@ -47,6 +51,12 @@ namespace PerspectiveShift
                 ? "PS_SelectPlaystyle".Translate()
                 : "PS_ModeAuthentic".Translate();
 
+        public override void PreOpen()
+        {
+            base.PreOpen();
+            openedAt = Time.realtimeSinceStartup;
+        }
+
         public override void DoWindowContents(Rect rect)
         {
             Text.Font = GameFont.Medium;
@@ -69,7 +79,7 @@ namespace PerspectiveShift
             DoBottomButtons(rect, nextLabel, null, null, true, true);
         }
 
-        private void DrawRoleOption(Rect rect, string label, string desc, Texture2D icon, bool selected, Action onSelect)
+        private void DrawRoleOption(Rect rect, string label, string desc, Texture2D icon, bool selected, bool recommended, Action onSelect)
         {
             Widgets.DrawMenuSection(rect);
 
@@ -89,6 +99,8 @@ namespace PerspectiveShift
             var iconRect = new Rect(rect.x, rect.y, rect.width, rect.width).ExpandedBy(21);
             GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit);
 
+            if (recommended) DrawRecommendedLabel(contentRect);
+
             Text.Font = GameFont.Medium;
             Text.Anchor = TextAnchor.MiddleCenter;
             var labelHeight = Text.CalcHeight(label, contentRect.width);
@@ -100,6 +112,23 @@ namespace PerspectiveShift
             var descRect = new Rect(contentRect.x, labelRect.yMax + 5f, contentRect.width, descHeight);
             Widgets.Label(descRect, desc);
             Text.Anchor = TextAnchor.UpperLeft;
+        }
+
+        private void DrawRecommendedLabel(Rect contentRect)
+        {
+            var grey = ColoredText.SubtleGrayColor;
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.UpperCenter;
+            GUI.color = Color.Lerp(grey, Color.white, RecommendedFlashIntensity());
+            Widgets.Label(new Rect(contentRect.x, contentRect.y, contentRect.width, RecommendedReserve), "PS_Recommended".Translate());
+            GUI.color = Color.white;
+        }
+
+        private float RecommendedFlashIntensity()
+        {
+            var t = (Time.realtimeSinceStartup - openedAt) / RecommendedFlashDuration;
+            if (t <= 0f || t >= 1f) return 0f;
+            return 0.5f - (0.5f * Mathf.Cos(t * 2f * Mathf.PI));
         }
 
         private void DrawRoleSelection(Rect rect)
@@ -122,6 +151,7 @@ namespace PerspectiveShift
                 "PS_RoleDirectorDesc".Translate(),
                 DirectorIcon,
                 !roleIsCharacter,
+                false,
                 () => roleIsCharacter = false);
 
             DrawRoleOption(rightRect,
@@ -129,6 +159,7 @@ namespace PerspectiveShift
                 "PS_RoleCharacterDesc".Translate(),
                 CharacterIcon,
                 roleIsCharacter,
+                ModCompatibility.ThemingModAvailable,
                 () => roleIsCharacter = true);
         }
 

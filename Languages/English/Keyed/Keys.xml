@@ -15,6 +15,42 @@
     <PS_RoleDirectorDesc>Experience the game from an omniscient point of view, only managing the characters. The classic experience.</PS_RoleDirectorDesc>
     <PS_RoleCharacter>Play as characters</PS_RoleCharacter>
     <PS_RoleCharacterDesc>Experience the game from the point of view of one or many of your characters. Customizable.</PS_RoleCharacterDesc>
+    <PS_Recommended>RECOMMENDED</PS_Recommended>
+
+    <PS_InhabitedControls>List of controls while inhabited</PS_InhabitedControls>
+    <PS_NeverShowAgain>Never show this again</PS_NeverShowAgain>
+    <PS_ShowControlsOnFirstInhabit>Show controls on first ever inhabit</PS_ShowControlsOnFirstInhabit>
+    <PS_ShowControlsOnFirstInhabitDesc>The first time you take control of a character in a save, open a summary of the character controls. Turning this off hides it everywhere, including in saves that have not shown it yet.</PS_ShowControlsOnFirstInhabitDesc>
+    <PS_InhabitedControlsRebindWarning>If you have rebound your keys, these may no longer apply. This will only show once per save.</PS_InhabitedControlsRebindWarning>
+    <PS_ControlsMovement>Movement</PS_ControlsMovement>
+    <PS_ControlsInteracting>Interacting</PS_ControlsInteracting>
+    <PS_ControlsCharacter>Your character</PS_ControlsCharacter>
+    <PS_KeyWASD>WASD</PS_KeyWASD>
+    <PS_KeyShiftHold>Hold left shift</PS_KeyShiftHold>
+    <PS_KeyCtrlHold>Hold left ctrl</PS_KeyCtrlHold>
+    <PS_KeyLeftClick>Left click</PS_KeyLeftClick>
+    <PS_KeyLeftClickHold>Hold left click</PS_KeyLeftClickHold>
+    <PS_KeyRightClick>Right click</PS_KeyRightClick>
+    <PS_KeyRightClickHauling>Right click (while hauling)</PS_KeyRightClickHauling>
+    <PS_KeyDoubleClickHauling>Double click (while hauling)</PS_KeyDoubleClickHauling>
+    <PS_KeyE>E</PS_KeyE>
+    <PS_KeyQ>Q</PS_KeyQ>
+    <PS_KeyH>H</PS_KeyH>
+    <PS_KeyF>F</PS_KeyF>
+    <PS_KeyJ>J</PS_KeyJ>
+    <PS_ControlMove>Move</PS_ControlMove>
+    <PS_ControlSprint>Sprint</PS_ControlSprint>
+    <PS_ControlSneak>Sneak</PS_ControlSneak>
+    <PS_ControlLeftClick>Begin hauling an item, or otherwise operate it</PS_ControlLeftClick>
+    <PS_ControlLeftClickHold>Specific tasks like building, mining, or chopping</PS_ControlLeftClickHold>
+    <PS_ControlRightClick>Queue more advanced jobs on things</PS_ControlRightClick>
+    <PS_ControlStoreItem>Store the carried item in your inventory</PS_ControlStoreItem>
+    <PS_ControlEquipItem>Equip the carried item</PS_ControlEquipItem>
+    <PS_ControlInventory>Open your inventory</PS_ControlInventory>
+    <PS_ControlNeeds>Open your needs tab</PS_ControlNeeds>
+    <PS_ControlHealth>Open your health tab</PS_ControlHealth>
+    <PS_ControlEat>Have your character eat food</PS_ControlEat>
+    <PS_ControlRecreation>Do recreation</PS_ControlRecreation>
 
     <PS_SelectPlaystyle>Select your character playstyle</PS_SelectPlaystyle>
     <PS_ModeAuthentic>Authentic style</PS_ModeAuthentic>

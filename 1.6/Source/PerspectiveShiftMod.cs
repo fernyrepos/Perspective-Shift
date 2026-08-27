@@ -90,6 +90,7 @@ namespace PerspectiveShift
             listing.CheckboxLabeled("PS_DisableCustomGizmos".Translate(), ref settings.disableCustomGizmos, "PS_DisableCustomGizmosDesc".Translate());
             listing.CheckboxLabeled("PS_AllowNonHuman".Translate(), ref settings.allowNonHuman, "PS_AllowNonHumanDesc".Translate());
             listing.CheckboxLabeled("PS_RequirePawnInFaction".Translate(), ref settings.requirePawnInFaction, "PS_RequirePawnInFactionDesc".Translate());
+            listing.CheckboxLabeled("PS_ShowControlsOnFirstInhabit".Translate(), ref settings.showControlsOnFirstInhabit, "PS_ShowControlsOnFirstInhabitDesc".Translate());
 
             scrollHeight = listing.curY - startY;
             listing.End();

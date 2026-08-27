@@ -57,6 +57,9 @@ namespace PerspectiveShift
         public static bool pendingDeathMenu = false;
         public static bool permadeath = false;
         public static bool allowDirectorInAuthentic = false;
+        public static bool shownControlsDialog = false;
+        private const float ControlsDialogDelay = 10f;
+        private static float controlsDialogDueAt = -1f;
         public static float lastDamageTime = -999f;
         public static bool IsActive
         {
@@ -151,6 +154,7 @@ namespace PerspectiveShift
             }
             CameraLockPosition = null;
             Avatar = null;
+            controlsDialogDueAt = -1f;
             Cursor.visible = true;
         }
 
@@ -267,6 +271,19 @@ namespace PerspectiveShift
             {
                 _savedConfig = Find.CameraDriver.config;
                 Find.CameraDriver.config = new CameraMapConfig_Avatar();
+            }
+
+            if (!shownControlsDialog && PerspectiveShiftMod.settings.showControlsOnFirstInhabit)
+            {
+                if (controlsDialogDueAt < 0f)
+                {
+                    controlsDialogDueAt = Time.realtimeSinceStartup + ControlsDialogDelay;
+                }
+                else if (Time.realtimeSinceStartup >= controlsDialogDueAt)
+                {
+                    shownControlsDialog = true;
+                    Find.WindowStack.Add(new Dialog_InhabitedControls());
+                }
             }
 
             Avatar.OnGUI();

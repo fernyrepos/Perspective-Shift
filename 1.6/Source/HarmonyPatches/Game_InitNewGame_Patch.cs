@@ -6,9 +6,9 @@ namespace PerspectiveShift
     [HarmonyPatch(typeof(Game), nameof(Game.InitNewGame))]
     public static class Game_InitNewGame_Patch
     {
-        public static void Postfix()
+        public static void Prefix()
         {
-            State.CameraLockPosition = null;
+            State.shownControlsDialog = false;
         }
     }
 }

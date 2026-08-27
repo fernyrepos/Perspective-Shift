@@ -24,6 +24,7 @@ namespace PerspectiveShift
         public static readonly bool ProcessorFrameworkAvailable;
         public static readonly bool RimbodyAvailable;
         public static readonly bool DubsBadHygieneAvailable;
+        public static readonly bool ThemingModAvailable;
 
         private static Type vehiclePawnType;
         private static MethodInfo addOrTransferMethod;
@@ -136,6 +137,8 @@ namespace PerspectiveShift
             DubsBadHygieneAvailable = ModsConfig.IsActive("Dubwise.DubsBadHygiene") || ModsConfig.IsActive("Dubwise.DubsBadHygiene.Lite");
             if (DubsBadHygieneAvailable && !InitDBHCompat())
                 DubsBadHygieneAvailable = false;
+
+            ThemingModAvailable = ModsConfig.IsActive("ferny.themingformodpack");
         }
 
         public static void ClearCaches()
