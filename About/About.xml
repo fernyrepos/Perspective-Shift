@@ -16,6 +16,7 @@
         <li>Ludeon.RimWorld.Odyssey</li>
         <li>brrainz.harmony</li>
         <li>ay1203.simplecamerasetting</li>
+        <li>memegoddess.runandgun</li>
     </loadAfter>
 	<modDependencies>
 		<li>

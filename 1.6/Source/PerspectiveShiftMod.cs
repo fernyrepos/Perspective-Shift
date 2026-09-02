@@ -42,6 +42,18 @@ namespace PerspectiveShift
             listing.CheckboxLabeled("PS_CameraEasing".Translate(), ref settings.cameraEasing, "PS_CameraEasingDesc".Translate());
             listing.CheckboxLabeled("PS_RequireHeldClickForJobs".Translate(), ref settings.requireHeldClickForJobs, "PS_RequireHeldClickForJobsDesc".Translate());
             listing.CheckboxLabeled("PS_DisableDoubleClickEquip".Translate(), ref settings.disableDoubleClickEquip, "PS_DisableDoubleClickEquipDesc".Translate());
+            listing.CheckboxLabeled("PS_DisableDoubleClickEat".Translate(), ref settings.disableDoubleClickEat, "PS_DisableDoubleClickEatDesc".Translate());
+            if (!settings.disableDoubleClickEquip)
+            {
+                listing.CheckboxLabeled("PS_WeaponTooltips".Translate(), ref settings.weaponTooltips, "PS_WeaponTooltipsDesc".Translate());
+                listing.CheckboxLabeled("PS_ApparelTooltips".Translate(), ref settings.apparelTooltips, "PS_ApparelTooltipsDesc".Translate());
+            }
+            if (!settings.disableDoubleClickEat)
+            {
+                listing.CheckboxLabeled("PS_EatTooltips".Translate(), ref settings.eatTooltips, "PS_EatTooltipsDesc".Translate());
+            }
+            listing.CheckboxLabeled("PS_HarvestTooltips".Translate(), ref settings.harvestTooltips, "PS_HarvestTooltipsDesc".Translate());
+            listing.CheckboxLabeled("PS_HaulingCursor".Translate(), ref settings.haulingCursor, "PS_HaulingCursorDesc".Translate());
             listing.CheckboxLabeled("PS_EnableDamageScreenEffect".Translate(), ref settings.enableDamageScreenEffect, "PS_EnableDamageScreenEffectDesc".Translate());
             listing.CheckboxLabeled("PS_SleepingPreventsVision".Translate(), ref settings.sleepingPreventsVision, "PS_SleepingPreventsVisionDesc".Translate());
             listing.CheckboxLabeled("PS_DisallowOtherMapsInAuthentic".Translate(), ref settings.disallowOtherMapsInAuthentic, "PS_DisallowOtherMapsInAuthenticDesc".Translate());

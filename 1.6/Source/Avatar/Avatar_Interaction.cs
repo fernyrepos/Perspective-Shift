@@ -85,6 +85,11 @@ namespace PerspectiveShift
                 return pawn.jobs.TryTakeOrderedJob(job);
             }
 
+            if (!PerspectiveShiftMod.settings.disableDoubleClickEat && Event.current.clickCount == 2 && TryMakeIngestJob(pawn, carriedThing, out Job ingestJob))
+            {
+                return pawn.jobs.TryTakeOrderedJob(ingestJob);
+            }
+
             if (!itemInRange) return false;
 
             if (!cell.InBounds(pawn.Map))
@@ -766,6 +771,8 @@ namespace PerspectiveShift
 
         private bool TryExecuteDesignatorlessFallback(IntVec3 clickCell, bool itemInRange)
         {
+            if (Prefs.DevMode) LogHarvestGate(clickCell, itemInRange);
+
             if (!itemInRange) return false;
 
             var plant = clickCell.GetPlant(pawn.Map);
@@ -775,7 +782,7 @@ namespace PerspectiveShift
                 && pawn.CanReserve(plant)
                 && (plant.def.plant.IsTree
                     ? (!pawn.WorkTypeIsDisabled(WorkTypeDefOf.PlantCutting) && PlantUtility.PawnWillingToCutPlant_Job(plant, pawn))
-                    : (plant.def.plant.harvestTag == "Standard" && !pawn.WorkTypeIsDisabled(WorkTypeDefOf.Growing))))
+                    : (plant.def.plant.harvestTag == "Standard" && !pawn.WorkTypeIsDisabled(WorkTypeDefOf.PlantCutting))))
             {
                 var job = JobMaker.MakeJob(JobDefOf.Harvest, plant);
                 if (TryStartForcedJob(job)) return true;
@@ -790,6 +797,39 @@ namespace PerspectiveShift
             }
 
             return false;
+        }
+
+        private void LogHarvestGate(IntVec3 clickCell, bool itemInRange)
+        {
+            var plant = clickCell.GetPlant(pawn.Map);
+            if (plant == null || !plant.def.plant.Harvestable) return;
+
+            var props = plant.def.plant;
+            string blocked = null;
+
+            if (!itemInRange)
+                blocked = $"out of grabRange (distance {pawn.Position.DistanceTo(clickCell):F2}, grabRange {PerspectiveShiftMod.settings.grabRange:F2})";
+            else if (!plant.HarvestableNow)
+                blocked = $"HarvestableNow false (growth {plant.Growth:F2}, harvestAfterGrowth {props.harvestAfterGrowth:F2})";
+            else if (!plant.CanYieldNow())
+                blocked = $"CanYieldNow false (yield {props.harvestYield:F1}, blighted {plant.Blighted})";
+            else if (!pawn.CanReserve(plant))
+                blocked = $"CanReserve false (reserved by {pawn.Map.reservationManager.FirstRespectedReserver(plant, pawn)?.LabelShort ?? "unknown"})";
+            else if (props.IsTree)
+            {
+                if (pawn.WorkTypeIsDisabled(WorkTypeDefOf.PlantCutting))
+                    blocked = "PlantCutting work type disabled for this pawn";
+                else if (!PlantUtility.PawnWillingToCutPlant_Job(plant, pawn))
+                    blocked = "PawnWillingToCutPlant_Job false (ideoligion refuses to cut this tree)";
+            }
+            else if (props.harvestTag != "Standard")
+                blocked = $"harvestTag \"{props.harvestTag}\" is not \"Standard\"";
+            else if (pawn.WorkTypeIsDisabled(WorkTypeDefOf.PlantCutting))
+                blocked = "PlantCutting work type disabled for this pawn";
+
+            Log.Message(blocked == null
+                ? $"[PerspectiveShift] harvest allowed: {plant.LabelCap} ({plant.def.defName})"
+                : $"[PerspectiveShift] harvest BLOCKED: {plant.LabelCap} ({plant.def.defName}) -> {blocked}");
         }
 
         public bool InteractWith(Thing target, JobDef forcedJob = null)
@@ -1020,6 +1060,20 @@ namespace PerspectiveShift
             var job = JobMaker.MakeJob(jobDef, thing);
             job.ignoreDesignations = true;
             return TryStartForcedJob(job, forcedJob);
+        }
+
+        public static bool TryMakeIngestJob(Pawn pawn, Thing item, out Job job)
+        {
+            job = null;
+            if (pawn.needs?.food == null) return false;
+            if (!item.def.IsNutritionGivingIngestible) return false;
+            if (!pawn.WillEat(item, pawn, true)) return false;
+
+            var foodDef = FoodUtility.GetFinalIngestibleDef(item);
+            job = JobMaker.MakeJob(JobDefOf.Ingest, item);
+            job.count = FoodUtility.WillIngestStackCountOf(pawn, foodDef, FoodUtility.NutritionForEater(pawn, item));
+            job.playerForced = true;
+            return true;
         }
 
         public static bool TryMakeWearOrEquipJob(Pawn pawn, Thing item, out Job job)

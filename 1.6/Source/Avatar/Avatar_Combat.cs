@@ -18,6 +18,9 @@ namespace PerspectiveShift
         private static Texture2D _reticleNoLOSTex;
         public static Texture2D ReticleNoLOSTex => _reticleNoLOSTex ??= ContentFinder<Texture2D>.Get("UI/ReticleNoLOS");
 
+        private static Texture2D _dropCursorTex;
+        public static Texture2D DropCursorTex => _dropCursorTex ??= ContentFinder<Texture2D>.Get("UI/Drop");
+
         public bool HandleSelectorClick()
         {
             if (Find.Targeter.IsTargeting) return false;
@@ -296,28 +299,43 @@ namespace PerspectiveShift
 
         private void UpdateCursorAndReticle(bool mouseOverGizmo, bool mouseOverUI)
         {
-            if (pawn.Drafted && !pawn.InMentalState)
-            {
-                if (!Find.TickManager.Paused && Find.Selector.IsSelected(pawn) && !Find.Targeter.IsTargeting)
-                {
-                    if (!PerspectiveShiftMod.settings.disableCustomGizmos)
-                        Find.Selector.Deselect(pawn);
-                }
+            bool drafted = pawn.Drafted && !pawn.InMentalState;
 
-                if (mouseOverUI || mouseOverGizmo || Find.TickManager.Paused || State.ControlsFrozen || Find.Targeter.IsTargeting)
-                {
-                    Cursor.visible = true;
-                }
-                else
-                {
-                    Cursor.visible = false;
-                    DrawReticle(UI.MousePositionOnUIInverted);
-                }
-            }
-            else
+            if (drafted && !Find.TickManager.Paused && Find.Selector.IsSelected(pawn) && !Find.Targeter.IsTargeting)
             {
-                Cursor.visible = true;
+                if (!PerspectiveShiftMod.settings.disableCustomGizmos)
+                    Find.Selector.Deselect(pawn);
             }
+
+            bool cursorBlocked = mouseOverUI || mouseOverGizmo || State.ControlsFrozen || Find.Targeter.IsTargeting;
+
+            if (PerspectiveShiftMod.settings.haulingCursor && CarriedThing != null && !pawn.InMentalState && !cursorBlocked)
+            {
+                if (drafted && !IsMoving) LeanTarget = Vector3.zero;
+                Cursor.visible = false;
+                DrawDropCursor(UI.MousePositionOnUIInverted);
+                return;
+            }
+
+            if (drafted && !cursorBlocked && !Find.TickManager.Paused)
+            {
+                Cursor.visible = false;
+                DrawReticle(UI.MousePositionOnUIInverted);
+                return;
+            }
+
+            Cursor.visible = true;
+        }
+
+        private void DrawDropCursor(Vector2 center)
+        {
+            if (Event.current.type != EventType.Repaint) return;
+
+            var tex = DropCursorTex;
+            if (tex == null) return;
+
+            const float size = 22f;
+            GUI.DrawTexture(new Rect(center.x - size / 2f, center.y - size / 2f, size, size), tex);
         }
     }
 }

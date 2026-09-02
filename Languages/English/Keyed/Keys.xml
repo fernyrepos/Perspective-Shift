@@ -74,6 +74,28 @@
     <PS_DisallowOtherMapsInAuthentic>Disallow seeing other maps in authentic style</PS_DisallowOtherMapsInAuthentic>
     <PS_DisallowOtherMapsInAuthenticDesc>In authentic style you can only look at the map your character is on. Jumping to another colony, to a pawn elsewhere, or to a letter about another map is refused, including while your character is travelling in a caravan.</PS_DisallowOtherMapsInAuthenticDesc>
     <PS_CannotViewOtherMaps>You can only see where your character is.</PS_CannotViewOtherMaps>
+    <PS_WeaponTooltips>Weapon tooltips</PS_WeaponTooltips>
+    <PS_WeaponTooltipsDesc>Hovering a weapon within reach shows its name, quality, and how its DPS and armor penetration compare with what you have equipped.</PS_WeaponTooltipsDesc>
+    <PS_ApparelTooltips>Apparel tooltips</PS_ApparelTooltips>
+    <PS_ApparelTooltipsDesc>Hovering apparel within reach shows its name, quality, and how its armor and insulation compare with whatever it would replace.</PS_ApparelTooltipsDesc>
+    <PS_HaulingCursor>Hauling cursor</PS_HaulingCursor>
+    <PS_HaulingCursorDesc>While you are carrying something, the cursor becomes a drop marker, replacing the aiming reticle even while drafted.</PS_HaulingCursorDesc>
+    <PS_EatTooltips>Food tooltips</PS_EatTooltips>
+    <PS_EatTooltipsDesc>Hovering food within reach shows a hint over it reminding you that double-clicking eats it.</PS_EatTooltipsDesc>
+    <PS_HintDps>DPS</PS_HintDps>
+    <PS_HintArmorPenetration>AP</PS_HintArmorPenetration>
+    <PS_HintArmorSharp>Sharp</PS_HintArmorSharp>
+    <PS_HintArmorBlunt>Blunt</PS_HintArmorBlunt>
+    <PS_HintInsulationCold>Cold</PS_HintInsulationCold>
+    <PS_HintInsulationHeat>Heat</PS_HintInsulationHeat>
+    <PS_HintNutrition>Nutrition</PS_HintNutrition>
+    <PS_ClickAndHoldToHarvest>Click and hold to harvest</PS_ClickAndHoldToHarvest>
+    <PS_ClickToHarvest>Click to harvest</PS_ClickToHarvest>
+    <PS_HarvestTooltips>Harvest tooltips</PS_HarvestTooltips>
+    <PS_HarvestTooltipsDesc>Hovering a harvestable plant within reach shows what it yields and that yield's nutrition.</PS_HarvestTooltipsDesc>
+    <PS_DoubleClickToEquip>Double-click to equip</PS_DoubleClickToEquip>
+    <PS_DoubleClickToWear>Double-click to wear</PS_DoubleClickToWear>
+    <PS_DoubleClickToEat>Double-click to eat</PS_DoubleClickToEat>
     <PS_WashYourself>Wash yourself</PS_WashYourself>
     <PS_DrinkWater>Drink water</PS_DrinkWater>
     <PS_RelieveBladder>Relieve bladder in water</PS_RelieveBladder>
@@ -178,6 +200,8 @@
     <PS_RequireHeldClickForJobsDesc>You must hold the left mouse button to continue jobs like mining or harvesting. Disable for accessibility.</PS_RequireHeldClickForJobsDesc>
     <PS_DisableDoubleClickEquip>Disable double-click to equip</PS_DisableDoubleClickEquip>
     <PS_DisableDoubleClickEquipDesc>Double-clicking a destination while carrying a weapon or apparel will no longer wear or equip it instead of dropping it.</PS_DisableDoubleClickEquipDesc>
+    <PS_DisableDoubleClickEat>Disable double-click to eat</PS_DisableDoubleClickEat>
+    <PS_DisableDoubleClickEatDesc>Double-clicking a destination while carrying food will no longer eat it instead of dropping it.</PS_DisableDoubleClickEatDesc>
     <PS_WorkSpeedMultiplier>Work speed multiplier: {0}</PS_WorkSpeedMultiplier>
     <PS_StatPart_AvatarWorkSpeed>Direct control work speed</PS_StatPart_AvatarWorkSpeed>
     <PS_FullyRested>You are fully rested.</PS_FullyRested>

@@ -22,6 +22,7 @@ namespace PerspectiveShift
         public bool cameraEasing = true;
         public bool requireHeldClickForJobs = true;
         public bool disableDoubleClickEquip = false;
+        public bool disableDoubleClickEat = false;
 
         public bool enableSprinting = true;
         public bool enableSneaking = true;
@@ -45,6 +46,11 @@ namespace PerspectiveShift
         public bool sleepingPreventsVision = true;
         public float avatarUIScale = 1f;
         public bool disallowOtherMapsInAuthentic = false;
+        public bool weaponTooltips = true;
+        public bool apparelTooltips = true;
+        public bool eatTooltips = true;
+        public bool harvestTooltips = true;
+        public bool haulingCursor = false;
 
         public override void ExposeData()
         {
@@ -57,11 +63,17 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref cameraEasing, "cameraEasing", true);
             Scribe_Values.Look(ref requireHeldClickForJobs, "requireHeldClickForJobs", true);
             Scribe_Values.Look(ref disableDoubleClickEquip, "disableDoubleClickEquip", false);
+            Scribe_Values.Look(ref disableDoubleClickEat, "disableDoubleClickEat", false);
 
             Scribe_Values.Look(ref showControlsOnFirstInhabit, "showControlsOnFirstInhabit", true);
             Scribe_Values.Look(ref sleepingPreventsVision, "sleepingPreventsVision", true);
             Scribe_Values.Look(ref avatarUIScale, "avatarUIScale", 1f);
             Scribe_Values.Look(ref disallowOtherMapsInAuthentic, "disallowOtherMapsInAuthentic", false);
+            Scribe_Values.Look(ref weaponTooltips, "weaponTooltips", true);
+            Scribe_Values.Look(ref apparelTooltips, "apparelTooltips", true);
+            Scribe_Values.Look(ref eatTooltips, "eatTooltips", true);
+            Scribe_Values.Look(ref harvestTooltips, "harvestTooltips", true);
+            Scribe_Values.Look(ref haulingCursor, "haulingCursor", false);
             Scribe_Values.Look(ref enableSprinting, "enableSprinting", true);
             Scribe_Values.Look(ref enableSneaking, "enableSneaking", true);
             Scribe_Values.Look(ref sprintSpeedMultiplier, "sprintSpeedMultiplier", 1.3f);
