@@ -217,4 +217,46 @@
     <PS_CannotSprintExhausted>You are too exhausted to sprint.</PS_CannotSprintExhausted>
     <PS_HoldingPlatformOccupied>This holding platform is already occupied.</PS_HoldingPlatformOccupied>
     <PS_CannotCaptureEntity>This entity cannot be captured to a holding platform.</PS_CannotCaptureEntity>
+    <PS_StartFishing>Start fishing</PS_StartFishing>
+    <PS_FishingNeedsResearch>requires {0}</PS_FishingNeedsResearch>
+    <PS_FishingIncapable>incapable of fishing</PS_FishingIncapable>
+    <PS_MineCursor>Mine cursor</PS_MineCursor>
+    <PS_MineCursorDesc>Swaps the cursor to a pickaxe when hovering over rock or a wall your character could mine.</PS_MineCursorDesc>
+    <PS_ChunkWorkoutLift>Lift {0}</PS_ChunkWorkoutLift>
+    <PS_ChunkWorkoutPress>Overhead press {0}</PS_ChunkWorkoutPress>
+    <PS_ChunkWorkoutSquat>Squat with {0}</PS_ChunkWorkoutSquat>
+    <PS_ChunkWorkoutTooTired>too tired</PS_ChunkWorkoutTooTired>
+    <PS_ChunkWorkoutExhausted>already worked out enough</PS_ChunkWorkoutExhausted>
+    <PS_ResetToDefault>Reset to default...</PS_ResetToDefault>
+    <PS_ResetThisTab>Reset {0} tab</PS_ResetThisTab>
+    <PS_ResetAll>Reset all settings</PS_ResetAll>
+    <PS_ResetAllConfirm>Reset every Perspective Shift setting back to its default value?</PS_ResetAllConfirm>
+    <PS_TabCamera>Camera</PS_TabCamera>
+    <PS_TabInteraction>Interaction</PS_TabInteraction>
+    <PS_TabCursors>Cursors</PS_TabCursors>
+    <PS_TabMovement>Movement</PS_TabMovement>
+    <PS_TabInterface>Interface</PS_TabInterface>
+    <PS_TabGameplay>Gameplay</PS_TabGameplay>
+    <PS_BuildCursor>Build cursor</PS_BuildCursor>
+    <PS_BuildCursorDesc>Swaps the cursor to a hammer when hovering over a construction frame that has all of its materials.</PS_BuildCursorDesc>
+    <PS_ChopCursor>Chop cursor</PS_ChopCursor>
+    <PS_ChopCursorDesc>Swaps the cursor to an axe when hovering over a tree your character could chop.</PS_ChopCursorDesc>
+    <PS_HarvestCursor>Harvest cursor</PS_HarvestCursor>
+    <PS_HarvestCursorDesc>Swaps the cursor to a sickle when hovering over a plant your character could harvest.</PS_HarvestCursorDesc>
+    <PS_SleepCursor>Sleep cursor</PS_SleepCursor>
+    <PS_SleepCursorDesc>Swaps the cursor when hovering over a bed your character could sleep in. Hidden while you are already resting.</PS_SleepCursorDesc>
+    <PS_ResearchCursor>Research cursor</PS_ResearchCursor>
+    <PS_ResearchCursorDesc>Swaps the cursor when hovering over a research bench your character could work at. Hidden while you are already researching.</PS_ResearchCursorDesc>
+    <PS_RoofCursor>Roof cursor</PS_RoofCursor>
+    <PS_RoofCursorDesc>Swaps the cursor when hovering over a cell marked for roofing that your character could roof.</PS_RoofCursorDesc>
+    <PS_FishingMinigame>Fishing minigame</PS_FishingMinigame>
+    <PS_FishingMinigameDesc>Replaces fishing zones with a hands-on minigame. Right-click any fishable water as your character to cast a line, wait for a bite, then reel it in. While this is on, the inhabited pawn no longer can automatically fish.</PS_FishingMinigameDesc>
+    <PS_FishingMinigameTitle>Reel in</PS_FishingMinigameTitle>
+    <PS_FishingHit>HIT!</PS_FishingHit>
+    <PS_FishingLanded>Caught!</PS_FishingLanded>
+    <PS_FishingReelHint>Hold left click</PS_FishingReelHint>
+    <PS_FishingEscaped>It got away.</PS_FishingEscaped>
+    <PS_FishingEscapedMessage>The catch slipped off the line.</PS_FishingEscapedMessage>
+    <PS_FishingCaught>Caught {0}.</PS_FishingCaught>
+    <PS_FishingNothingBiting>Nothing is biting here.</PS_FishingNothingBiting>
 </LanguageData>

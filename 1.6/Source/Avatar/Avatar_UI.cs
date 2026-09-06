@@ -94,6 +94,7 @@ namespace PerspectiveShift
             bool mouseOverGizmo = MapGizmoUtility.LastMouseOverGizmo != null || gizmoBounds.Contains(UI.MousePositionOnUIInverted);
             bool mouseOverUI = IsMouseOverUI() || IsMouseOverColonistBar();
             DrawEquipHint(mouseOverUI || mouseOverGizmo);
+            DrawFishingAlert();
             HandleHoldToFire(mouseOverGizmo, mouseOverUI);
             UpdateCursorAndReticle(mouseOverGizmo, mouseOverUI);
         }
@@ -626,6 +627,40 @@ namespace PerspectiveShift
             DrawingAvatarNeeds = false;
 
             if (scaled) GUI.matrix = prevMatrix;
+        }
+
+        private static readonly Color FishingAlertColor = new Color(1f, 0.86f, 0.35f);
+
+        private void DrawFishingAlert()
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            if (pawn.Map == null || !pawn.Spawned) return;
+            if (pawn.jobs?.curDriver is not JobDriver_PSFishMinigame fishing) return;
+
+            string text = fishing.AlertText;
+            if (text.NullOrEmpty()) return;
+
+            var anchor = (pawn.DrawPos + new Vector3(0f, 0f, 0.95f)).MapToUIPosition();
+
+            var prevFont = Text.Font;
+            var prevAnchor = Text.Anchor;
+            bool prevWrap = Text.WordWrap;
+            Text.Font = GameFont.Medium;
+            Text.Anchor = TextAnchor.MiddleCenter;
+            Text.WordWrap = false;
+
+            var size = Text.CalcSize(text);
+            var rect = new Rect(anchor.x - size.x / 2f - 4f, anchor.y - size.y, size.x + 8f, size.y);
+
+            GUI.color = new Color(0f, 0f, 0f, 0.75f);
+            Widgets.Label(new Rect(rect.x + 1.5f, rect.y + 1.5f, rect.width, rect.height), text);
+            GUI.color = FishingAlertColor;
+            Widgets.Label(rect, text);
+            GUI.color = Color.white;
+
+            Text.WordWrap = prevWrap;
+            Text.Anchor = prevAnchor;
+            Text.Font = prevFont;
         }
 
         private void DrawEquipHint(bool mouseOverUI)

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <JobDef>
+    <defName>PS_FishMinigame</defName>
+    <driverClass>PerspectiveShift.JobDriver_PSFishMinigame</driverClass>
+    <reportString>fishing.</reportString>
+    <casualInterruptible>true</casualInterruptible>
+    <playerInterruptible>true</playerInterruptible>
+  </JobDef>
+
+</Defs>

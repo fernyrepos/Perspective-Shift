@@ -23,6 +23,7 @@ namespace PerspectiveShift
         public static readonly bool AchtungAvailable;
         public static readonly bool ProcessorFrameworkAvailable;
         public static readonly bool RimbodyAvailable;
+        public static readonly bool RimbodyChunkWorkoutsAvailable;
         public static readonly bool DubsBadHygieneAvailable;
         public static readonly bool ThemingModAvailable;
 
@@ -76,6 +77,25 @@ namespace PerspectiveShift
         private static FieldInfo allowedIngredientsField;
 
         private static Type rimbodyDBType;
+        private static MethodInfo compPhysiqueMethod;
+        private static PropertyInfo hasPhysiqueProperty;
+        private static FieldInfo gainField;
+        private static PropertyInfo gainMaxProperty;
+
+        public class RimbodyChunkWorkout
+        {
+            public JobDef job;
+            public string labelKey;
+        }
+
+        public static readonly List<RimbodyChunkWorkout> RimbodyChunkWorkouts = new List<RimbodyChunkWorkout>();
+
+        private static readonly string[][] ChunkWorkoutDefs =
+        {
+            new[] { "Rimbody_DoChunkLifting", "PS_ChunkWorkoutLift" },
+            new[] { "Rimbody_DoChunkOverheadPress", "PS_ChunkWorkoutPress" },
+            new[] { "Rimbody_DoChunkSquats", "PS_ChunkWorkoutSquat" },
+        };
         private static FieldInfo strengthTargetsField;
         private static FieldInfo cardioTargetsField;
         private static FieldInfo balanceTargetsField;
@@ -133,6 +153,8 @@ namespace PerspectiveShift
             RimbodyAvailable = ModsConfig.IsActive("Maux36.Rimbody");
             if (RimbodyAvailable && !InitRimbodyCompat())
                 RimbodyAvailable = false;
+
+            RimbodyChunkWorkoutsAvailable = ModsConfig.IsActive("Maux36.Rimbody") && InitRimbodyChunkCompat();
 
             DubsBadHygieneAvailable = ModsConfig.IsActive("Dubwise.DubsBadHygiene") || ModsConfig.IsActive("Dubwise.DubsBadHygiene.Lite");
             if (DubsBadHygieneAvailable && !InitDBHCompat())
@@ -297,6 +319,57 @@ namespace PerspectiveShift
             if (!Require(ref doTryGiveJobCardioMethod, () => AccessTools.Method(AccessTools.TypeByName("Maux36.Rimbody.JobGiver_DoCardioBuilding"), "DoTryGiveJob"), "DoTryGiveJob method", "Rimbody")) return false;
             if (!Require(ref doTryGiveJobBalanceMethod, () => AccessTools.Method(AccessTools.TypeByName("Maux36.Rimbody.JobGiver_DoBalanceBuilding"), "DoTryGiveTargetJob"), "DoTryGiveTargetJob method", "Rimbody")) return false;
             return true;
+        }
+
+        private static bool InitRimbodyChunkCompat()
+        {
+            var compType = AccessTools.TypeByName("Maux36.Rimbody.CompPhysique");
+            if (compType == null) return false;
+            if (!Require(ref compPhysiqueMethod, () => AccessTools.Method("Maux36.Rimbody.PawnExtensions:compPhysique"), "compPhysique method", "Rimbody")) return false;
+            if (!Require(ref hasPhysiqueProperty, () => AccessTools.Property(compType, "HasPhysique"), "HasPhysique property", "Rimbody")) return false;
+            if (!Require(ref gainField, () => AccessTools.Field(compType, "gain"), "gain field", "Rimbody")) return false;
+            if (!Require(ref gainMaxProperty, () => AccessTools.Property(compType, "gainMax"), "gainMax property", "Rimbody")) return false;
+
+            foreach (var entry in ChunkWorkoutDefs)
+            {
+                var job = DefDatabase<JobDef>.GetNamedSilentFail(entry[0]);
+                if (job != null)
+                    RimbodyChunkWorkouts.Add(new RimbodyChunkWorkout { job = job, labelKey = entry[1] });
+            }
+
+            return RimbodyChunkWorkouts.Count > 0;
+        }
+
+        private static object RimbodyPhysique(Pawn pawn)
+        {
+            if (!RimbodyChunkWorkoutsAvailable || pawn == null) return null;
+            var comp = compPhysiqueMethod.Invoke(null, new object[] { pawn });
+            if (comp == null) return null;
+            return (bool)hasPhysiqueProperty.GetValue(comp, null) ? comp : null;
+        }
+
+        public static bool RimbodyTracksPhysique(Pawn pawn) => RimbodyPhysique(pawn) != null;
+
+        public static bool RimbodyWorkoutBlocked(Pawn pawn, out string reason)
+        {
+            reason = null;
+            var comp = RimbodyPhysique(pawn);
+            if (comp == null) return true;
+
+            var rest = pawn.needs?.rest;
+            if (rest != null && rest.CurLevel < 0.17f)
+            {
+                reason = "PS_ChunkWorkoutTooTired".Translate();
+                return true;
+            }
+
+            if ((float)gainField.GetValue(comp) >= (float)gainMaxProperty.GetValue(comp, null))
+            {
+                reason = "PS_ChunkWorkoutExhausted".Translate();
+                return true;
+            }
+
+            return false;
         }
 
         private static bool InitDBHCompat()

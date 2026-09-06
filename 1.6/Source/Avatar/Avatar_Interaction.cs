@@ -15,6 +15,8 @@ namespace PerspectiveShift
         {
             typeof(FloatMenuOptionProvider_DropEquipment),
             typeof(FloatMenuOptionProvider_CleanRoom),
+            typeof(FloatMenuOptionProvider_PSFishing),
+            typeof(FloatMenuOptionProvider_PSChunkWorkout),
         };
 
         private bool HandleLeftClick()
@@ -39,6 +41,8 @@ namespace PerspectiveShift
         private bool HandleLeftClickInt()
         {
             if (pawn.Map == null || !pawn.Spawned) return false;
+
+            if (pawn.jobs?.curDriver is JobDriver_PSFishMinigame fishing && fishing.TryHook()) return true;
 
             var clickCell = UI.MouseCell();
             var things = clickCell.GetThingList(pawn.Map);

@@ -51,6 +51,14 @@ namespace PerspectiveShift
         public bool eatTooltips = true;
         public bool harvestTooltips = true;
         public bool haulingCursor = false;
+        public bool mineCursor = true;
+        public bool buildCursor = true;
+        public bool chopCursor = true;
+        public bool harvestCursor = true;
+        public bool sleepCursor = true;
+        public bool researchCursor = true;
+        public bool roofCursor = true;
+        public bool fishingMinigame = true;
 
         public override void ExposeData()
         {
@@ -74,6 +82,14 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref eatTooltips, "eatTooltips", true);
             Scribe_Values.Look(ref harvestTooltips, "harvestTooltips", true);
             Scribe_Values.Look(ref haulingCursor, "haulingCursor", false);
+            Scribe_Values.Look(ref mineCursor, "mineCursor", true);
+            Scribe_Values.Look(ref buildCursor, "buildCursor", true);
+            Scribe_Values.Look(ref chopCursor, "chopCursor", true);
+            Scribe_Values.Look(ref harvestCursor, "harvestCursor", true);
+            Scribe_Values.Look(ref sleepCursor, "sleepCursor", true);
+            Scribe_Values.Look(ref researchCursor, "researchCursor", true);
+            Scribe_Values.Look(ref roofCursor, "roofCursor", true);
+            Scribe_Values.Look(ref fishingMinigame, "fishingMinigame", true);
             Scribe_Values.Look(ref enableSprinting, "enableSprinting", true);
             Scribe_Values.Look(ref enableSneaking, "enableSneaking", true);
             Scribe_Values.Look(ref sprintSpeedMultiplier, "sprintSpeedMultiplier", 1.3f);

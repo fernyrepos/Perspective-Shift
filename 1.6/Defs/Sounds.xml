@@ -49,4 +49,94 @@
             </li>
         </subSounds>
     </SoundDef>
+
+    <SoundDef>
+        <defName>PS_FishBite</defName>
+        <maxSimultaneous>1</maxSimultaneous>
+        <subSounds>
+            <li>
+                <onCamera>True</onCamera>
+                <grains>
+                    <li Class="AudioGrain_Clip">
+                        <clipPath>PS_FishBite</clipPath>
+                    </li>
+                </grains>
+                <volumeRange>38~38</volumeRange>
+            </li>
+        </subSounds>
+    </SoundDef>
+
+    <SoundDef>
+        <defName>PS_FishHit</defName>
+        <maxSimultaneous>1</maxSimultaneous>
+        <subSounds>
+            <li>
+                <onCamera>True</onCamera>
+                <grains>
+                    <li Class="AudioGrain_Clip">
+                        <clipPath>PS_FishHit</clipPath>
+                    </li>
+                </grains>
+                <volumeRange>34~34</volumeRange>
+            </li>
+        </subSounds>
+    </SoundDef>
+
+    <SoundDef>
+        <defName>PS_FishEscape</defName>
+        <maxSimultaneous>1</maxSimultaneous>
+        <subSounds>
+            <li>
+                <onCamera>True</onCamera>
+                <grains>
+                    <li Class="AudioGrain_Clip">
+                        <clipPath>PS_FishEscape</clipPath>
+                    </li>
+                </grains>
+                <volumeRange>32~32</volumeRange>
+            </li>
+        </subSounds>
+    </SoundDef>
+
+    <SoundDef>
+        <defName>PS_ReelSlow</defName>
+        <sustain>True</sustain>
+        <priorityMode>PrioritizeNearest</priorityMode>
+        <maxVoices>1</maxVoices>
+        <maxSimultaneous>1</maxSimultaneous>
+        <subSounds>
+            <li>
+                <onCamera>True</onCamera>
+                <grains>
+                    <li Class="AudioGrain_Clip">
+                        <clipPath>PS_SlowReel</clipPath>
+                    </li>
+                </grains>
+                <volumeRange>26~26</volumeRange>
+                <sustainAttack>0.04</sustainAttack>
+                <sustainRelease>0.08</sustainRelease>
+            </li>
+        </subSounds>
+    </SoundDef>
+
+    <SoundDef>
+        <defName>PS_ReelFast</defName>
+        <sustain>True</sustain>
+        <priorityMode>PrioritizeNearest</priorityMode>
+        <maxVoices>1</maxVoices>
+        <maxSimultaneous>1</maxSimultaneous>
+        <subSounds>
+            <li>
+                <onCamera>True</onCamera>
+                <grains>
+                    <li Class="AudioGrain_Clip">
+                        <clipPath>PS_FastReel</clipPath>
+                    </li>
+                </grains>
+                <volumeRange>30~30</volumeRange>
+                <sustainAttack>0.04</sustainAttack>
+                <sustainRelease>0.08</sustainRelease>
+            </li>
+        </subSounds>
+    </SoundDef>
 </Defs>
