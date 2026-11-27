@@ -545,7 +545,8 @@ namespace PerspectiveShift
             if (Event.current.type == EventType.Layout) return;
 
             State.DrawingTopRightGizmos = true;
-            var gizmoSource = ModCompatibility.IsPawnInVehicle(pawn, out Pawn vehicle, out bool isDriver, out _)
+            var gizmoSource = ModCompatibility.IsPawnInVehicle(pawn, out Pawn vehicle, out bool isDriver, out _) &&
+                              vehicle is { Spawned: true }
                 ? vehicle
                 : (Thing)pawn;
             var wasSelected = Find.Selector.IsSelected(gizmoSource);
