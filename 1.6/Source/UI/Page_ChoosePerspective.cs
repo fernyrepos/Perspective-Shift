@@ -75,8 +75,43 @@ namespace PerspectiveShift
             else
                 DrawAuthenticOptions(mainRect);
 
-            string nextLabel = ((step == PageStep.Role && !roleIsCharacter) || (step == PageStep.Playstyle && selectedPlaystyle == PlaystyleMode.Dynamic)) ? "Start".Translate() : "Next".Translate();
+            string nextLabel = NextButtonLabel();
+            DrawBottomNote(rect);
             DoBottomButtons(rect, nextLabel, null, null, true, true);
+        }
+
+        private void DrawBottomNote(Rect rect)
+        {
+            float noteWidth = rect.width - BottomButSize.x * 2f - 40f;
+            if (noteWidth <= 0f) return;
+
+            var noteRect = new Rect(rect.x + BottomButSize.x + 20f, rect.y + rect.height - BottomButSize.y, noteWidth, BottomButSize.y);
+
+            var prevFont = Text.Font;
+            var prevAnchor = Text.Anchor;
+            Text.Font = GameFont.Tiny;
+            Text.Anchor = TextAnchor.MiddleCenter;
+            GUI.color = new Color(1f, 1f, 1f, 0.55f);
+            Widgets.Label(noteRect, "PS_SettingsChangeableNote".Translate());
+            GUI.color = Color.white;
+            Text.Anchor = prevAnchor;
+            Text.Font = prevFont;
+        }
+
+        private string NextButtonLabel()
+        {
+            if (step == PageStep.Role)
+                return roleIsCharacter ? "PS_Setup".Translate() : "Start".Translate();
+
+            if (step == PageStep.Playstyle)
+            {
+                if (selectedPlaystyle == PlaystyleMode.Dynamic) return "Start".Translate();
+                if (selectedPlaystyle == PlaystyleMode.Swap && Page_ChooseStartingCharacter.WillSkipToSingleCandidate())
+                    return "Start".Translate();
+                return "PS_Configure".Translate();
+            }
+
+            return "Next".Translate();
         }
 
         private void DrawRoleOption(Rect rect, string label, string desc, Texture2D icon, bool selected, bool recommended, Action onSelect)

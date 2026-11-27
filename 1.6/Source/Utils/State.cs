@@ -31,6 +31,49 @@ namespace PerspectiveShift
             return pawn.GetLord() != null || pawn.mindState?.duty != null;
         }
         public enum ForcedInteractionOutcome { None, ForceAccept, ForceReject }
+
+        public static bool fulfillNeeds = false;
+        public static bool returnAfterFulfillment = true;
+        public static bool showJobCallouts = true;
+        public static bool playDoneSound = true;
+        public static HashSet<AutoNeed> disabledAutoNeeds = new HashSet<AutoNeed>();
+
+        public static bool IsAutoNeedEnabled(AutoNeed need)
+        {
+            disabledAutoNeeds ??= new HashSet<AutoNeed>();
+            return !disabledAutoNeeds.Contains(need);
+        }
+
+        public static void SetAutoNeedEnabled(AutoNeed need, bool enabled)
+        {
+            disabledAutoNeeds ??= new HashSet<AutoNeed>();
+            if (enabled) disabledAutoNeeds.Remove(need);
+            else disabledAutoNeeds.Add(need);
+        }
+
+        public static Dictionary<AutoNeed, float> autoNeedThresholds = new Dictionary<AutoNeed, float>();
+
+        public static float DefaultAutoNeedThreshold(AutoNeed need)
+        {
+            switch (need)
+            {
+                case AutoNeed.Hygiene: return 0.2f;
+                case AutoNeed.Recreation: return 0.35f;
+                default: return 0.3f;
+            }
+        }
+
+        public static float GetAutoNeedThreshold(AutoNeed need)
+        {
+            autoNeedThresholds ??= new Dictionary<AutoNeed, float>();
+            return autoNeedThresholds.TryGetValue(need, out float value) ? value : DefaultAutoNeedThreshold(need);
+        }
+
+        public static void SetAutoNeedThreshold(AutoNeed need, float value)
+        {
+            autoNeedThresholds ??= new Dictionary<AutoNeed, float>();
+            autoNeedThresholds[need] = Mathf.Clamp(value, 0.05f, 1f);
+        }
         public static bool TryApplyForcedInteraction(ref float __result)
         {
             if (forcedInteraction == ForcedInteractionOutcome.ForceAccept)
@@ -52,6 +95,10 @@ namespace PerspectiveShift
         public static bool DrawingTopRightGizmos = false;
         private static CameraMapConfig _savedConfig;
         public static Vector3? CameraLockPosition;
+        public const int CameraRecenterFrames = 300;
+        public static int cameraRecenterFrames;
+        public static int cameraRecenterSettled = -1;
+        public static bool cameraRecenterSnap;
         public static bool skipDialog = false;
         public static ForcedInteractionOutcome forcedInteraction = ForcedInteractionOutcome.None;
         public static bool pendingDeathMenu = false;
@@ -64,6 +111,12 @@ namespace PerspectiveShift
         private static float sleepFade;
         private static float lastSleepFadeTime = -1f;
         public static float lastDamageTime = -999f;
+        private const float DamageFlashDuration = 0.2f;
+        private const float DamageFlashPeak = 0.4f;
+        private const float DamageVignetteDuration = 0.35f;
+        private const float DamageVignettePeak = 0.65f;
+        private static Texture2D _damageVignetteTex;
+        private static Texture2D DamageVignetteTex => _damageVignetteTex ??= ContentFinder<Texture2D>.Get("UI/DamageVignette");
         public static bool IsActive
         {
             get
@@ -75,18 +128,6 @@ namespace PerspectiveShift
                     _isActiveCacheFrame = Time.frameCount;
                 }
                 return _isActiveCache;
-            }
-        }
-
-        public static float lastTickRealTime = 0f;
-        public static float smoothedTickTime = 1f / 60f;
-
-        public static float ActualTickRateMultiplier
-        {
-            get
-            {
-                if (smoothedTickTime <= 0.0001f) return Find.TickManager.TickRateMultiplier;
-                return (1f / smoothedTickTime) / 60f;
             }
         }
 
@@ -196,9 +237,20 @@ namespace PerspectiveShift
             Messages.Message("PS_LostControl".Translate(), MessageTypeDefOf.NegativeEvent);
         }
 
+        public static bool IsActiveOrInVehicle
+        {
+            get
+            {
+                if (IsActive) return true;
+                if (Avatar?.pawn == null) return false;
+                if (Avatar.pawn.Dead || WorldComponent_GravshipController.CutsceneInProgress) return false;
+                return ModCompatibility.IsPawnInVehicle(Avatar.pawn, out _, out _, out _);
+            }
+        }
+
         public static void Update()
         {
-            if (!IsActive)
+            if (!IsActiveOrInVehicle)
             {
                 if (!Cursor.visible) Cursor.visible = true;
                 return;
@@ -213,25 +265,14 @@ namespace PerspectiveShift
 
         public static void Tick()
         {
-            if (!IsActive) return;
-
-            float now = Time.realtimeSinceStartup;
-            if (lastTickRealTime != 0f)
-            {
-                float delta = now - lastTickRealTime;
-                if (delta < 1f)
-                {
-                    smoothedTickTime = Mathf.Lerp(smoothedTickTime, delta, 0.1f);
-                }
-            }
-            lastTickRealTime = now;
+            if (!IsActiveOrInVehicle) return;
 
             Avatar.Tick();
         }
 
         public static void OnGUI()
         {
-            if (!IsActive)
+            if (!IsActiveOrInVehicle)
             {
                 if (!Cursor.visible) Cursor.visible = true;
                 return;
@@ -293,12 +334,14 @@ namespace PerspectiveShift
 
             if (PerspectiveShiftMod.settings.enableDamageScreenEffect && lastDamageTime > 0f)
             {
+                bool vignette = PerspectiveShiftMod.settings.damageEffectStyle == DamageEffectStyle.Vignette;
+                float duration = vignette ? DamageVignetteDuration : DamageFlashDuration;
                 float timeSinceDamage = Time.realtimeSinceStartup - lastDamageTime;
-                if (timeSinceDamage < 0.2f)
+                if (timeSinceDamage < duration)
                 {
                     Color prevColor = GUI.color;
-                    GUI.color = new Color(1f, 0f, 0f, Mathf.Lerp(0.4f, 0f, timeSinceDamage / 0.2f));
-                    GUI.DrawTexture(new Rect(0, 0, UI.screenWidth, UI.screenHeight), BaseContent.WhiteTex);
+                    GUI.color = new Color(1f, 0f, 0f, Mathf.Lerp(vignette ? DamageVignettePeak : DamageFlashPeak, 0f, timeSinceDamage / duration));
+                    GUI.DrawTexture(new Rect(0, 0, UI.screenWidth, UI.screenHeight), vignette ? DamageVignetteTex : BaseContent.WhiteTex);
                     GUI.color = prevColor;
                 }
             }
@@ -333,44 +376,6 @@ namespace PerspectiveShift
             GUI.color = Color.white;
         }
 
-        private static int lastMapBlockFrame = -1;
-
-        public static bool MapViewBlocked(Map map)
-        {
-            if (!PerspectiveShiftMod.settings.disallowOtherMapsInAuthentic) return false;
-            if (CurrentMode != PlaystyleMode.Authentic) return false;
-
-            var avatarPawn = Avatar?.pawn;
-            if (avatarPawn == null || avatarPawn.Dead) return false;
-
-            return map != avatarPawn.MapHeld;
-        }
-
-        public static bool MapSwitchBlocked(Map map)
-        {
-            if (!PerspectiveShiftMod.settings.disallowOtherMapsInAuthentic) return false;
-            if (CurrentMode != PlaystyleMode.Authentic) return false;
-            if (Current.ProgramState != ProgramState.Playing) return false;
-            if (Event.current == null) return false;
-            if (WorldComponent_GravshipController.CutsceneInProgress) return false;
-
-            var avatarPawn = Avatar?.pawn;
-            if (avatarPawn == null || avatarPawn.Dead) return false;
-
-            var held = avatarPawn.MapHeld;
-            if (map == held) return false;
-            if (held != null && Find.CurrentMap != held) return false;
-
-            return true;
-        }
-
-        public static void NotifyMapViewBlocked()
-        {
-            if (Time.frameCount == lastMapBlockFrame) return;
-            lastMapBlockFrame = Time.frameCount;
-            Messages.Message("PS_CannotViewOtherMaps".Translate(), MessageTypeDefOf.RejectInput, historical: false);
-        }
-
         public static Thing TryGetSpawnedContainer(Pawn pawn)
         {
             if (pawn == null) return null;
@@ -400,6 +405,35 @@ namespace PerspectiveShift
                     (job.placedThings != null && job.placedThings.Any(pt => pt.thing == thing)))
                     return false;
             }
+            return true;
+        }
+
+        public static void TryRecenterCameraAfterLoad()
+        {
+            if (cameraRecenterFrames <= 0) return;
+            if (LongEventHandler.ShouldWaitForEvent) return;
+            if (Find.CurrentMap == null) return;
+
+            var pawn = Avatar?.pawn;
+            if (pawn == null || !pawn.Spawned || pawn.Map != Find.CurrentMap) return;
+
+            cameraRecenterFrames--;
+
+            if (CameraLockPosition.HasValue)
+            {
+                CameraLockPosition = null;
+                cameraRecenterSettled = 0;
+                cameraRecenterSnap = true;
+                return;
+            }
+
+            if (cameraRecenterSettled >= 0 && ++cameraRecenterSettled >= 3) cameraRecenterFrames = 0;
+        }
+
+        public static bool ConsumeCameraRecenterSnap()
+        {
+            if (!cameraRecenterSnap) return false;
+            cameraRecenterSnap = false;
             return true;
         }
 

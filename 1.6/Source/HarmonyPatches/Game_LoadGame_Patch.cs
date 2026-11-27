@@ -9,6 +9,8 @@ namespace PerspectiveShift
         public static void Postfix()
         {
             State.CameraLockPosition = null;
+            State.cameraRecenterFrames = State.CameraRecenterFrames;
+            State.cameraRecenterSettled = -1;
             if (State.pendingDeathMenu && State.Avatar?.pawn is { Dead: true } deadPawn)
             {
                 LongEventHandler.ExecuteWhenFinished(() =>

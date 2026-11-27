@@ -63,8 +63,8 @@ namespace PerspectiveShift
 
             AddHeader("PS_ControlsMovement");
             AddRow("PS_KeyWASD", "PS_ControlMove");
-            if (settings.enableSprinting) AddRow("PS_KeyShiftHold", "PS_ControlSprint");
-            if (settings.enableSneaking) AddRow("PS_KeyCtrlHold", "PS_ControlSneak");
+            if (settings.enableSprinting) AddRow(settings.sprintMode == KeyHoldMode.Toggle ? "PS_KeyShiftPress" : "PS_KeyShiftHold", "PS_ControlSprint");
+            if (settings.enableSneaking) AddRow(settings.sneakMode == KeyHoldMode.Toggle ? "PS_KeyCtrlPress" : "PS_KeyCtrlHold", "PS_ControlSneak");
 
             AddHeader("PS_ControlsInteracting");
             AddRow("PS_KeyLeftClick", "PS_ControlLeftClick");

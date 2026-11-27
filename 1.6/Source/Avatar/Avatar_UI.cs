@@ -160,6 +160,7 @@ namespace PerspectiveShift
         private void DrawGizmosAndNeeds()
         {
             if (pawn.InMentalState) return;
+            if (PerspectiveShiftMod.settings.hideGizmosOnWorldMap && WorldRendererUtility.WorldSelected) return;
 
             bool hideForTab = PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomLeft && Find.MainTabsRoot?.OpenTab != null;
             if (hideForTab) return;
@@ -194,7 +195,7 @@ namespace PerspectiveShift
             {
                 job.playerForced = true;
                 pawn.jobs.TryTakeOrderedJob(job);
-                Messages.Message("PS_DoingRecreation".Translate(job.def.reportString), pawn, MessageTypeDefOf.TaskCompletion, false);
+                Messages.Message("PS_DoingRecreation".Translate(RecreationReport(job)), pawn, MessageTypeDefOf.TaskCompletion, false);
                 Event.current.Use();
             }
             else
@@ -202,6 +203,14 @@ namespace PerspectiveShift
                 Messages.Message("PS_NoRecreationAvailable".Translate(), pawn, MessageTypeDefOf.RejectInput, false);
                 Event.current.Use();
             }
+        }
+
+        private string RecreationReport(Job job)
+        {
+            if (pawn.CurJob == job && pawn.jobs?.curDriver != null)
+                return pawn.jobs.curDriver.GetReport();
+
+            return JobUtility.GetResolvedJobReport(job.def.reportString, job.targetA, job.targetB, job.targetC);
         }
 
         private void HandleEatFoodBinding()
@@ -307,8 +316,76 @@ namespace PerspectiveShift
             }
         }
 
+        private int speedDiagFrame = -1;
+        private float speedDiagStart = -1f;
+        private int speedDiagFrames;
+        private int speedDiagLastTicks = -1;
+        private int speedDiagTicks;
+        private Vector3 speedDiagLastPos;
+        private bool speedDiagHasPos;
+        private float speedDiagDist;
+        private float speedDiagLastNominal = -1f;
+        private float speedDiagLogUntil = -1f;
+
+        private void SampleSpeedDiagnostics()
+        {
+            if (Time.frameCount == speedDiagFrame) return;
+            speedDiagFrame = Time.frameCount;
+
+            var tickManager = Find.TickManager;
+            float now = Time.realtimeSinceStartup;
+            int ticks = tickManager.TicksGame;
+            float nominal = tickManager.TickRateMultiplier;
+
+            if (nominal != speedDiagLastNominal)
+            {
+                if (speedDiagLastNominal >= 0f) State.Message($"SPEEDDIAG nominal {speedDiagLastNominal:F1}x -> {nominal:F1}x");
+                speedDiagLastNominal = nominal;
+                speedDiagLogUntil = now + 8f;
+            }
+
+            if (speedDiagStart < 0f)
+            {
+                speedDiagStart = now;
+                speedDiagLastTicks = ticks;
+                speedDiagHasPos = false;
+            }
+
+            if (ticks >= speedDiagLastTicks) speedDiagTicks += ticks - speedDiagLastTicks;
+            speedDiagLastTicks = ticks;
+            speedDiagFrames++;
+
+            Vector3 pos = physicsPosition ?? pawn.DrawPos;
+            if (speedDiagHasPos)
+            {
+                Vector3 moved = pos - speedDiagLastPos;
+                moved.y = 0f;
+                if (moved.sqrMagnitude < 4f) speedDiagDist += moved.magnitude;
+            }
+            speedDiagLastPos = pos;
+            speedDiagHasPos = true;
+
+            float elapsed = now - speedDiagStart;
+            if (elapsed < 0.25f) return;
+
+            if (now < speedDiagLogUntil || IsMoving)
+            {
+                State.Message($"SPEEDDIAG {tickManager.CurTimeSpeed} nom={nominal:F1}x " +
+                    $"sim={speedDiagTicks / elapsed / 60f:F2}x fps={speedDiagFrames / elapsed:F0} " +
+                    $"avatar={speedDiagDist / elapsed:F2}c/s dt={Time.deltaTime * 1000f:F0}ms moving={IsMoving}");
+            }
+
+            speedDiagStart = now;
+            speedDiagFrames = 0;
+            speedDiagTicks = 0;
+            speedDiagDist = 0f;
+        }
+
         private void DebugLog()
         {
+            bool shouldLogSpeedDiagnostics = false;
+            if (shouldLogSpeedDiagnostics) SampleSpeedDiagnostics();
+
             bool shouldShowOverlay = false;
             if (shouldShowOverlay)
             {
@@ -409,6 +486,60 @@ namespace PerspectiveShift
             return UI.MouseCell() == pawn.Position;
         }
 
+        private static readonly Dictionary<Type, bool> abilityCommandCache = new Dictionary<Type, bool>();
+
+        private static bool IsShrinkableAbility(Gizmo gizmo)
+        {
+            if (!(gizmo is Command command)) return false;
+            if (command.shrinkable) return true;
+            if (command is Command_Ability) return true;
+
+            Type type = command.GetType();
+            if (abilityCommandCache.TryGetValue(type, out bool cached)) return cached;
+
+            bool isAbility = false;
+            for (Type t = type; t != null && t != typeof(Command); t = t.BaseType)
+            {
+                if (t.Name == "Command_Ability")
+                {
+                    isAbility = true;
+                    break;
+                }
+            }
+
+            abilityCommandCache[type] = isAbility;
+            return isAbility;
+        }
+
+        private static List<Command> ExtractShrunkAbilities(List<Gizmo> gizmos, float actualSize, float spacing, float maxRowWidth)
+        {
+            var shrinkable = new List<Command>();
+            int rows = 1;
+            float rowWidth = 0f;
+
+            foreach (var gizmo in gizmos)
+            {
+                if (IsShrinkableAbility(gizmo)) shrinkable.Add((Command)gizmo);
+
+                float gizmoWidth = gizmo.GetWidth(actualSize);
+                if (rowWidth > 0f && rowWidth + gizmoWidth > maxRowWidth)
+                {
+                    rows++;
+                    rowWidth = 0f;
+                }
+                rowWidth += gizmoWidth + spacing;
+            }
+
+            if (rows <= 2 || shrinkable.Count <= 1)
+            {
+                shrinkable.Clear();
+                return shrinkable;
+            }
+
+            foreach (var command in shrinkable) gizmos.Remove(command);
+            return shrinkable;
+        }
+
         public void DrawPlayerGizmos()
         {
             if (Event.current.type == EventType.Layout) return;
@@ -480,6 +611,8 @@ namespace PerspectiveShift
 
             float maxRowWidth = (actualSize + spacing) * 4f;
             float rowWidth = 0f;
+
+            var shrunkCommands = ExtractShrunkAbilities(gizmos, actualSize, spacing, maxRowWidth);
 
             bool rightAnchored = PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.TopRight || PerspectiveShiftMod.settings.gizmoCorner == GizmoCorner.BottomRight;
             float cursor = rightAnchored ? startX + actualSize : startX;
@@ -559,9 +692,74 @@ namespace PerspectiveShift
                 else cursor += gizmoWidth + spacing;
             }
 
+            if (shrunkCommands.Count > 0)
+            {
+                float shrunkSize = shrunkCommands[0].GetShrunkSize;
+                float shrunkSpacing = 3f;
+                bool downward = yStep > 0f;
+                float shrunkStep = downward ? (shrunkSize + shrunkSpacing) : -(shrunkSize + shrunkSpacing);
+                float labelOverflow = 12f;
+
+                y = gizmos.Count > 0
+                    ? (downward ? y + actualSize + spacing + labelOverflow : y - shrunkSize - spacing)
+                    : (downward ? startY : startY + actualSize - shrunkSize);
+
+                cursor = rightAnchored ? startX + actualSize : startX;
+                rowWidth = 0f;
+
+                foreach (var command in shrunkCommands)
+                {
+                    if (rowWidth > 0f && rowWidth + shrunkSize > maxRowWidth)
+                    {
+                        cursor = rightAnchored ? startX + actualSize : startX;
+                        y += shrunkStep;
+                        rowWidth = 0f;
+                    }
+
+                    float drawX = rightAnchored ? cursor - shrunkSize : cursor;
+
+                    KeyBindingDef tempHotkey = command.hotKey;
+                    if (suppressHotkeys) command.hotKey = null;
+
+                    float screenX = drawX * s;
+                    float screenY = y * s;
+                    float screenSize = shrunkSize * s;
+
+                    boundsMinX = Mathf.Min(boundsMinX, screenX);
+                    boundsMaxX = Mathf.Max(boundsMaxX, screenX + screenSize);
+                    boundsMinY = Mathf.Min(boundsMinY, screenY);
+                    boundsMaxY = Mathf.Max(boundsMaxY, screenY + screenSize);
+
+                    GizmoRenderParms shrunkParms = default;
+                    shrunkParms.isFirst = isFirst;
+                    GizmoResult shrunkResult = command.GizmoOnGUIShrunk(new Vector2(drawX, y), shrunkSize, shrunkParms);
+
+                    if (suppressHotkeys) command.hotKey = tempHotkey;
+
+                    GenUI.AbsorbClicksInRect(new Rect(drawX, y, shrunkSize, shrunkSize));
+
+                    if (shrunkResult.State == GizmoState.Interacted ||
+                        (shrunkResult.State == GizmoState.OpenedFloatMenu
+                         && !command.RightClickFloatMenuOptions.Any()))
+                    {
+                        interactedGizmo = command;
+                        interactedEvent = shrunkResult.InteractEvent;
+                    }
+                    else if (shrunkResult.State == GizmoState.OpenedFloatMenu)
+                    {
+                        floatMenuGizmo = command;
+                    }
+
+                    isFirst = false;
+                    rowWidth += shrunkSize + shrunkSpacing;
+                    if (rightAnchored) cursor -= shrunkSize + shrunkSpacing;
+                    else cursor += shrunkSize + shrunkSpacing;
+                }
+            }
+
             GUI.matrix = prevMatrix;
 
-            if (gizmos.Count > 0)
+            if (gizmos.Count > 0 || shrunkCommands.Count > 0)
             {
                 gizmoBounds = new Rect(boundsMinX, boundsMinY, boundsMaxX - boundsMinX, boundsMaxY - boundsMinY);
             }
@@ -968,49 +1166,52 @@ namespace PerspectiveShift
             icon = null;
             if (!cell.InBounds(pawn.Map)) return null;
 
-            bool weaponHints = ShowWeaponHints;
-            bool apparelHints = ShowApparelHints;
-            bool eatHints = ShowEatHints;
-            bool drugHints = ShowDrugHints;
-            bool bookHints = ShowBookHints;
-            var things = cell.GetThingList(pawn.Map);
-            for (int i = 0; i < things.Count; i++)
+            if (!(pawn.Map.haulDestinationManager.SlotGroupAt(cell)?.parent is Thing))
             {
-                var thing = things[i];
-                if (thing.def.category != ThingCategory.Item) continue;
-                if (!IsTargetInRange(thing)) continue;
-
-                bool isApparel = thing is Apparel;
-                if ((isApparel ? apparelHints : weaponHints) && !thing.def.IsStuff && TryMakeWearOrEquipJob(pawn, thing, out _))
+                bool weaponHints = ShowWeaponHints;
+                bool apparelHints = ShowApparelHints;
+                bool eatHints = ShowEatHints;
+                bool drugHints = ShowDrugHints;
+                bool bookHints = ShowBookHints;
+                var things = cell.GetThingList(pawn.Map);
+                for (int i = 0; i < things.Count; i++)
                 {
-                    label = (isApparel ? "PS_DoubleClickToWear" : "PS_DoubleClickToEquip").Translate();
-                    icon = isApparel ? WearIcon : EquipIcon;
-                    BuildGearHintStats(thing);
-                    return thing;
-                }
+                    var thing = things[i];
+                    if (thing.def.category != ThingCategory.Item) continue;
+                    if (!IsTargetInRange(thing)) continue;
 
-                if (drugHints && TryMakeDrugIngestJob(pawn, thing, out _))
-                {
-                    label = "PS_DoubleClickToIngest".Translate();
-                    icon = IngestIcon;
-                    BuildDrugHintStats(thing);
-                    return thing;
-                }
+                    bool isApparel = thing is Apparel;
+                    if ((isApparel ? apparelHints : weaponHints) && !thing.def.IsStuff && TryMakeWearOrEquipJob(pawn, thing, out _))
+                    {
+                        label = (isApparel ? "PS_DoubleClickToWear" : "PS_DoubleClickToEquip").Translate();
+                        icon = isApparel ? WearIcon : EquipIcon;
+                        BuildGearHintStats(thing);
+                        return thing;
+                    }
 
-                if (eatHints && TryMakeIngestJob(pawn, thing, out _))
-                {
-                    label = "PS_DoubleClickToEat".Translate();
-                    icon = EatIcon;
-                    BuildFoodHintStats(thing);
-                    return thing;
-                }
+                    if (drugHints && TryMakeDrugIngestJob(pawn, thing, out _))
+                    {
+                        label = "PS_DoubleClickToIngest".Translate();
+                        icon = IngestIcon;
+                        BuildDrugHintStats(thing);
+                        return thing;
+                    }
 
-                if (bookHints && thing is Book book && TryMakeReadJob(pawn, book, out _))
-                {
-                    label = "PS_DoubleClickToRead".Translate();
-                    icon = ReadIcon;
-                    BuildBookHintStats(book);
-                    return thing;
+                    if (eatHints && TryMakeIngestJob(pawn, thing, out _))
+                    {
+                        label = "PS_DoubleClickToEat".Translate();
+                        icon = EatIcon;
+                        BuildFoodHintStats(thing);
+                        return thing;
+                    }
+
+                    if (bookHints && thing is Book book && TryMakeReadJob(pawn, book, out _))
+                    {
+                        label = "PS_DoubleClickToRead".Translate();
+                        icon = ReadIcon;
+                        BuildBookHintStats(book);
+                        return thing;
+                    }
                 }
             }
 

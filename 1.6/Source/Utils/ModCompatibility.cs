@@ -29,24 +29,25 @@ namespace PerspectiveShift
         public static readonly bool DubsBadHygieneAvailable;
         public static readonly bool ThemingModAvailable;
         public static readonly bool AlphaBooksAvailable;
+        public static readonly bool DiscoveriesAvailable;
+        public static readonly bool IsoRimAvailable;
+
+        private static Func<bool> isoRimViewReady;
+        private static Func<float> isoRimViewYaw;
 
         private static Type vehiclePawnType;
         private static MethodInfo addOrTransferMethod;
-        private static FieldInfo vehiclePatherField;
         private static FieldInfo handlersField;
         private static FieldInfo thingOwnerField;
         private static FieldInfo roleField;
-        private static FieldInfo handlingTypesField;
-        private static MethodInfo startPathMethod;
-        private static MethodInfo stopDeadMethod;
-        private static PropertyInfo movingProperty;
-        private static FieldInfo destinationField;
+        private static PropertyInfo handlingTypesProperty;
         private static FieldInfo patherVehicleField;
+        private static PropertyInfo slotsAvailableProperty;
+        private static MethodInfo canOperateRoleMethod;
+        private static MethodInfo promptToBoardMethod;
+        private static MethodInfo ideoAllowsBoardingMethod;
+        private static FieldInfo movementStatusField;
 
-        private static PropertyInfo vehicleDraftedProp;
-        private static FieldInfo vehicleIgnitionField;
-        private static PropertyInfo ignitionDraftedProp;
-        private static MethodInfo canReachMethod;
         private static PropertyInfo compVehicleTurretsProp;
         private static PropertyInfo turretsProp;
         private static FieldInfo keyField;
@@ -88,6 +89,8 @@ namespace PerspectiveShift
         private static PropertyInfo abCounterpartsProperty;
 
         private static Type alphaBookType;
+        private static MethodInfo discoveryTryDiscoverMethod;
+        private static MethodInfo discoveryTryShowNextMethod;
         public static JobDef AlphaBookReadingJob;
 
         private static Type rimbodyDBType;
@@ -129,70 +132,88 @@ namespace PerspectiveShift
 
         private static readonly Dictionary<int, (Pawn vehicle, bool isDriver, bool isGunner, int lastTick)> vehicleRoleCache
             = new Dictionary<int, (Pawn, bool, bool, int)>();
-        private static readonly Dictionary<int, int> wasdActiveVehicles
-            = new Dictionary<int, int>();
-
         static ModCompatibility()
         {
             GiddyUpAvailable = ModsConfig.IsActive("MemeGoddess.GiddyUp");
 
             RunAndGunAvailable = ModsConfig.IsActive("MemeGoddess.RunAndGun") || ModsConfig.IsActive("roolo.RunAndGun");
-            if (RunAndGunAvailable && !InitRunAndGunCompat())
+            if (RunAndGunAvailable && !TryInit("RunAndGun", InitRunAndGunCompat))
                 RunAndGunAvailable = false;
 
             VehicleFrameworkAvailable = ModsConfig.IsActive("SmashPhil.VehicleFramework");
-            if (VehicleFrameworkAvailable && !InitVehicleCompat())
+            if (VehicleFrameworkAvailable && !TryInit("Vehicle", InitVehicleCompat))
                 VehicleFrameworkAvailable = false;
 
             VanillaVehiclesExpandedAvailable = ModsConfig.IsActive("OskarPotocki.VanillaVehiclesExpanded");
-            if (VanillaVehiclesExpandedAvailable && VehicleFrameworkAvailable && !InitVVECompat())
+            if (VanillaVehiclesExpandedAvailable && VehicleFrameworkAvailable && !TryInit("VVE", InitVVECompat))
                 VanillaVehiclesExpandedAvailable = false;
 
             VanillaExpandedFrameworkAvailable = ModsConfig.IsActive("OskarPotocki.VanillaFactionsExpanded.Core");
-            if (VanillaExpandedFrameworkAvailable && !InitVEFCompat())
+            if (VanillaExpandedFrameworkAvailable && !TryInit("VEF", InitVEFCompat))
                 VanillaExpandedFrameworkAvailable = false;
 
             AchtungAvailable = ModsConfig.IsActive("brrainz.achtung");
-            if (AchtungAvailable && !InitAchtungCompat())
+            if (AchtungAvailable && !TryInit("Achtung", InitAchtungCompat))
                 AchtungAvailable = false;
 
             SimpleCameraSettingAvailable = ModsConfig.IsActive("ray1203.SimpleCameraSetting");
-            if (SimpleCameraSettingAvailable && !InitSimpleCameraSettingCompat())
+            if (SimpleCameraSettingAvailable && !TryInit("SimpleCameraSetting", InitSimpleCameraSettingCompat))
                 SimpleCameraSettingAvailable = false;
 
             ProcessorFrameworkAvailable = ModsConfig.IsActive("syrchalis.processor.framework");
-            if (ProcessorFrameworkAvailable && !InitProcessorFrameworkCompat())
+            if (ProcessorFrameworkAvailable && !TryInit("ProcessorFramework", InitProcessorFrameworkCompat))
                 ProcessorFrameworkAvailable = false;
 
             RimbodyAvailable = ModsConfig.IsActive("Maux36.Rimbody");
-            if (RimbodyAvailable && !InitRimbodyCompat())
+            if (RimbodyAvailable && !TryInit("Rimbody", InitRimbodyCompat))
                 RimbodyAvailable = false;
 
-            RimbodyChunkWorkoutsAvailable = ModsConfig.IsActive("Maux36.Rimbody") && InitRimbodyChunkCompat();
+            RimbodyChunkWorkoutsAvailable = ModsConfig.IsActive("Maux36.Rimbody") && TryInit("RimbodyChunk", InitRimbodyChunkCompat);
 
             AsAboveSoBelowAvailable = ModsConfig.IsActive("astryl.AsAboveSoBelow2");
-            if (AsAboveSoBelowAvailable && !InitAsAboveSoBelowCompat())
+            if (AsAboveSoBelowAvailable && !TryInit("AsAboveSoBelow", InitAsAboveSoBelowCompat))
                 AsAboveSoBelowAvailable = false;
 
             ProgressionAmmunitionAvailable = ModsConfig.IsActive("ferny.ProgressionAmmunition");
-            if (ProgressionAmmunitionAvailable && !InitProgressionAmmunitionCompat())
+            if (ProgressionAmmunitionAvailable && !TryInit("ProgressionAmmunition", InitProgressionAmmunitionCompat))
                 ProgressionAmmunitionAvailable = false;
 
             DubsBadHygieneAvailable = ModsConfig.IsActive("Dubwise.DubsBadHygiene") || ModsConfig.IsActive("Dubwise.DubsBadHygiene.Lite");
-            if (DubsBadHygieneAvailable && !InitDBHCompat())
+            if (DubsBadHygieneAvailable && !TryInit("DBH", InitDBHCompat))
                 DubsBadHygieneAvailable = false;
 
             AlphaBooksAvailable = ModsConfig.IsActive("sarg.alphabooks");
-            if (AlphaBooksAvailable && !InitAlphaBooksCompat())
+            if (AlphaBooksAvailable && !TryInit("AlphaBooks", InitAlphaBooksCompat))
                 AlphaBooksAvailable = false;
 
+            DiscoveriesAvailable = ModsConfig.IsActive("ferny.Discoveries");
+            if (DiscoveriesAvailable && !TryInit("Discoveries", InitDiscoveriesCompat))
+                DiscoveriesAvailable = false;
+
+            IsoRimAvailable = ModsConfig.IsActive("Peren.IsoRim17") || ModsConfig.IsActive("connor.isorim");
+            if (IsoRimAvailable && !TryInit("IsoRim", InitIsoRimCompat))
+                IsoRimAvailable = false;
+
             ThemingModAvailable = ModsConfig.IsActive("ferny.themingformodpack");
+        }
+
+        private static bool TryInit(string name, Func<bool> init)
+        {
+            try
+            {
+                return init();
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[PS] {name} compatibility failed to initialize and has been disabled: {ex}");
+                return false;
+            }
         }
 
         public static void ClearCaches()
         {
             vehicleRoleCache.Clear();
-            wasdActiveVehicles.Clear();
+            VehicleControl.ClearCaches();
         }
 
         private static bool Require<T>(ref T target, Func<T> lookup, string name, string prefix) where T : class
@@ -219,7 +240,6 @@ namespace PerspectiveShift
             Type vehiclePathFollowerType = null;
             Type vehicleRoleHandlerType = null;
             Type vehicleRoleType = null;
-            Type utilityType = null;
             Type compVehicleTurretsType = null;
             Type vehicleTurretType = null;
             MethodInfo patherDrawMethod = null;
@@ -231,21 +251,11 @@ namespace PerspectiveShift
             if (!Require(ref vehiclePathFollowerType, () => AccessTools.TypeByName("Vehicles.VehiclePathFollower"), "VehiclePathFollower", "VehicleFramework")) return false;
             if (!Require(ref vehicleRoleHandlerType, () => AccessTools.TypeByName("Vehicles.VehicleRoleHandler"), "VehicleRoleHandler", "VehicleFramework")) return false;
             if (!Require(ref vehicleRoleType, () => AccessTools.TypeByName("Vehicles.VehicleRole"), "VehicleRole", "VehicleFramework")) return false;
-            if (!Require(ref vehiclePatherField, () => AccessTools.Field(vehiclePawnType, "vehiclePather"), "vehiclePather", "VehicleFramework")) return false;
             if (!Require(ref handlersField, () => AccessTools.Field(vehiclePawnType, "handlers"), "handlers", "VehicleFramework")) return false;
             if (!Require(ref thingOwnerField, () => AccessTools.Field(vehicleRoleHandlerType, "thingOwner"), "thingOwner", "VehicleFramework")) return false;
             if (!Require(ref roleField, () => AccessTools.Field(vehicleRoleHandlerType, "role"), "role", "VehicleFramework")) return false;
-            if (!Require(ref handlingTypesField, () => AccessTools.Field(vehicleRoleType, "handlingTypes"), "handlingTypes", "VehicleFramework")) return false;
-            if (!Require(ref startPathMethod, () => AccessTools.Method(vehiclePathFollowerType, "StartPath"), "StartPath", "VehicleFramework")) return false;
-            if (!Require(ref stopDeadMethod, () => AccessTools.Method(vehiclePathFollowerType, "StopDead"), "StopDead", "VehicleFramework")) return false;
-            if (!Require(ref movingProperty, () => AccessTools.Property(vehiclePathFollowerType, "Moving"), "Moving", "VehicleFramework")) return false;
-            if (!Require(ref destinationField, () => AccessTools.Field(vehiclePathFollowerType, "destination"), "destination", "VehicleFramework")) return false;
+            if (!Require(ref handlingTypesProperty, () => AccessTools.Property(vehicleRoleType, "HandlingTypes"), "HandlingTypes", "VehicleFramework")) return false;
             if (!Require(ref patherVehicleField, () => AccessTools.Field(vehiclePathFollowerType, "vehicle"), "VehiclePathFollower.vehicle", "VehicleFramework")) return false;
-            if (!Require(ref vehicleDraftedProp, () => AccessTools.Property(vehiclePawnType, "Drafted"), "Drafted", "VehicleFramework")) return false;
-            if (!Require(ref vehicleIgnitionField, () => AccessTools.Field(vehiclePawnType, "ignition"), "ignition", "VehicleFramework")) return false;
-            if (!Require(ref ignitionDraftedProp, () => AccessTools.Property(vehicleIgnitionField.FieldType, "Drafted"), "ignition.Drafted", "VehicleFramework")) return false;
-            if (!Require(ref utilityType, () => AccessTools.TypeByName("Vehicles.VehicleReachabilityUtility"), "VehicleReachabilityUtility", "VehicleFramework")) return false;
-            if (!Require(ref canReachMethod, () => AccessTools.Method(utilityType, "CanReachVehicle", new Type[] { vehiclePawnType, typeof(LocalTargetInfo), typeof(PathEndMode), typeof(Danger), typeof(TraverseMode) }), "CanReachVehicle", "VehicleFramework")) return false;
             if (!Require(ref compVehicleTurretsType, () => AccessTools.TypeByName("Vehicles.CompVehicleTurrets"), "CompVehicleTurrets", "VehicleFramework")) return false;
             if (!Require(ref vehicleTurretType, () => AccessTools.TypeByName("Vehicles.VehicleTurret"), "VehicleTurret", "VehicleFramework")) return false;
             if (!Require(ref compVehicleTurretsProp, () => AccessTools.Property(vehiclePawnType, "CompVehicleTurrets"), "CompVehicleTurrets", "VehicleFramework")) return false;
@@ -258,6 +268,13 @@ namespace PerspectiveShift
             if (!Require(ref getGizmosMethod, () => AccessTools.Method(vehiclePawnType, "GetGizmos"), "GetGizmos", "VehicleFramework")) return false;
             if (!Require(ref allowDeconstructMethod, () => AccessTools.Method("Vehicles.Patch_Construction:AllowDeconstructVehicle"), "AllowDeconstructVehicle", "VehicleFramework")) return false;
             if (!Require(ref getFloatMenuOptionsMethod, () => AccessTools.Method(vehiclePawnType, "GetFloatMenuOptions"), "GetFloatMenuOptions", "VehicleFramework")) return false;
+            if (!Require(ref slotsAvailableProperty, () => AccessTools.Property(vehicleRoleHandlerType, "AreSlotsAvailableAndReservable"), "AreSlotsAvailableAndReservable", "VehicleFramework")) return false;
+            if (!Require(ref canOperateRoleMethod, () => AccessTools.Method(vehicleRoleHandlerType, "CanOperateRole", new Type[] { typeof(Pawn) }), "CanOperateRole", "VehicleFramework")) return false;
+            if (!Require(ref promptToBoardMethod, () => AccessTools.Method(vehiclePawnType, "PromptToBoardVehicle"), "PromptToBoardVehicle", "VehicleFramework")) return false;
+            if (!Require(ref ideoAllowsBoardingMethod, () => AccessTools.Method(vehiclePawnType, "IdeoAllowsBoarding"), "IdeoAllowsBoarding", "VehicleFramework")) return false;
+            if (!Require(ref movementStatusField, () => AccessTools.Field(vehiclePawnType, "movementStatus"), "movementStatus", "VehicleFramework")) return false;
+
+            if (!VehicleControl.Init(vehiclePawnType, vehiclePathFollowerType)) return false;
 
             var vehicleCompatHarmony = new Harmony("PerspectiveShift.VehicleCompat");
             vehicleCompatHarmony.Patch(patherDrawMethod,
@@ -388,6 +405,34 @@ namespace PerspectiveShift
             return true;
         }
 
+        private static bool InitDiscoveriesCompat()
+        {
+            if (!Require(ref discoveryTryDiscoverMethod, () => AccessTools.Method("Discoveries.DiscoveryTracker:TryDiscover", new[] { typeof(Thing), typeof(bool) }), "DiscoveryTracker.TryDiscover", "Discoveries")) return false;
+            if (!Require(ref discoveryTryShowNextMethod, () => AccessTools.Method("Discoveries.DiscoveryQueue:TryShowNext"), "DiscoveryQueue.TryShowNext", "Discoveries")) return false;
+            return true;
+        }
+
+        private static bool InitIsoRimCompat()
+        {
+            Type apiType = null;
+            MethodInfo readyGetter = null;
+            MethodInfo yawGetter = null;
+
+            if (!Require(ref apiType, () => AccessTools.TypeByName("IsoRim.Api"), "IsoRim.Api type", "IsoRim")) return false;
+            if (!Require(ref readyGetter, () => AccessTools.PropertyGetter(apiType, "ViewReady"), "Api.ViewReady", "IsoRim")) return false;
+            if (!Require(ref yawGetter, () => AccessTools.PropertyGetter(apiType, "ViewYaw"), "Api.ViewYaw", "IsoRim")) return false;
+
+            isoRimViewReady = (Func<bool>)Delegate.CreateDelegate(typeof(Func<bool>), readyGetter);
+            isoRimViewYaw = (Func<float>)Delegate.CreateDelegate(typeof(Func<float>), yawGetter);
+            return true;
+        }
+
+        public static float IsoRimViewYaw()
+        {
+            if (!IsoRimAvailable || !isoRimViewReady()) return 0f;
+            return isoRimViewYaw();
+        }
+
         private static bool InitAsAboveSoBelowCompat()
         {
             if (!Require(ref abStairsType, () => AccessTools.TypeByName("AsAboveSoBelow.Building_ABStairs2"), "Building_ABStairs2 type", "AsAboveSoBelow")) return false;
@@ -404,6 +449,16 @@ namespace PerspectiveShift
         }
 
         public static bool IsAlphaBook(Thing thing) => AlphaBooksAvailable && alphaBookType.IsInstanceOfType(thing);
+
+        public static void NotifyThingPickedUp(Thing thing)
+        {
+            if (!DiscoveriesAvailable || thing == null) return;
+
+            if (discoveryTryDiscoverMethod.Invoke(null, new object[] { thing, false }) is true)
+            {
+                discoveryTryShowNextMethod.Invoke(null, null);
+            }
+        }
 
         private static bool InitRimbodyChunkCompat()
         {
@@ -636,9 +691,9 @@ namespace PerspectiveShift
                         if (role == null)
                             continue;
 
-                        int handlingTypesValue = (int)handlingTypesField.GetValue(role);
-                        isDriver = (handlingTypesValue & 1) == 1;
-                        isGunner = (handlingTypesValue & 2) == 2;
+                        int handling = (int)handlingTypesProperty.GetValue(role, null);
+                        isDriver = (handling & 1) == 1;
+                        isGunner = (handling & 2) == 2;
                         break;
                     }
                 }
@@ -650,82 +705,6 @@ namespace PerspectiveShift
 
             vehicleRoleCache[pawn.thingIDNumber] = (vehicle, isDriver, isGunner, currentTick);
             return true;
-        }
-
-        public static void StopVehicle(Pawn vehicle)
-        {
-            var vPather = vehiclePatherField.GetValue(vehicle);
-            if (vPather != null)
-                stopDeadMethod.Invoke(vPather, null);
-        }
-
-        public static bool ProcessVehicleMovement(Pawn vehicle, Vector3 inputDir)
-        {
-            wasdActiveVehicles[vehicle.thingIDNumber] = GenTicks.TicksGame;
-
-            var vPather = vehiclePatherField.GetValue(vehicle);
-            if (vPather == null)
-                return false;
-
-            if (!(bool)vehicleDraftedProp.GetValue(vehicle, null))
-            {
-                var ignition = vehicleIgnitionField.GetValue(vehicle);
-                ignitionDraftedProp.SetValue(ignition, true, null);
-            }
-
-            var isMoving = (bool)movingProperty.GetValue(vPather, null);
-            float currentDistToDest = 0f;
-            Vector3 currentDestVec = Vector3.zero;
-
-            if (isMoving)
-            {
-                var dest = (LocalTargetInfo)destinationField.GetValue(vPather);
-                if (dest.IsValid)
-                {
-                    currentDestVec = (dest.Cell - vehicle.Position).ToVector3();
-                    currentDestVec.y = 0;
-                    currentDistToDest = currentDestVec.magnitude;
-                    if (currentDistToDest > 5f && Vector3.Angle(inputDir, currentDestVec) < 45f)
-                        return true;
-                }
-            }
-
-            float[] distances = { 20f, 10f, 5f, 2f, 30f, 40f, 50f, 60f, 70f };
-            foreach (var dist in distances)
-            {
-                if (isMoving && dist <= currentDistToDest && Vector3.Angle(inputDir.normalized * dist, currentDestVec) < 25f)
-                    continue;
-
-                var targetCell = (vehicle.DrawPos + inputDir.normalized * dist).ToIntVec3();
-                targetCell.x = Mathf.Clamp(targetCell.x, 0, vehicle.Map.Size.x - 1);
-                targetCell.z = Mathf.Clamp(targetCell.z, 0, vehicle.Map.Size.z - 1);
-
-                if (targetCell.InBounds(vehicle.Map) is false || !targetCell.Walkable(vehicle.Map))
-                    continue;
-
-                try
-                {
-                    bool reachable = (bool)canReachMethod.Invoke(null, new object[] {
-                        vehicle, (LocalTargetInfo)targetCell, PathEndMode.OnCell, Danger.Deadly, TraverseMode.ByPawn
-                    });
-                    if (!reachable)
-                        continue;
-                }
-                catch { }
-
-                var currentDest = (LocalTargetInfo)destinationField.GetValue(vPather);
-                if (currentDest.IsValid && currentDest.Cell == targetCell && isMoving)
-                    return true;
-
-                startPathMethod.Invoke(vPather, new object[] { (LocalTargetInfo)targetCell, PathEndMode.OnCell, false });
-
-                if ((bool)movingProperty.GetValue(vPather, null))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         public static void FireVehicleWeapons(Pawn vehicle, Pawn gunner, Vector3 targetMapPos)
@@ -837,11 +816,7 @@ namespace PerspectiveShift
             try
             {
                 Pawn vehicle = __instance.parent as Pawn;
-                if (!wasdActiveVehicles.TryGetValue(vehicle.thingIDNumber, out int lastWasdTick))
-                    return true;
-
-                if (GenTicks.TicksGame - lastWasdTick > 3)
-                    return true;
+                if (!VehicleControl.RecentlyDriven(vehicle)) return true;
 
                 var maxSpeed = (float)vveStatMoveSpeedProp.GetValue(__instance, null);
                 var currentSpeed = (float)vveCurrentSpeedField.GetValue(__instance);
@@ -897,6 +872,66 @@ namespace PerspectiveShift
                 Log.Error($"[PS] Error putting cargo to vehicle: {ex}");
                 return false;
             }
+        }
+
+        public static bool VehicleBoardingEligible(Thing vehicle, Pawn pawn)
+        {
+            if (!VehicleFrameworkAvailable || pawn == null || !IsVehiclePawn(vehicle)) return false;
+            if (vehicle == pawn || !vehicle.Spawned || !pawn.Spawned || vehicle.Map != pawn.Map) return false;
+            if (vehicle.Faction != pawn.Faction) return false;
+            if (!pawn.RaceProps.ToolUser) return false;
+
+            try
+            {
+                if ((int)movementStatusField.GetValue(vehicle) == 0) return false;
+                if (!(bool)ideoAllowsBoardingMethod.Invoke(vehicle, new object[] { pawn })) return false;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[PS] Error checking vehicle boarding eligibility: {ex}");
+                return false;
+            }
+
+            return pawn.CanReserveAndReach(vehicle, PathEndMode.ClosestTouch, Danger.Deadly);
+        }
+
+        public static bool TryBoardVehicle(Thing vehicle, Pawn pawn)
+        {
+            try
+            {
+                var handlers = handlersField.GetValue(vehicle) as IList;
+                if (handlers == null) return false;
+
+                object seat = FindOpenSeat(pawn, handlers, true) ?? FindOpenSeat(pawn, handlers, false);
+                if (seat == null) return false;
+
+                promptToBoardMethod.Invoke(vehicle, new object[] { pawn, seat });
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[PS] Error boarding vehicle: {ex}");
+                return false;
+            }
+        }
+
+        private static object FindOpenSeat(Pawn pawn, IList handlers, bool requireMovement)
+        {
+            foreach (var handler in handlers)
+            {
+                if (handler == null) continue;
+                if (!(bool)slotsAvailableProperty.GetValue(handler, null)) continue;
+
+                var role = roleField.GetValue(handler);
+                if (role == null) continue;
+
+                int handling = (int)handlingTypesProperty.GetValue(role, null);
+                if (requireMovement && (handling & 1) != 1) continue;
+                if (handling != 0 && !(bool)canOperateRoleMethod.Invoke(handler, new object[] { pawn })) continue;
+
+                return handler;
+            }
+            return null;
         }
 
         public static bool IsVehiclePawn(Thing t)
@@ -971,6 +1006,14 @@ namespace PerspectiveShift
                 return true;
             }
             return false;
+        }
+
+        public static ThinkNode_JobGiver MakeHygieneJobGiver(string typeName)
+        {
+            if (!DubsBadHygieneAvailable) return null;
+            var type = AccessTools.TypeByName(typeName);
+            if (type == null) return null;
+            return Activator.CreateInstance(type) as ThinkNode_JobGiver;
         }
 
         public static bool IsDBHThirstEnabled() => DubsBadHygieneAvailable && (bool)thirstNeedProp.GetValue(null, null);

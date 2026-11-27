@@ -28,7 +28,7 @@ namespace PerspectiveShift
         public PerspectiveShiftMod(ModContentPack pack) : base(pack)
         {
             settings = GetSettings<PerspectiveShiftSettings>();
-            new Harmony("PerspectiveShiftMod").PatchAll();
+            new Harmony("PerspectiveShiftMod").PatchAll(typeof(PerspectiveShiftMod).Assembly);
         }
 
         public override void DoSettingsWindowContents(Rect rect)
@@ -185,10 +185,12 @@ namespace PerspectiveShift
 
                 case SettingsTab.Movement:
                     settings.enableSprinting = d.enableSprinting;
+                    settings.sprintMode = d.sprintMode;
                     settings.sprintSpeedMultiplier = d.sprintSpeedMultiplier;
                     settings.sprintFoodDrain = d.sprintFoodDrain;
                     settings.sprintSleepDrain = d.sprintSleepDrain;
                     settings.enableSneaking = d.enableSneaking;
+                    settings.sneakMode = d.sneakMode;
                     settings.sneakSpeedMultiplier = d.sneakSpeedMultiplier;
                     settings.moveSpeedMultiplier = d.moveSpeedMultiplier;
                     settings.playerMoveSpeedCap = d.playerMoveSpeedCap;
@@ -197,8 +199,11 @@ namespace PerspectiveShift
                 case SettingsTab.Interface:
                     settings.gizmoCorner = d.gizmoCorner;
                     settings.disableCustomGizmos = d.disableCustomGizmos;
+                    settings.hideGizmosOnWorldMap = d.hideGizmosOnWorldMap;
+                    settings.enableFulfillNeedsGizmo = d.enableFulfillNeedsGizmo;
                     settings.showControlsOnFirstInhabit = d.showControlsOnFirstInhabit;
                     settings.enableDamageScreenEffect = d.enableDamageScreenEffect;
+                    settings.damageEffectStyle = d.damageEffectStyle;
                     break;
 
                 default:
@@ -207,10 +212,15 @@ namespace PerspectiveShift
                     settings.fishingMinigame = d.fishingMinigame;
                     settings.instantEquip = d.instantEquip;
                     settings.sleepingPreventsVision = d.sleepingPreventsVision;
-                    settings.disallowOtherMapsInAuthentic = d.disallowOtherMapsInAuthentic;
                     settings.totalFreedom = d.totalFreedom;
                     settings.allowNonHuman = d.allowNonHuman;
                     settings.requirePawnInFaction = d.requirePawnInFaction;
+                    settings.noPlayerRestNeed = d.noPlayerRestNeed;
+                    settings.noPlayerFoodNeed = d.noPlayerFoodNeed;
+                    settings.noPlayerHygieneNeed = d.noPlayerHygieneNeed;
+                    settings.noPlayerBladderNeed = d.noPlayerBladderNeed;
+                    settings.noPlayerRecreationNeed = d.noPlayerRecreationNeed;
+                    settings.noPlayerMentalBreaks = d.noPlayerMentalBreaks;
                     break;
             }
 
@@ -311,11 +321,30 @@ namespace PerspectiveShift
             listing.CheckboxLabeled("PS_ReleaseToWildCursor".Translate(), ref settings.releaseToWildCursor, "PS_ReleaseToWildCursorDesc".Translate());
         }
 
+        private static string DamageEffectStyleLabel(DamageEffectStyle style) => ("PS_DamageEffectStyle_" + style).Translate();
+
+        public static string KeyHoldModeLabel(KeyHoldMode mode) => ("PS_KeyHoldMode_" + mode).Translate();
+
+        private static void DoKeyHoldModeRow(Listing_Standard listing, string labelKey, KeyHoldMode current, Action<KeyHoldMode> setter)
+        {
+            if (!listing.ButtonTextLabeled(labelKey.Translate(), KeyHoldModeLabel(current))) return;
+
+            var list = new List<FloatMenuOption>();
+            foreach (KeyHoldMode mode in Enum.GetValues(typeof(KeyHoldMode)))
+            {
+                var picked = mode;
+                list.Add(new FloatMenuOption(KeyHoldModeLabel(picked), () => setter(picked)));
+            }
+            Find.WindowStack.Add(new FloatMenu(list));
+        }
+
         private void DoMovementTab(Listing_Standard listing)
         {
             listing.CheckboxLabeled("PS_EnableSprinting".Translate(), ref settings.enableSprinting);
             if (settings.enableSprinting)
             {
+                DoKeyHoldModeRow(listing, "PS_SprintBehavior", settings.sprintMode, m => settings.sprintMode = m);
+
                 listing.Label("PS_SprintSpeedMultiplier".Translate(settings.sprintSpeedMultiplier.ToString("F1")));
                 settings.sprintSpeedMultiplier = listing.Slider(settings.sprintSpeedMultiplier, 1.1f, 3f);
 
@@ -329,6 +358,8 @@ namespace PerspectiveShift
             listing.CheckboxLabeled("PS_EnableSneaking".Translate(), ref settings.enableSneaking);
             if (settings.enableSneaking)
             {
+                DoKeyHoldModeRow(listing, "PS_SneakBehavior", settings.sneakMode, m => settings.sneakMode = m);
+
                 listing.Label("PS_SneakSpeedMultiplier".Translate(settings.sneakSpeedMultiplier.ToString("F1")));
                 settings.sneakSpeedMultiplier = listing.Slider(settings.sneakSpeedMultiplier, 0.1f, 0.9f);
             }
@@ -355,8 +386,20 @@ namespace PerspectiveShift
             }
 
             listing.CheckboxLabeled("PS_DisableCustomGizmos".Translate(), ref settings.disableCustomGizmos, "PS_DisableCustomGizmosDesc".Translate());
+            listing.CheckboxLabeled("PS_HideGizmosOnWorldMap".Translate(), ref settings.hideGizmosOnWorldMap, "PS_HideGizmosOnWorldMapDesc".Translate());
+            listing.CheckboxLabeled("PS_EnableFulfillNeedsGizmo".Translate(), ref settings.enableFulfillNeedsGizmo, "PS_EnableFulfillNeedsGizmoDesc".Translate());
             listing.CheckboxLabeled("PS_ShowControlsOnFirstInhabit".Translate(), ref settings.showControlsOnFirstInhabit, "PS_ShowControlsOnFirstInhabitDesc".Translate());
             listing.CheckboxLabeled("PS_EnableDamageScreenEffect".Translate(), ref settings.enableDamageScreenEffect, "PS_EnableDamageScreenEffectDesc".Translate());
+            if (settings.enableDamageScreenEffect && listing.ButtonTextLabeled("PS_DamageEffectStyle".Translate(), DamageEffectStyleLabel(settings.damageEffectStyle)))
+            {
+                var styles = new List<FloatMenuOption>();
+                foreach (DamageEffectStyle style in Enum.GetValues(typeof(DamageEffectStyle)))
+                {
+                    var picked = style;
+                    styles.Add(new FloatMenuOption(DamageEffectStyleLabel(picked), () => settings.damageEffectStyle = picked));
+                }
+                Find.WindowStack.Add(new FloatMenu(styles));
+            }
         }
 
         private void DoGameplayTab(Listing_Standard listing)
@@ -375,10 +418,24 @@ namespace PerspectiveShift
             }
             listing.CheckboxLabeled("PS_InstantEquip".Translate(), ref settings.instantEquip, "PS_InstantEquipDesc".Translate());
             listing.CheckboxLabeled("PS_SleepingPreventsVision".Translate(), ref settings.sleepingPreventsVision, "PS_SleepingPreventsVisionDesc".Translate());
-            listing.CheckboxLabeled("PS_DisallowOtherMapsInAuthentic".Translate(), ref settings.disallowOtherMapsInAuthentic, "PS_DisallowOtherMapsInAuthenticDesc".Translate());
             listing.CheckboxLabeled("PS_TotalFreedom".Translate(), ref settings.totalFreedom, "PS_TotalFreedomDesc".Translate());
             listing.CheckboxLabeled("PS_AllowNonHuman".Translate(), ref settings.allowNonHuman, "PS_AllowNonHumanDesc".Translate());
             listing.CheckboxLabeled("PS_RequirePawnInFaction".Translate(), ref settings.requirePawnInFaction, "PS_RequirePawnInFactionDesc".Translate());
+
+            listing.GapLine();
+
+            listing.CheckboxLabeled("PS_NoPlayerRestNeed".Translate(), ref settings.noPlayerRestNeed, "PS_NoPlayerRestNeedDesc".Translate());
+            listing.CheckboxLabeled("PS_NoPlayerFoodNeed".Translate(), ref settings.noPlayerFoodNeed, "PS_NoPlayerFoodNeedDesc".Translate());
+            listing.CheckboxLabeled("PS_NoPlayerRecreationNeed".Translate(), ref settings.noPlayerRecreationNeed, "PS_NoPlayerRecreationNeedDesc".Translate());
+            if (ModCompatibility.IsDBHHygieneEnabled())
+            {
+                listing.CheckboxLabeled("PS_NoPlayerHygieneNeed".Translate(), ref settings.noPlayerHygieneNeed, "PS_NoPlayerHygieneNeedDesc".Translate());
+            }
+            if (ModCompatibility.IsDBHBladderEnabled())
+            {
+                listing.CheckboxLabeled("PS_NoPlayerBladderNeed".Translate(), ref settings.noPlayerBladderNeed, "PS_NoPlayerBladderNeedDesc".Translate());
+            }
+            listing.CheckboxLabeled("PS_NoPlayerMentalBreaks".Translate(), ref settings.noPlayerMentalBreaks, "PS_NoPlayerMentalBreaksDesc".Translate());
         }
 
         public override string SettingsCategory()

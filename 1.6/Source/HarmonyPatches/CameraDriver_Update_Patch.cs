@@ -8,7 +8,9 @@ namespace PerspectiveShift
     {
         public static void Postfix()
         {
-            if (State.IsActive && Find.CurrentMap != null)
+            State.TryRecenterCameraAfterLoad();
+
+            if (State.IsActiveOrInVehicle && Find.CurrentMap != null)
             {
                 State.Avatar.UpdateCamera();
             }

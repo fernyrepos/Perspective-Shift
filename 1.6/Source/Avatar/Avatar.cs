@@ -41,6 +41,8 @@ namespace PerspectiveShift
             if (pawn.Downed || !pawn.Spawned || pawn.Map == null || pawn.IsUnderAIControl() || pawn.InMentalState) return;
 
             HandleNeeds();
+            HandleAutoNeeds();
+            HandleGatheringPrompt();
             HandleCarriedThing();
             HandleDoorInteraction();
             HandleCombatStance();
@@ -52,6 +54,7 @@ namespace PerspectiveShift
         private void HandleNeeds()
         {
             if (pawn.needs == null) return;
+            HandleSuppressedNeeds();
             if (pawn.needs.rest != null) HandleRestNeed();
             HandlePinnedNeeds();
         }

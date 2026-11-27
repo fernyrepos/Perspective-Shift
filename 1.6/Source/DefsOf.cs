@@ -18,6 +18,7 @@ namespace PerspectiveShift
         public static KeyBindingDef PS_EatFood;
         public static KeyBindingDef PS_DoRecreation;
         public static SoundDef PS_PackInventory;
+        public static SoundDef PS_NeedsDone;
         public static SoundDef PS_StorageOpen;
         public static SoundDef PS_SprintSound;
         public static SoundDef PS_FishBite;

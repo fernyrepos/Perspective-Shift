@@ -16,6 +16,9 @@
     <PS_RoleCharacter>Play as characters</PS_RoleCharacter>
     <PS_RoleCharacterDesc>Experience the game from the point of view of one or many of your characters. Customizable.</PS_RoleCharacterDesc>
     <PS_Recommended>RECOMMENDED</PS_Recommended>
+    <PS_Setup>Setup</PS_Setup>
+    <PS_Configure>Configure</PS_Configure>
+    <PS_SettingsChangeableNote>These settings can be changed at any time under 'Gameplay' options in the pause menu.</PS_SettingsChangeableNote>
 
     <PS_InhabitedControls>List of controls while inhabited</PS_InhabitedControls>
     <PS_NeverShowAgain>Never show this again</PS_NeverShowAgain>
@@ -28,6 +31,8 @@
     <PS_KeyWASD>WASD</PS_KeyWASD>
     <PS_KeyShiftHold>Hold left shift</PS_KeyShiftHold>
     <PS_KeyCtrlHold>Hold left ctrl</PS_KeyCtrlHold>
+    <PS_KeyShiftPress>Press left shift</PS_KeyShiftPress>
+    <PS_KeyCtrlPress>Press left ctrl</PS_KeyCtrlPress>
     <PS_KeyLeftClick>Left click</PS_KeyLeftClick>
     <PS_KeyLeftClickHold>Hold left click</PS_KeyLeftClickHold>
     <PS_KeyRightClick>Right click</PS_KeyRightClick>
@@ -68,14 +73,14 @@
     <PS_DisableAimingDelayDesc>When checked, your controlled character fires weapons instantly without having to wait for the weapon's aiming cycle. Cooldown between shots still applies.</PS_DisableAimingDelayDesc>
 
     <PS_EnableDamageScreenEffect>Enable damage screen effect</PS_EnableDamageScreenEffect>
-    <PS_EnableDamageScreenEffectDesc>Flashes a red overlay on the screen briefly when your controlled character takes damage.</PS_EnableDamageScreenEffectDesc>
+    <PS_EnableDamageScreenEffectDesc>Shows a brief red overlay when your controlled character takes damage.</PS_EnableDamageScreenEffectDesc>
+    <PS_DamageEffectStyle>Damage effect style</PS_DamageEffectStyle>
+    <PS_DamageEffectStyle_Flash>Full screen flash</PS_DamageEffectStyle_Flash>
+    <PS_DamageEffectStyle_Vignette>Edge vignette</PS_DamageEffectStyle_Vignette>
     <PS_InstantEquip>Instant double-click equip</PS_InstantEquip>
     <PS_InstantEquipDesc>Double-clicking a carried weapon or apparel equips or wears it immediately, skipping the equip job and its wear delay. Replaced gear is dropped at your feet.</PS_InstantEquipDesc>
     <PS_SleepingPreventsVision>Sleeping prevents vision</PS_SleepingPreventsVision>
     <PS_SleepingPreventsVisionDesc>While the character you are inhabiting is asleep or unconscious, the world fades to black until they wake up. Your interface stays visible.</PS_SleepingPreventsVisionDesc>
-    <PS_DisallowOtherMapsInAuthentic>Disallow seeing other maps in authentic style</PS_DisallowOtherMapsInAuthentic>
-    <PS_DisallowOtherMapsInAuthenticDesc>In authentic style you can only look at the map your character is on. Jumping to another colony, to a pawn elsewhere, or to a letter about another map is refused, including while your character is travelling in a caravan.</PS_DisallowOtherMapsInAuthenticDesc>
-    <PS_CannotViewOtherMaps>You can only see where your character is.</PS_CannotViewOtherMaps>
     <PS_WeaponTooltips>Weapon tooltips</PS_WeaponTooltips>
     <PS_WeaponTooltipsDesc>Hovering a weapon within reach shows its name, quality, and how its DPS and armor penetration compare with what you have equipped.</PS_WeaponTooltipsDesc>
     <PS_ApparelTooltips>Apparel tooltips</PS_ApparelTooltips>
@@ -127,6 +132,10 @@
     <PS_RelieveBladder>Relieve bladder in water</PS_RelieveBladder>
 
     <PS_EnableSprinting>Enable sprinting</PS_EnableSprinting>
+    <PS_SprintBehavior>Sprint behavior</PS_SprintBehavior>
+    <PS_SneakBehavior>Sneak behavior</PS_SneakBehavior>
+    <PS_KeyHoldMode_Hold>Hold</PS_KeyHoldMode_Hold>
+    <PS_KeyHoldMode_Toggle>Toggle</PS_KeyHoldMode_Toggle>
     <PS_SprintSpeedMultiplier>Sprint speed multiplier: {0}</PS_SprintSpeedMultiplier>
     <PS_EnableSneaking>Enable sneaking</PS_EnableSneaking>
     <PS_SneakSpeedMultiplier>Sneak speed multiplier: {0}</PS_SneakSpeedMultiplier>
@@ -142,8 +151,47 @@
     <PS_AllowNonHumanDesc>Allows possessing animals, mechanoids, and other non-colonist pawns.</PS_AllowNonHumanDesc>
     <PS_RequirePawnInFaction>Require target to be in faction</PS_RequirePawnInFaction>
     <PS_RequirePawnInFactionDesc>Ensures you can only take control of pawns that are part of your faction. Disable carefully, this is unsupported and only meant for fooling around.</PS_RequirePawnInFactionDesc>
+
+  <PS_NoPlayerRestNeed>Disable player rest need</PS_NoPlayerRestNeed>
+  <PS_NoPlayerRestNeedDesc>While inhabiting a character, their rest need stays full.</PS_NoPlayerRestNeedDesc>
+  <PS_NoPlayerFoodNeed>Disable player food need</PS_NoPlayerFoodNeed>
+  <PS_NoPlayerFoodNeedDesc>While inhabiting a character, their food need stays full.</PS_NoPlayerFoodNeedDesc>
+  <PS_NoPlayerRecreationNeed>Disable player recreation need</PS_NoPlayerRecreationNeed>
+  <PS_NoPlayerRecreationNeedDesc>While inhabiting a character, their recreation need stays full.</PS_NoPlayerRecreationNeedDesc>
+  <PS_NoPlayerHygieneNeed>Disable player hygiene need</PS_NoPlayerHygieneNeed>
+  <PS_NoPlayerHygieneNeedDesc>While inhabiting a character, their hygiene need stays full. Requires Dubs Bad Hygiene.</PS_NoPlayerHygieneNeedDesc>
+  <PS_NoPlayerBladderNeed>Disable player bladder need</PS_NoPlayerBladderNeed>
+  <PS_NoPlayerBladderNeedDesc>While inhabiting a character, their bladder need stays full. Requires Dubs Bad Hygiene.</PS_NoPlayerBladderNeedDesc>
+  <PS_NoPlayerMentalBreaks>Disable player mental breaks</PS_NoPlayerMentalBreaks>
+  <PS_NoPlayerMentalBreaksDesc>While inhabiting a character, they will not have mental breaks and no break risk alert is raised for them. Mental states forced by other sources, such as a berserk pulser, still apply.</PS_NoPlayerMentalBreaksDesc>
+    <PS_HideGizmosOnWorldMap>Hide inhabited gizmos on world map screen</PS_HideGizmosOnWorldMap>
+    <PS_HideGizmosOnWorldMapDesc>While you are inhabiting a character, the character's gizmo panel and need bars are hidden whenever the world map is open, so they do not sit on top of it. They come back as soon as you leave the world map.</PS_HideGizmosOnWorldMapDesc>
     <PS_DisableCustomGizmos>Disable custom gizmo UI</PS_DisableCustomGizmos>
     <PS_DisableCustomGizmosDesc>Disables the custom Perspective Shift gizmo overlay. You will need to manually click/select your character to see their gizmos, just like in vanilla RimWorld.</PS_DisableCustomGizmosDesc>
+    <PS_EnableFulfillNeedsGizmo>Enable fulfill needs gizmo</PS_EnableFulfillNeedsGizmo>
+    <PS_EnableFulfillNeedsGizmoDesc>Shows a gizmo that lets your controlled character take care of its own needs when you are not busy with something else.</PS_EnableFulfillNeedsGizmoDesc>
+    <PS_FulfillNeeds>Fulfill needs</PS_FulfillNeeds>
+    <PS_FulfillNeedsDesc>While enabled, your character will go eat, sleep and otherwise look after itself when it is idle.\n\nRight-click to choose which needs it handles.</PS_FulfillNeedsDesc>
+    <PS_AutoNeed_Food>Food</PS_AutoNeed_Food>
+    <PS_AutoNeed_Sleep>Sleep</PS_AutoNeed_Sleep>
+    <PS_AutoNeed_Bladder>Bladder</PS_AutoNeed_Bladder>
+    <PS_AutoNeed_Hygiene>Hygiene</PS_AutoNeed_Hygiene>
+    <PS_AutoNeed_Recreation>Recreation</PS_AutoNeed_Recreation>
+  <PS_AutoNeedThreshold>Below {0}</PS_AutoNeedThreshold>
+  <PS_ReturnAfterFulfillment>Return to original location after fulfillment job</PS_ReturnAfterFulfillment>
+  <PS_ReturnAfterFulfillmentDesc>After your character finishes seeing to a need on their own, they walk back to where they were standing when it started.</PS_ReturnAfterFulfillmentDesc>
+  <PS_ShowJobCallouts>Show job callouts</PS_ShowJobCallouts>
+  <PS_ShowJobCalloutsDesc>Your character announces what they are going off to do, and says when they are back.</PS_ShowJobCalloutsDesc>
+  <PS_PlayDoneSound>Play done sound</PS_PlayDoneSound>
+  <PS_PlayDoneSoundDesc>Play a sound when the avatar finishes fulfilling their needs.</PS_PlayDoneSoundDesc>
+  <PS_Callout_Food>Eating...</PS_Callout_Food>
+  <PS_Callout_Sleep>Sleeping...</PS_Callout_Sleep>
+  <PS_Callout_Bladder>Defecating...</PS_Callout_Bladder>
+  <PS_Callout_Hygiene>Washing...</PS_Callout_Hygiene>
+  <PS_Callout_Recreation>Relaxing...</PS_Callout_Recreation>
+  <PS_Callout_Done>Done.</PS_Callout_Done>
+  <PS_AttendParty>Would you like to attend the party?</PS_AttendParty>
+  <PS_AttendWedding>Would you like to attend the wedding?</PS_AttendWedding>
 
     <PS_ChooseYourCharacter>Choose your character</PS_ChooseYourCharacter>
     <PS_ChooseYourStartingCharacter>Choose your starting character</PS_ChooseYourStartingCharacter>
@@ -209,6 +257,7 @@
     <PS_ContinueSwapMode_Desc>Continue your game from the perspective of your characters, freely swapping between them.</PS_ContinueSwapMode_Desc>
     <PS_ContinueDirectorMode_Desc>Continue your game from an omniscient point of view, directing and managing your characters.</PS_ContinueDirectorMode_Desc>
     <PS_AbilityCancelled>{0} cancelled due to movement.</PS_AbilityCancelled>
+    <PS_VehicleNoSeat>{0} has no free seat.</PS_VehicleNoSeat>
     <PS_StorageFull>{0} cannot be deposited as the storage is full.</PS_StorageFull>
     <PS_SaveAndEndRun>Save and end run</PS_SaveAndEndRun>
     <PS_BedForPrisonersOnly>This bed is for prisoners only.</PS_BedForPrisonersOnly>

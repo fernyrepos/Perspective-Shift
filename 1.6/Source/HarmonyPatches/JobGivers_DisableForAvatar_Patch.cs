@@ -11,6 +11,8 @@ namespace PerspectiveShift
     [HarmonyPatch]
     public static class JobGivers_DisableForAvatar_Patch
     {
+        public static bool allowAvatarJobs;
+
         public static IEnumerable<MethodBase> TargetMethods()
         {
             yield return AccessTools.Method(typeof(JobGiver_AIFightEnemy), "TryGiveJob");
@@ -23,6 +25,7 @@ namespace PerspectiveShift
 
         public static bool Prefix(Pawn pawn, ref Job __result)
         {
+            if (allowAvatarJobs) return true;
             if (pawn.IsAvatar() && !pawn.InMentalState)
             {
                 if (!pawn.Drafted && pawn.IsUnderAIControl())

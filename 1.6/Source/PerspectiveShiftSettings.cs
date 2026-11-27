@@ -3,6 +3,27 @@ using Verse;
 
 namespace PerspectiveShift
 {
+    public enum KeyHoldMode
+    {
+        Hold,
+        Toggle
+    }
+
+    public enum AutoNeed
+    {
+        Food,
+        Sleep,
+        Bladder,
+        Hygiene,
+        Recreation
+    }
+
+    public enum DamageEffectStyle
+    {
+        Flash,
+        Vignette
+    }
+
     public enum GizmoCorner
     {
         TopRight,
@@ -28,6 +49,8 @@ namespace PerspectiveShift
 
         public bool enableSprinting = true;
         public bool enableSneaking = true;
+        public KeyHoldMode sprintMode = KeyHoldMode.Hold;
+        public KeyHoldMode sneakMode = KeyHoldMode.Hold;
         public float sprintSpeedMultiplier = 1.3f;
         public float sneakSpeedMultiplier = 0.5f;
 
@@ -41,13 +64,21 @@ namespace PerspectiveShift
         public bool requirePawnInFaction = true;
         public float sprintFoodDrain = 1.5f;
         public float sprintSleepDrain = 2f;
+        public bool noPlayerRestNeed = false;
+        public bool noPlayerFoodNeed = false;
+        public bool noPlayerHygieneNeed = false;
+        public bool noPlayerBladderNeed = false;
+        public bool noPlayerRecreationNeed = false;
+        public bool noPlayerMentalBreaks = false;
         public bool disableCustomGizmos = false;
+        public bool hideGizmosOnWorldMap = true;
+        public bool enableFulfillNeedsGizmo = true;
         public List<string> pinnedNeeds = new List<string>() { "Mood", "Food", "Rest", "Joy" };
         public bool enableDamageScreenEffect = true;
+        public DamageEffectStyle damageEffectStyle = DamageEffectStyle.Flash;
         public bool showControlsOnFirstInhabit = true;
         public bool sleepingPreventsVision = true;
         public float avatarUIScale = 1f;
-        public bool disallowOtherMapsInAuthentic = false;
         public bool weaponTooltips = true;
         public bool apparelTooltips = true;
         public bool eatTooltips = true;
@@ -103,7 +134,6 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref showControlsOnFirstInhabit, "showControlsOnFirstInhabit", true);
             Scribe_Values.Look(ref sleepingPreventsVision, "sleepingPreventsVision", true);
             Scribe_Values.Look(ref avatarUIScale, "avatarUIScale", 1f);
-            Scribe_Values.Look(ref disallowOtherMapsInAuthentic, "disallowOtherMapsInAuthentic", false);
             Scribe_Values.Look(ref weaponTooltips, "weaponTooltips", true);
             Scribe_Values.Look(ref apparelTooltips, "apparelTooltips", true);
             Scribe_Values.Look(ref eatTooltips, "eatTooltips", true);
@@ -141,6 +171,8 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref fishingMinigame, "fishingMinigame", true);
             Scribe_Values.Look(ref instantEquip, "instantEquip", true);
             Scribe_Values.Look(ref enableSprinting, "enableSprinting", true);
+            Scribe_Values.Look(ref sprintMode, "sprintMode", KeyHoldMode.Hold);
+            Scribe_Values.Look(ref sneakMode, "sneakMode", KeyHoldMode.Hold);
             Scribe_Values.Look(ref enableSneaking, "enableSneaking", true);
             Scribe_Values.Look(ref sprintSpeedMultiplier, "sprintSpeedMultiplier", 1.3f);
             Scribe_Values.Look(ref sneakSpeedMultiplier, "sneakSpeedMultiplier", 0.5f);
@@ -155,9 +187,18 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref requirePawnInFaction, "requirePawnInFaction", true);
             Scribe_Values.Look(ref sprintFoodDrain, "sprintFoodDrain", 1.5f);
             Scribe_Values.Look(ref sprintSleepDrain, "sprintSleepDrain", 2f);
+            Scribe_Values.Look(ref noPlayerRestNeed, "noPlayerRestNeed", false);
+            Scribe_Values.Look(ref noPlayerFoodNeed, "noPlayerFoodNeed", false);
+            Scribe_Values.Look(ref noPlayerHygieneNeed, "noPlayerHygieneNeed", false);
+            Scribe_Values.Look(ref noPlayerBladderNeed, "noPlayerBladderNeed", false);
+            Scribe_Values.Look(ref noPlayerRecreationNeed, "noPlayerRecreationNeed", false);
+            Scribe_Values.Look(ref noPlayerMentalBreaks, "noPlayerMentalBreaks", false);
             Scribe_Values.Look(ref disableCustomGizmos, "disableCustomGizmos", false);
+            Scribe_Values.Look(ref hideGizmosOnWorldMap, "hideGizmosOnWorldMap", true);
+            Scribe_Values.Look(ref enableFulfillNeedsGizmo, "enableFulfillNeedsGizmo", true);
             Scribe_Collections.Look(ref pinnedNeeds, "pinnedNeeds", LookMode.Value);
             Scribe_Values.Look(ref enableDamageScreenEffect, "enableDamageScreenEffect", true);
+            Scribe_Values.Look(ref damageEffectStyle, "damageEffectStyle", DamageEffectStyle.Flash);
 
             if (pinnedNeeds == null)
             {

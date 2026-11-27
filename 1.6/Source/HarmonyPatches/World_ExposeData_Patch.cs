@@ -18,10 +18,18 @@ namespace PerspectiveShift
             Scribe_Values.Look(ref State.shownControlsDialog, "PS_ShownControlsDialog", false);
             Scribe_Values.Look(ref State.authenticPawnId, "PS_AuthenticPawnId", -1);
             Scribe_Collections.Look(ref State.seekAtWillPawns, "PS_SeekAtWillPawns", LookMode.Value);
+            Scribe_Values.Look(ref State.fulfillNeeds, "PS_FulfillNeeds", false);
+            Scribe_Values.Look(ref State.returnAfterFulfillment, "PS_ReturnAfterFulfillment", true);
+            Scribe_Values.Look(ref State.showJobCallouts, "PS_ShowJobCallouts", true);
+            Scribe_Values.Look(ref State.playDoneSound, "PS_PlayDoneSound", true);
+            Scribe_Collections.Look(ref State.disabledAutoNeeds, "PS_DisabledAutoNeeds", LookMode.Value);
+            Scribe_Collections.Look(ref State.autoNeedThresholds, "PS_AutoNeedThresholds", LookMode.Value, LookMode.Value);
             Scribe_Collections.Look(ref FloatMenuOptionProvider_AvatarInteraction.lastInteractionByTarget, "PS_LastInteractionByTarget", LookMode.Value, LookMode.Value);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 State.seekAtWillPawns ??= new HashSet<int>();
+                State.disabledAutoNeeds ??= new HashSet<AutoNeed>();
+                State.autoNeedThresholds ??= new Dictionary<AutoNeed, float>();
                 FloatMenuOptionProvider_AvatarInteraction.lastInteractionByTarget ??= new Dictionary<int, int>();
             }
         }

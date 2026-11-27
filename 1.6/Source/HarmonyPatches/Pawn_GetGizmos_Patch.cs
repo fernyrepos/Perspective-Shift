@@ -39,6 +39,18 @@ namespace PerspectiveShift
                 }
             }
 
+            if (__instance.IsAvatar() && PerspectiveShiftMod.settings.enableFulfillNeedsGizmo)
+            {
+                yield return new Command_FulfillNeeds
+                {
+                    defaultLabel = "PS_FulfillNeeds".Translate(),
+                    defaultDesc = "PS_FulfillNeedsDesc".Translate(),
+                    icon = ContentFinder<Texture2D>.Get("Gizmos/AutoNeeds"),
+                    isActive = () => State.fulfillNeeds,
+                    toggleAction = () => State.fulfillNeeds = !State.fulfillNeeds
+                };
+            }
+
             foreach (var g in values)
             {
                 if (__instance.IsAvatar() && g is Command_Toggle toggle && toggle.tutorTag == "FireAtWillToggle")

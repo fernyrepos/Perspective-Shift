@@ -12,24 +12,20 @@ namespace PerspectiveShift
     {
         private float moveInputDuration = 0f;
         private bool wasSprinting = false;
-        private Vector3 lastVehicleMoveInput = Vector3.zero;
+        private bool sprintKeyHeld = false;
+        private bool sneakKeyHeld = false;
+        private bool sprintToggled = false;
+        private bool sneakToggled = false;
         private IntVec3 prevCell = IntVec3.Invalid;
-        private int vehicleStopGraceTicks = 0;
-        private int vehiclePathFailCooldown = 0;
         private Vector3 _leanVelocity = Vector3.zero;
         private const float jobInterruptDelay = 0.35f;
+        private int lastGameTick = -1;
+        private float gameTimeCredit = 0f;
+        private const float maxGameTimeCredit = 2f / 60f;
         private const float maxPhysicsDesyncDistSq = 2.25f;
 
         public void UpdatePhysics()
         {
-            if (pawn.Map == null || pawn.Map != Find.CurrentMap)
-            {
-                moveInput = Vector3.zero;
-                physicsPosition = null;
-                wasMovingLastFrame = false;
-                return;
-            }
-
             if (pawn.Downed)
             {
                 physicsPosition = null;
@@ -37,11 +33,17 @@ namespace PerspectiveShift
                 return;
             }
 
-            var inVehicle = ModCompatibility.IsPawnInVehicle(pawn, out Pawn vehicle, out bool isDriver, out bool isGunner);
-
-            if (inVehicle)
+            if (ModCompatibility.IsPawnInVehicle(pawn, out Pawn vehicle, out bool isDriver, out _))
             {
                 UpdateVehiclePhysics(vehicle, isDriver);
+                physicsPosition = null;
+                wasMovingLastFrame = false;
+                return;
+            }
+
+            if (pawn.Map == null || pawn.Map != Find.CurrentMap)
+            {
+                moveInput = Vector3.zero;
                 physicsPosition = null;
                 wasMovingLastFrame = false;
                 return;
@@ -144,7 +146,7 @@ namespace PerspectiveShift
                     return;
             }
 
-            var newPos = PerspectiveShiftMod.settings.cameraEasing
+            var newPos = PerspectiveShiftMod.settings.cameraEasing && !State.ConsumeCameraRecenterSnap()
                 ? Vector3.Lerp(driver.rootPos, targetCamPos, 0.1f)
                 : targetCamPos;
 
@@ -174,17 +176,45 @@ namespace PerspectiveShift
 
             if (moveInput.sqrMagnitude > 1f) moveInput.Normalize();
 
-            bool sprintKeyDown = DefsOf.PS_Sprint.KeyDownEvent;
-            isSprinting = PerspectiveShiftMod.settings.enableSprinting && DefsOf.PS_Sprint.IsDown;
+            if (ModCompatibility.IsoRimAvailable && moveInput != Vector3.zero)
+            {
+                float viewYaw = ModCompatibility.IsoRimViewYaw();
+                if (viewYaw != 0f) moveInput = Quaternion.Euler(0f, viewYaw, 0f) * moveInput;
+            }
+
+            var settings = PerspectiveShiftMod.settings;
+
+            bool sprintDown = DefsOf.PS_Sprint.IsDown;
+            bool sprintPressed = sprintDown && !sprintKeyHeld;
+            sprintKeyHeld = sprintDown;
+
+            bool sneakDown = DefsOf.PS_Walk.IsDown;
+            bool sneakPressed = sneakDown && !sneakKeyHeld;
+            sneakKeyHeld = sneakDown;
+
+            if (settings.sprintMode == KeyHoldMode.Toggle)
+            {
+                if (sprintPressed) sprintToggled = !sprintToggled;
+            }
+            else sprintToggled = false;
+
+            if (settings.sneakMode == KeyHoldMode.Toggle)
+            {
+                if (sneakPressed) sneakToggled = !sneakToggled;
+            }
+            else sneakToggled = false;
+
+            isSprinting = settings.enableSprinting && (settings.sprintMode == KeyHoldMode.Toggle ? sprintToggled : sprintDown);
             if (isSprinting && pawn.needs?.rest != null && pawn.needs.rest.CurLevelPercentage <= 0.01f)
             {
                 isSprinting = false;
-                if (sprintKeyDown)
+                sprintToggled = false;
+                if (sprintPressed)
                 {
                     Messages.Message("PS_CannotSprintExhausted".Translate(), MessageTypeDefOf.RejectInput, false);
                 }
             }
-            isWalking = PerspectiveShiftMod.settings.enableSneaking && DefsOf.PS_Walk.IsDown;
+            isWalking = settings.enableSneaking && (settings.sneakMode == KeyHoldMode.Toggle ? sneakToggled : sneakDown);
 
             if (isSprinting && !wasSprinting)
             {
@@ -285,8 +315,7 @@ namespace PerspectiveShift
             float gaitMultiplier = isSprinting ? PerspectiveShiftMod.settings.sprintSpeedMultiplier
                                  : isWalking ? PerspectiveShiftMod.settings.sneakSpeedMultiplier
                                  : 1f;
-            float tickRate = Mathf.Min(State.ActualTickRateMultiplier, Find.TickManager.TickRateMultiplier);
-            float speed = baseSpeed * PerspectiveShiftMod.settings.moveSpeedMultiplier * terrainMultiplier * gaitMultiplier * Time.deltaTime * tickRate;
+            float speed = baseSpeed * PerspectiveShiftMod.settings.moveSpeedMultiplier * terrainMultiplier * gaitMultiplier * GameSecondsThisFrame();
             speed = Mathf.Min(speed, PerspectiveShiftMod.settings.playerMoveSpeedCap);
 
             IntVec3 forwardCell = (physicsPosition.Value + deltaRaw * 0.8f).ToIntVec3();
@@ -385,6 +414,24 @@ namespace PerspectiveShift
             }
         }
 
+        private float GameSecondsThisFrame()
+        {
+            var tickManager = Find.TickManager;
+            int now = tickManager.TicksGame;
+            if (lastGameTick < 0 || now < lastGameTick)
+            {
+                lastGameTick = now;
+                gameTimeCredit = 0f;
+            }
+
+            gameTimeCredit += (now - lastGameTick) / 60f;
+            lastGameTick = now;
+
+            float spend = Mathf.Min(Time.deltaTime * tickManager.TickRateMultiplier, gameTimeCredit);
+            gameTimeCredit = Mathf.Min(gameTimeCredit - spend, maxGameTimeCredit);
+            return spend;
+        }
+
         private void UpdateRotation(Vector3 dir)
         {
             if (dir.x < -0.1f && dir.z > 0.1f) pawn.Rotation = Rot4.West;
@@ -474,43 +521,17 @@ namespace PerspectiveShift
 
         private void UpdateVehiclePhysics(Pawn vehicle, bool isDriver)
         {
-            if (isDriver)
+            moveInput = Vector3.zero;
+
+            if (!isDriver || vehicle == null || !vehicle.Spawned || vehicle.Map != Find.CurrentMap) return;
+
+            if (!State.ControlsFrozen && !State.CameraLockPosition.HasValue && !pawn.InMentalState && !passedOut)
             {
-                if (State.ControlsFrozen || State.CameraLockPosition.HasValue) moveInput = Vector3.zero;
-                else UpdateInput();
-
-                if (vehiclePathFailCooldown > 0) vehiclePathFailCooldown--;
-
-                if (IsMoving)
-                {
-                    vehicleStopGraceTicks = 10;
-                    if (vehiclePathFailCooldown <= 0)
-                    {
-                        var success = ModCompatibility.ProcessVehicleMovement(vehicle, moveInput);
-                        if (!success)
-                        {
-                            vehiclePathFailCooldown = 5;
-                        }
-                        else
-                        {
-                            lastVehicleMoveInput = moveInput;
-                        }
-                    }
-                }
-                else if (lastVehicleMoveInput != Vector3.zero)
-                {
-                    if (vehicleStopGraceTicks > 0)
-                    {
-                        vehicleStopGraceTicks--;
-                    }
-                    else
-                    {
-                        ModCompatibility.StopVehicle(vehicle);
-                        lastVehicleMoveInput = Vector3.zero;
-                        vehiclePathFailCooldown = 0;
-                    }
-                }
+                UpdateInput();
             }
+
+            if (IsMoving) VehicleControl.Drive(vehicle, moveInput);
+            else VehicleControl.NotifyNoInput(vehicle);
         }
 
         private void HandleAbilityCancellation(Job curJob)

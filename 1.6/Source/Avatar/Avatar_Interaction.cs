@@ -2,6 +2,7 @@ using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using Verse;
 using Verse.AI;
@@ -60,6 +61,12 @@ namespace PerspectiveShift
 
             if (shiftHeld && withinGrabRange)
                 return false;
+
+            foreach (var thing in things)
+            {
+                if (!withinGrabRange && !IsWithinInteractionRange(thing)) continue;
+                if (TryHandleVehicleBoarding(thing)) return true;
+            }
 
             foreach (var thing in things)
             {
@@ -447,6 +454,36 @@ namespace PerspectiveShift
             return false;
         }
 
+        private static readonly Dictionary<Type, bool> acceptanceDeclarations = new Dictionary<Type, bool>();
+
+        private static bool DeclaresAcceptance(Type type, Type baseType)
+        {
+            if (acceptanceDeclarations.TryGetValue(type, out bool declares)) return declares;
+
+            declares = false;
+            for (var current = type; current != null && current != baseType; current = current.BaseType)
+            {
+                if (current.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly).Any(m => m.Name == "Accepts"))
+                {
+                    declares = true;
+                    break;
+                }
+            }
+
+            acceptanceDeclarations[type] = declares;
+            return declares;
+        }
+
+        private static bool AcceptsDeposit(CompThingContainer comp, Thing thing)
+        {
+            return DeclaresAcceptance(comp.GetType(), typeof(CompThingContainer)) && comp.Accepts(thing);
+        }
+
+        private static bool AcceptsDeposit(Building_Casket casket, Thing thing)
+        {
+            return DeclaresAcceptance(casket.GetType(), typeof(Building_Casket)) && casket.Accepts(thing);
+        }
+
         private bool TryHandleContainerTransfer(Thing t, Thing carriedThing)
         {
             if (t == pawn) return false;
@@ -460,17 +497,20 @@ namespace PerspectiveShift
                 }
                 return false;
             }
-            if (t is Building_Casket casket && casket.Accepts(carriedThing))
+            if (t is Building_Casket casket)
             {
+                if (!AcceptsDeposit(casket, carriedThing)) return false;
                 return casket.TryAcceptThing(carriedThing);
             }
 
             if (carriedThing is Corpse) return false;
             if (t is IBillGiver) return false;
+            if (t.TryGetComp<CompEntityHolder>() != null) return false;
 
             var container = t.TryGetInnerInteractableThingOwner();
             if (container != null)
             {
+                if (container.Owner is CompThingContainer comp && !AcceptsDeposit(comp, carriedThing)) return false;
                 if (!container.CanAcceptAnyOf(carriedThing)) return false;
                 var sound = carriedThing.def.soundDrop;
                 int countBefore = carriedThing.stackCount;
@@ -681,6 +721,7 @@ namespace PerspectiveShift
             if (pickedUpCount > 0)
             {
                 PlaySoundOnce(target.def.soundPickup, new TargetInfo(pawn.Position, pawn.Map));
+                ModCompatibility.NotifyThingPickedUp(CarriedThing ?? target);
                 return true;
             }
             return false;
@@ -693,6 +734,13 @@ namespace PerspectiveShift
             var frame = thing as Frame;
             if (frame != null && InteractWith(frame)) return true;
             return false;
+        }
+
+        private bool TryHandleVehicleBoarding(Thing thing)
+        {
+            if (!ModCompatibility.VehicleBoardingEligible(thing, pawn)) return false;
+            if (ModCompatibility.TryBoardVehicle(thing, pawn)) return true;
+            return RejectInteraction("PS_VehicleNoSeat", thing.LabelShortCap);
         }
 
         private bool TryHandleBuildingInteractions(Thing thing)
@@ -721,8 +769,22 @@ namespace PerspectiveShift
             return false;
         }
 
+        private static bool floatMenuProvidersMissingLogged;
+
         private bool TryHandleFloatMenu(IntVec3 clickCell)
         {
+            if (FloatMenuMakerMap.providers == null)
+            {
+                if (!floatMenuProvidersMissingLogged)
+                {
+                    floatMenuProvidersMissingLogged = true;
+                    Log.Error("[PerspectiveShift] FloatMenuMakerMap.providers is null, so no interaction options can be built. The game's FloatMenuMakerMap.Init() never ran, which means something threw during startup before it.");
+                }
+                return false;
+            }
+
+            if (pawn.Map == null) return false;
+
             var acceptanceReport = FloatMenuMakerMap.ShouldGenerateFloatMenuForPawn(pawn);
             if (!acceptanceReport.Accepted)
             {

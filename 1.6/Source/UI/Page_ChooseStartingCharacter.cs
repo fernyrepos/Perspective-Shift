@@ -55,6 +55,18 @@ namespace PerspectiveShift
             }
         }
 
+        public static bool WillSkipToSingleCandidate()
+        {
+            if (Current.ProgramState == ProgramState.Playing) return false;
+            if (Find.GameInitData == null) return false;
+            if (Find.GameInitData.startingPawnCount > 1) return false;
+
+            if (PerspectiveShiftMod.settings.allowNonHuman && Find.Scenario != null &&
+                Find.Scenario.AllParts.OfType<ScenPart_StartingAnimal>().Any()) return false;
+
+            return true;
+        }
+
         public override void PreOpen()
         {
             base.PreOpen();

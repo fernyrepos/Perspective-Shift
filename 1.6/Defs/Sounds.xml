@@ -17,6 +17,22 @@
     </SoundDef>
 
     <SoundDef>
+        <defName>PS_NeedsDone</defName>
+        <maxSimultaneous>1</maxSimultaneous>
+        <subSounds>
+            <li>
+                <onCamera>True</onCamera>
+                <grains>
+                    <li Class="AudioGrain_Clip">
+                        <clipPath>PS_NeedsDone</clipPath>
+                    </li>
+                </grains>
+                <volumeRange>5~5</volumeRange>
+            </li>
+        </subSounds>
+    </SoundDef>
+
+    <SoundDef>
         <defName>PS_StorageOpen</defName>
         <maxSimultaneous>1</maxSimultaneous>
         <subSounds>

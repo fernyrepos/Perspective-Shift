@@ -9,7 +9,10 @@ namespace PerspectiveShift
         public static void Postfix(IntVec3 cell)
         {
             if (!State.IsActive) return;
+            if (Find.CurrentMap == null) return;
             if (State.Avatar.pawn.Map != Find.CurrentMap) return;
+            if (LongEventHandler.ShouldWaitForEvent) return;
+            if (!cell.IsValid || !cell.InBounds(Find.CurrentMap)) return;
             if (cell == State.Avatar.pawn.Position)
             {
                 State.CameraLockPosition = null;
